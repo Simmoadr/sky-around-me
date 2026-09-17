@@ -91,9 +91,15 @@ function renderRecent(){$('recentList').innerHTML=S.recent.length?S.recent.map(r
 async function fetchAircraft(){
   const radiusNm = 54; // ~100 km
   const url = `https://opendata.adsb.fi/api/v3/lat/${S.lat}/lon/${S.lon}/dist/${radiusNm}`;
-  const r = await fetch(url,{cache:'no-store',headers:{'Accept':'application/json'}});
-  if(!r.ok) throw new Error(`ADSB.fi HTTP ${r.status}`);
-  return r.json();
+  try{
+    const r = await fetch(url,{cache:'no-store'});
+    if(!r.ok) throw new Error(`ADSB.fi HTTP ${r.status} ${r.statusText||''}`.trim());
+    return await r.json();
+  }catch(e){
+    const name=e&&e.name?e.name:'Error';
+    const msg=e&&e.message?e.message:String(e);
+    throw new Error(`${name}: ${msg} · URL ${url}`);
+  }
 }
 async function poll(){
  $('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE…';$('updated').textContent='Requesting live ADS-B…';
@@ -113,7 +119,7 @@ async function poll(){
   })).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)})).filter(x=>x.d<=100);
   const f=choose(items);S.featured=f?.icao||null;render(items);show(f);$('count').textContent=items.length+' aircraft in range';$('updated').textContent=`Updated ${new Date().toLocaleTimeString()} · ${rawCount} returned · ADSB.fi`;$('mapStatus').textContent='LIVE';
   $('detail').title=`ADSB.fi returned ${rawCount} aircraft; ${items.length} are within 100 km.`;
- }catch(e){$('mapStatus').textContent='DATA ERROR';$('status').textContent='LIVE DATA ERROR';$('detail').textContent='Could not read live ADS-B data. '+e.message;$('updated').textContent='Connection failed';console.error('Sky Around Me',e)}
+ }catch(e){$('mapStatus').textContent='DATA ERROR';$('status').textContent='LIVE DATA ERROR';$('detail').textContent='Diagnostic: '+e.message;$('updated').textContent='Connection failed';console.error('Sky Around Me',e)}
 }
 function setLocation(lat,lon){S.lat=lat;S.lon=lon;me.setLatLng([lat,lon]);range.setLatLng([lat,lon]);map.setView([lat,lon],8);S.featured=null;poll();clearInterval(S.timer);S.timer=setInterval(poll,60000)}
 function valid(a,b){return Number.isFinite(a)&&Number.isFinite(b)&&a>=-90&&a<=90&&b>=-180&&b<=180}
