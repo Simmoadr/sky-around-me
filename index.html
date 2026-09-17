@@ -58,7 +58,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
    <div class="eyebrow">RECENTLY FEATURED</div>
    <div class="recent" id="recentList"><div class="row"><span>Nothing yet</span><small>—</small></div></div>
   </div>
-  <div class="footer"><span>OpenSky ADS-B</span><span>Refresh ~60s</span></div>
+  <div class="footer"><span>IntelSky · Live ADS-B / MLAT</span><span>Refresh ~60s</span></div>
  </aside>
 </div>
 </div>
@@ -89,23 +89,16 @@ function show(x){
 }
 function renderRecent(){$('recentList').innerHTML=S.recent.length?S.recent.map(r=>`<div class="row"><span><b>${r.icao.toUpperCase()}</b><br><small>Previously featured</small></span><small>${Math.max(1,Math.round((Date.now()-r.time)/60000))} min</small></div>`).join(''):'<div class="row"><span>Nothing yet</span><small>—</small></div>'}
 async function fetchAircraft(){
-  const radiusNm = 54; // ~100 km
-  const url = `https://opendata.adsb.fi/api/v3/lat/${S.lat}/lon/${S.lon}/dist/${radiusNm}`;
-  try{
-    const r = await fetch(url,{cache:'no-store'});
-    if(!r.ok) throw new Error(`ADSB.fi HTTP ${r.status} ${r.statusText||''}`.trim());
-    return await r.json();
-  }catch(e){
-    const name=e&&e.name?e.name:'Error';
-    const msg=e&&e.message?e.message:String(e);
-    throw new Error(`${name}: ${msg} · URL ${url}`);
-  }
+  const url = 'https://intelsky.org/api/';
+  const r = await fetch(url,{cache:'no-store'});
+  if(!r.ok) throw new Error(`IntelSky HTTP ${r.status}`);
+  return r.json();
 }
 async function poll(){
  $('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE…';$('updated').textContent='Requesting live ADS-B…';
  try{
   const j=await fetchAircraft();
-  const raw=Array.isArray(j.ac)?j.ac:(Array.isArray(j.aircraft)?j.aircraft:[]);
+  const raw=Array.isArray(j.ac)?j.ac:[];
   const rawCount=raw.length;
   const items=raw.map(a=>({
     icao:(a.hex||'').toLowerCase(),
@@ -115,10 +108,13 @@ async function poll(){
     alt:typeof a.alt_baro==='number'?a.alt_baro*0.3048:null,
     speed:typeof a.gs==='number'?a.gs*0.514444:null,
     heading:typeof a.track==='number'?a.track:null,
-    vs:typeof a.baro_rate==='number'?a.baro_rate*0.00508:null
+    vs:typeof a.baro_rate==='number'?a.baro_rate*0.00508:null,
+    type:a.t||'',
+    desc:a.desc||'',
+    operator:a.ownOp||a.operator||''
   })).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)})).filter(x=>x.d<=100);
-  const f=choose(items);S.featured=f?.icao||null;render(items);show(f);$('count').textContent=items.length+' aircraft in range';$('updated').textContent=`Updated ${new Date().toLocaleTimeString()} · ${rawCount} returned · ADSB.fi`;$('mapStatus').textContent='LIVE';
-  $('detail').title=`ADSB.fi returned ${rawCount} aircraft; ${items.length} are within 100 km.`;
+  const f=choose(items);S.featured=f?.icao||null;render(items);show(f);$('count').textContent=items.length+' aircraft in range';$('updated').textContent=`Updated ${new Date().toLocaleTimeString()} · ${rawCount} returned · IntelSky`;$('mapStatus').textContent='LIVE';
+  $('detail').title=`IntelSky returned ${rawCount} aircraft; ${items.length} are within 100 km.`;
  }catch(e){$('mapStatus').textContent='DATA ERROR';$('status').textContent='LIVE DATA ERROR';$('detail').textContent='Diagnostic: '+e.message;$('updated').textContent='Connection failed';console.error('Sky Around Me',e)}
 }
 function setLocation(lat,lon){S.lat=lat;S.lon=lon;me.setLatLng([lat,lon]);range.setLatLng([lat,lon]);map.setView([lat,lon],8);S.featured=null;poll();clearInterval(S.timer);S.timer=setInterval(poll,60000)}
