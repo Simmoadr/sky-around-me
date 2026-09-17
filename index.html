@@ -89,7 +89,7 @@ function show(x){
 }
 function renderRecent(){$('recentList').innerHTML=S.recent.length?S.recent.map(r=>`<div class="row"><span><b>${r.icao.toUpperCase()}</b><br><small>Previously featured</small></span><small>${Math.max(1,Math.round((Date.now()-r.time)/60000))} min</small></div>`).join(''):'<div class="row"><span>Nothing yet</span><small>—</small></div>'}
 async function fetchAircraft(){
-  const url = 'https://intelsky.org/api/';
+  const url = 'https://intelsky.org/stats/map.php?ajax_live=1';
   const r = await fetch(url,{cache:'no-store'});
   if(!r.ok) throw new Error(`IntelSky HTTP ${r.status}`);
   return r.json();
@@ -113,7 +113,7 @@ async function poll(){
     desc:a.desc||'',
     operator:a.ownOp||a.operator||''
   })).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)})).filter(x=>x.d<=100);
-  const f=choose(items);S.featured=f?.icao||null;render(items);show(f);$('count').textContent=items.length+' aircraft in range';$('updated').textContent=`Updated ${new Date().toLocaleTimeString()} · ${rawCount} returned · IntelSky`;$('mapStatus').textContent='LIVE';
+  const f=choose(items);S.featured=f?.icao||null;render(items);show(f);$('count').textContent=items.length+' aircraft in range';$('updated').textContent=`Updated ${new Date().toLocaleTimeString()} · ${rawCount} returned · IntelSky proxy`;$('mapStatus').textContent='LIVE';
   $('detail').title=`IntelSky returned ${rawCount} aircraft; ${items.length} are within 100 km.`;
  }catch(e){$('mapStatus').textContent='DATA ERROR';$('status').textContent='LIVE DATA ERROR';$('detail').textContent='Diagnostic: '+e.message;$('updated').textContent='Connection failed';console.error('Sky Around Me',e)}
 }
