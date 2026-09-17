@@ -25,6 +25,65 @@
 .edit-panel{display:none;margin-top:12px;padding:18px;border:1px solid var(--line);background:#fff;border-radius:15px}.edit-panel.show{display:block}
 @media(max-width:1050px){.telemetry{min-width:0}.identity{align-items:flex-start;flex-direction:column}.flight-layout{grid-template-columns:1fr}.map-card{width:300px}}
 @media(max-width:700px){.app{padding:12px}.topbar{gap:10px}.brand-sub,.clock{display:none}.nav button{padding:8px 9px;font-size:8px}.home-head,.page-intro{align-items:flex-start;gap:15px}.home-head .live-badge{margin-top:4px}.hero-top,.hero-bottom{padding-left:22px;padding-right:22px}.hero-route{font-size:11px}.aircraft-stage{left:0;right:0;top:72px}.sky{top:90px}.telemetry{grid-template-columns:1fr 1fr;width:100%;gap:15px}.flight-name{font-size:25px}.map-wrap{height:calc(100vh - 120px);min-height:520px}.map-card{left:12px;right:12px;top:auto;bottom:12px;width:auto}.form{grid-template-columns:1fr}.form .wide,.form .btn{grid-column:auto}.flight-row{grid-template-columns:1fr}.flight-main{align-items:flex-start}.page-intro{flex-direction:column}}
+
+/* WALL-MOUNTED IPAD LANDSCAPE: Page 1 is a fixed, no-scroll dashboard. */
+@media (min-width:701px) and (orientation:landscape) {
+  html,body{height:100%;overflow:hidden}
+  .app{height:100vh;min-height:0;padding:14px 22px 14px}
+  .topbar{padding-bottom:12px}
+  .mark{width:32px;height:32px}
+  .nav button{padding:8px 14px}
+  .home{padding-top:18px;height:calc(100vh - 59px);overflow:hidden}
+  .home-head{margin-bottom:12px;min-height:46px}
+  h1{font-size:clamp(32px,3.7vw,50px)}
+  .hero{height:calc(100vh - 370px);min-height:420px;max-height:505px;border-radius:27px}
+  .hero-top{padding:25px 36px 0}
+  .sky{top:82px;height:220px}
+  .aircraft-stage{top:34px;height:210px}
+  .aircraft-stage-art{height:210px}
+  .aircraft-photo-wrap{height:210px}
+  .hero-bottom{padding:18px 36px 23px}
+  .divider{margin-bottom:17px}
+  .flight-name{font-size:28px}
+  .telemetry{gap:18px;min-width:500px}
+  .metric b{font-size:18px}
+  .progress{margin-top:15px}
+  .watch-bottom{margin-top:10px;padding:14px 20px;border-radius:19px}
+  .watch-bottom-head{gap:14px}
+  .watch-bottom-title{font-size:17px}
+  .watch-bottom-body{margin-top:9px;gap:18px}
+  .watch-code{font-size:18px}
+  .watch-copy div{font-size:10px}
+  .watch-count b{font-size:18px}
+  .watch-live-grid{padding-top:9px;gap:10px}
+  .watch-live-grid b{font-size:13px}
+  #editFlight{display:none}
+}
+
+/* Short landscape screens: tighten the same dashboard further. */
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px) {
+  .app{padding-top:10px;padding-bottom:10px}
+  .topbar{padding-bottom:9px}
+  .home{padding-top:12px;height:calc(100vh - 47px)}
+  .home-head{margin-bottom:8px;min-height:40px}
+  .hero{height:calc(100vh - 315px);min-height:375px}
+  .hero-top{padding-top:20px}
+  .sky{top:72px;height:180px}
+  .aircraft-stage{top:25px;height:175px}
+  .aircraft-stage-art,.aircraft-photo-wrap{height:175px}
+  .hero-bottom{padding-top:13px;padding-bottom:17px}
+  .watch-bottom{margin-top:7px;padding-top:10px;padding-bottom:10px}
+}
+
+/* iPad portrait: allow the content to breathe and scroll normally. */
+@media (min-width:701px) and (orientation:portrait) {
+  body{overflow:auto}
+  .app{padding:18px 22px 28px}
+  .home{padding-top:22px}
+  .hero{min-height:560px}
+  .identity{flex-direction:column;align-items:flex-start}
+  .telemetry{min-width:0;width:100%}
+}
 </style>
 </head>
 <body>
@@ -185,6 +244,7 @@ const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.la
 function render(items){const seen=new Set();items.forEach(x=>{seen.add(x.icao);const feat=x.icao===S.featured;let m=S.markers.get(x.icao);if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat)}).addTo(map);S.markers.set(x.icao,m)}else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat))}m.bindPopup(`<b>${x.callsign||x.icao.toUpperCase()}</b><br>${x.d.toFixed(1)} km · ${x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft'} · ${x.speed==null?'—':Math.round(x.speed*1.94384)+' kt'}`)});S.markers.forEach((m,id)=>{if(!seen.has(id)){map.removeLayer(m);S.markers.delete(id)}})}
 async function fetchAircraft(){const r=await fetch('https://sky-around-me-api.adrian-simmonds.workers.dev/?source=intelsky',{cache:'no-store'});if(!r.ok)throw new Error('IntelSky HTTP '+r.status);return r.json()}
 async function poll(){if(!document.getElementById('map'))return;$('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';try{const j=await fetchAircraft();const raw=Array.isArray(j.ac)?j.ac:[];const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||'',operator:a.ownOp||a.operator||''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));const items=allItems.filter(x=>x.d<=100);S.lastAllItems=allItems;S.lastItems=items;renderHomeWatch(items);const f=choose(items);S.featured=f?.icao||null;render(items);if(f){renderLiveHome(f);$('status').textContent='LIVE';$('call').textContent=f.callsign||f.icao.toUpperCase();$('detail').textContent=(f.desc||f.type||'Airborne aircraft')+' · ICAO '+f.icao.toUpperCase();$('dist').textContent=f.d.toFixed(1)+' km';$('alt').textContent=f.alt==null?'—':Math.round(f.alt*3.28084).toLocaleString()+' ft';$('speed').textContent=f.speed==null?'—':Math.round(f.speed*1.94384)+' kt';$('heading').textContent=f.heading==null?'—':Math.round(f.heading)+'°';$('pathInfo').textContent='Nearest airborne aircraft highlighted. Live track layer ready for the next build.'}else{renderScheduledHome();$('status').textContent='NO AIRCRAFT NEARBY';$('call').textContent='—';$('detail').textContent='No airborne aircraft within 100 km. Home screen has returned to your next scheduled flight.';$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';$('pathInfo').textContent='No local traffic right now. Your scheduled flight remains the fallback.'}$('countPill').textContent=`${items.length} aircraft in range · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;$('mapStatus').textContent='LIVE'}catch(e){$('mapStatus').textContent='DATA ERROR';$('status').textContent='LIVE DATA ERROR';$('detail').textContent=e.message;console.error('Sky Around Me',e)}}
-renderScheduledHome();renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();poll();setInterval(()=>{renderWatchlist();renderScheduledHome();renderHomeWatch(S.lastItems)},1000);S.timer=setInterval(poll,60000);
+function refreshHomeDisplay(){const f=choose(S.lastItems||[]);if(f)renderLiveHome(f);else renderScheduledHome();renderHomeWatch(S.lastItems||[])}
+renderScheduledHome();renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();poll();setInterval(()=>{renderWatchlist();refreshHomeDisplay()},1000);S.timer=setInterval(poll,60000);
 </script>
 </body></html>
