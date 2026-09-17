@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sky Around Me</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#071014;--panel:rgba(12,23,29,.92);--card:rgba(17,32,39,.9);--line:rgba(255,255,255,.09);--text:#f3f7f8;--muted:#91a3aa;--accent:#62e6ad;--blue:#69b9ff;--warn:#f2ca63}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+body{min-height:100vh}.app{max-width:1440px;margin:auto;padding:18px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}.brand{display:flex;align-items:center;gap:12px}.mark{width:42px;height:42px;border:1px solid var(--line);border-radius:13px;background:linear-gradient(145deg,#18352f,#0e1d23);display:grid;place-items:center;font-size:21px}.title{font-size:20px;font-weight:800;letter-spacing:.02em}.subtitle{font-size:10px;color:var(--muted);letter-spacing:.16em;margin-top:3px}.actions{display:flex;gap:8px;align-items:center}.btn{min-height:42px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:0 14px;border-radius:11px;font-weight:700;cursor:pointer}.btn.primary{background:#17372e;border-color:#2d745c;color:#dffff0}.btn:active{transform:translateY(1px)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 365px;gap:14px}.map-wrap{position:relative;min-height:700px;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#0a151a}.map{position:absolute;inset:0}.leaflet-container{background:#101a1f;font:inherit}.leaflet-control-zoom{border:0!important}.leaflet-control-zoom a{background:#101c21!important;color:#e8f1f2!important;border:1px solid var(--line)!important}.hud{position:absolute;z-index:500;pointer-events:none}.top-hud{top:16px;left:16px;right:16px;display:flex;justify-content:space-between;gap:12px}.pill{background:rgba(7,16,20,.86);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:12px;padding:9px 11px;font-size:11px}.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:7px;box-shadow:0 0 10px rgba(98,230,173,.65)}.bottom-hud{left:16px;bottom:16px}.range{font-weight:800}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#101d23;color:var(--text);border:1px solid var(--line)}.leaflet-popup-content{margin:12px}.popup-title{font-weight:800}.popup-sub{color:var(--muted);font-size:11px;margin-top:3px}
+.side{display:flex;flex-direction:column;gap:12px}.panel{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:16px;backdrop-filter:blur(12px)}.eyebrow{font-size:10px;letter-spacing:.15em;color:var(--muted);font-weight:800}.target{margin-top:10px;padding:16px;border-radius:15px;background:linear-gradient(145deg,#10251f,#0e191e);border:1px solid rgba(98,230,173,.2)}.status{color:var(--accent);font-size:10px;letter-spacing:.14em;font-weight:900}.callsign{font-size:34px;line-height:1.05;font-weight:900;margin-top:7px;letter-spacing:-.03em}.desc{font-size:12px;color:var(--muted);margin-top:5px}.tag{display:inline-flex;margin-top:13px;padding:7px 9px;border-radius:999px;background:rgba(98,230,173,.08);border:1px solid rgba(98,230,173,.18);font-size:10px;font-weight:800;color:var(--accent)}.stats{display:grid;grid-template-columns:1fr 1fr;margin-top:14px;gap:7px}.stat{padding:11px 10px;background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:11px}.stat span{display:block;color:var(--muted);font-size:9px;letter-spacing:.11em}.stat b{display:block;font-size:17px;margin-top:4px}.meta{display:flex;justify-content:space-between;margin-top:10px;color:var(--muted);font-size:10px}.recent{max-height:220px;overflow:auto;margin-top:8px}.row{display:flex;justify-content:space-between;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line);font-size:12px}.row:last-child{border-bottom:0}.row small{color:var(--muted)}.location{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.location input{width:100%;min-height:42px;background:#0b181d;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:0 10px;font-size:16px}.location .wide{grid-column:1/-1}.footer{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;padding:2px 4px}.notice{color:var(--muted);font-size:10px;line-height:1.5}.aircraft-icon{font-size:20px;line-height:20px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.55))}.featured-icon{font-size:28px;line-height:28px;color:var(--accent);filter:drop-shadow(0 0 7px rgba(98,230,173,.75))}
+@media(max-width:950px){.layout{grid-template-columns:1fr}.map-wrap{min-height:580px}.side{display:grid;grid-template-columns:1fr 1fr}.side>.panel:first-child{grid-column:1/-1}}
+@media(max-width:650px){.app{padding:10px}header{align-items:flex-start}.subtitle{display:none}.actions .secondary{display:none}.map-wrap{min-height:480px}.side{display:flex}.callsign{font-size:29px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="brand"><div class="mark">✈</div><div><div class="title">SKY AROUND ME</div><div class="subtitle">AMBIENT FLIGHT TRACKER</div></div></div>
+ <div class="actions"><button class="btn secondary" id="locate">Use iPad location</button><button class="btn primary" id="start">Start live</button></div>
+</header>
+<div class="layout">
+ <section class="map-wrap">
+  <div id="map" class="map"></div>
+  <div class="hud top-hud"><div class="pill"><span class="live-dot"></span><span id="mapStatus">READY</span></div><div class="pill range">100 KM RANGE</div></div>
+  <div class="hud bottom-hud"><div class="pill"><span id="count">0 aircraft</span> · <span id="updated">Not connected</span></div></div>
+ </section>
+ <aside class="side">
+  <div class="panel">
+   <div class="eyebrow">FEATURED AIRCRAFT</div>
+   <div class="target">
+    <div class="status" id="status">WAITING FOR LIVE DATA</div>
+    <div class="callsign" id="call">—</div>
+    <div class="desc" id="detail">Testing location: Lusk, County Dublin, Ireland</div>
+    <div class="tag" id="overhead">NO TARGET</div>
+    <div class="stats">
+     <div class="stat"><span>DISTANCE</span><b id="dist">—</b></div>
+     <div class="stat"><span>ALTITUDE</span><b id="alt">—</b></div>
+     <div class="stat"><span>GROUND SPEED</span><b id="speed">—</b></div>
+     <div class="stat"><span>HEADING</span><b id="heading">—</b></div>
+    </div>
+    <div class="meta"><span id="icao">ICAO —</span><span id="vertical">VS —</span></div>
+   </div>
+  </div>
+  <div class="panel">
+   <div class="eyebrow">TEST LOCATION</div>
+   <div class="location">
+    <input id="lat" value="53.52558" inputmode="decimal" aria-label="Latitude">
+    <input id="lon" value="-6.16581" inputmode="decimal" aria-label="Longitude">
+    <button class="btn primary wide" id="apply">Use Lusk coordinates</button>
+   </div>
+   <div class="notice" style="margin-top:10px">100 km is deliberately generous for testing. The map will show every live aircraft returned inside the range, while the featured target is selected using distance and flight direction.</div>
+  </div>
+  <div class="panel">
+   <div class="eyebrow">RECENTLY FEATURED</div>
+   <div class="recent" id="recentList"><div class="row"><span>Nothing yet</span><small>—</small></div></div>
+  </div>
+  <div class="footer"><span>OpenSky ADS-B</span><span>Refresh ~60s</span></div>
+ </aside>
+</div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const S={lat:53.52558,lon:-6.16581,timer:null,featured:null,recent:[],markers:new Map(),trail:new Map()};
+const $=id=>document.getElementById(id);
+const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);
+L.control.zoom({position:'bottomright'}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);
+let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map).bindTooltip('You / test location',{direction:'top'});
+let range=L.circle([S.lat,S.lon],{radius:100000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);
+function hav(a,b,c,d){const R=6371,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,q=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
+function bearing(a,b,c,d){const r=Math.PI/180,y=Math.sin((d-b)*r)*Math.cos(c*r),x=Math.cos(a*r)*Math.sin(c*r)-Math.sin(a*r)*Math.cos(c*r)*Math.cos((d-b)*r);return (Math.atan2(y,x)*180/Math.PI+360)%360}
+function icon(x,featured){return L.divIcon({className:'',html:`<div class="${featured?'featured-icon':'aircraft-icon'}" style="transform:rotate(${Number.isFinite(x.heading)?x.heading:0}deg)">✈</div>`,iconSize:[featured?32:24,featured?32:24],iconAnchor:[featured?16:16,featured?12:12]})}
+function choose(items){if(!items.length)return null;const scored=items.map(x=>{let score=x.d;if(x.heading!=null&&x.speed>30){const toMe=bearing(x.lat,x.lon,S.lat,S.lon);const diff=Math.abs(((x.heading-toMe+540)%360)-180);if(diff<45)score-=12;else if(diff>120)score+=7}if(x.alt!=null&&x.alt<3000)score-=4;return {...x,score}}).sort((a,b)=>a.score-b.score);const next=scored[0];if(S.featured){const old=items.find(x=>x.icao===S.featured);if(old&&old.d<next.d+7)return old}return next}
+function render(items){
+ const seen=new Set();
+ items.forEach(x=>{seen.add(x.icao);let m=S.markers.get(x.icao);const feat=x.icao===S.featured;if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat)}).addTo(map);S.markers.set(x.icao,m)}else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat))}m.bindPopup(`<div class="popup-title">${x.callsign||x.icao.toUpperCase()}</div><div class="popup-sub">${x.d.toFixed(1)} km · ${x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft'} · ${x.speed==null?'—':Math.round(x.speed*1.94384)+' kt'}</div>`)});S.markers.forEach((m,id)=>{if(!seen.has(id)){map.removeLayer(m);S.markers.delete(id)}})
+}
+function show(x){
+ if(!x){$('status').textContent='NO AIRCRAFT IN 100 KM';$('call').textContent='—';$('detail').textContent='Waiting for a live ADS-B target.';$('overhead').textContent='SCANNING';['dist','alt','speed','heading'].forEach(k=>$(k).textContent='—');$('icao').textContent='ICAO —';$('vertical').textContent='VS —';return}
+ const was=S.featured;S.featured=x.icao;
+ $('status').textContent=x.d<5?'PASSING CLOSE':'CURRENTLY MOST RELEVANT';$('call').textContent=x.callsign||x.icao.toUpperCase();$('detail').textContent='Live ADS-B position · ICAO '+x.icao.toUpperCase();
+ $('overhead').textContent=x.d<5?'NEAR YOU':(x.heading!=null&&x.speed>30?'APPROACHING':'NEAREST IN RANGE');
+ $('dist').textContent=x.d.toFixed(1)+' km';$('alt').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('speed').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('heading').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('icao').textContent='ICAO '+x.icao.toUpperCase();$('vertical').textContent='VS '+(x.vs==null?'—':Math.round(x.vs*196.85)+' ft/min');
+ if(was&&was!==x.icao){S.recent.unshift({icao:was,time:new Date()});S.recent=S.recent.slice(0,5);renderRecent()}
+}
+function renderRecent(){$('recentList').innerHTML=S.recent.length?S.recent.map(r=>`<div class="row"><span><b>${r.icao.toUpperCase()}</b><br><small>Previously featured</small></span><small>${Math.max(1,Math.round((Date.now()-r.time)/60000))} min</small></div>`).join(''):'<div class="row"><span>Nothing yet</span><small>—</small></div>'}
+async function fetchOpenSky(url){
+  try{
+    const r=await fetch(url,{cache:'no-store'});
+    if(r.ok)return {res:r,via:'direct'};
+    const directText=await r.text().catch(()=> '');
+    throw new Error(`HTTP ${r.status}${directText?` — ${directText.slice(0,120)}`:''}`);
+  }catch(directErr){
+    // Local file origins can be blocked by browser CORS/security rules. Use a public proxy only as a diagnostic fallback.
+    const proxy='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
+    const r=await fetch(proxy,{cache:'no-store'});
+    if(!r.ok)throw new Error(`Direct: ${directErr.message} | Proxy: HTTP ${r.status}`);
+    return {res:r,via:'proxy'};
+  }
+}
+async function poll(){
+ $('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE…';$('updated').textContent='Requesting OpenSky…';
+ const d=.9,url=`https://opensky-network.org/api/states/all?lamin=${Math.max(-90,S.lat-d)}&lamax=${Math.min(90,S.lat+d)}&lomin=${Math.max(-180,S.lon-d)}&lomax=${Math.min(180,S.lon+d)}`;
+ try{const {res,via}=await fetchOpenSky(url);const j=await res.json();
+  const rawCount=Array.isArray(j.states)?j.states.length:0;
+  const items=(j.states||[]).map(s=>({icao:s[0],callsign:(s[1]||'').trim(),lon:s[5],lat:s[6],alt:s[7],speed:s[9],heading:s[10],vs:s[11]})).filter(x=>x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)})).filter(x=>x.d<=100);
+  const f=choose(items);S.featured=f?.icao||null;render(items);show(f);$('count').textContent=items.length+' aircraft in range';$('updated').textContent=`Updated ${new Date().toLocaleTimeString()} · ${rawCount} raw · ${via}`;$('mapStatus').textContent='LIVE';
+  $('detail').title=`OpenSky returned ${rawCount} raw state vectors; ${items.length} are within 100 km.`;
+ }catch(e){$('mapStatus').textContent='DATA ERROR';$('status').textContent='LIVE DATA ERROR';$('detail').textContent='Could not read OpenSky live data. '+e.message;$('updated').textContent='Connection failed';console.error('Sky Around Me',e)}
+}
+function setLocation(lat,lon){S.lat=lat;S.lon=lon;me.setLatLng([lat,lon]);range.setLatLng([lat,lon]);map.setView([lat,lon],8);S.featured=null;poll();clearInterval(S.timer);S.timer=setInterval(poll,60000)}
+function valid(a,b){return Number.isFinite(a)&&Number.isFinite(b)&&a>=-90&&a<=90&&b>=-180&&b<=180}
+$('apply').addEventListener('click',()=>{const a=Number($('lat').value),b=Number($('lon').value);if(valid(a,b))setLocation(a,b);else alert('Enter valid latitude and longitude.')});
+$('start').addEventListener('click',()=>{const a=Number($('lat').value),b=Number($('lon').value);if(valid(a,b))setLocation(a,b);});
+$('locate').addEventListener('click',()=>{if(!navigator.geolocation){alert('Location is not available in this browser.');return}navigator.geolocation.getCurrentPosition(p=>{ $('lat').value=p.coords.latitude.toFixed(6);$('lon').value=p.coords.longitude.toFixed(6);setLocation(p.coords.latitude,p.coords.longitude)},()=>alert('Safari could not provide your location. The Lusk test coordinates remain active.'),{enableHighAccuracy:true,maximumAge:30000,timeout:10000})});
+setLocation(S.lat,S.lon);
+</script>
+</body>
+</html>
