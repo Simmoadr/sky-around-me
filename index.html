@@ -361,7 +361,7 @@ function icon(x,featured){return L.divIcon({className:'',html:`<div class="${fea
 function choose(items){if(!items.length)return null;const airborne=items.filter(x=>(x.alt!=null&&x.alt>140)||(x.speed!=null&&x.speed>80));return (airborne.length?airborne:items).slice().sort((a,b)=>a.d-b.d)[0]}
 const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);L.control.zoom({position:'bottomright'}).addTo(map);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);
 function render(items){const seen=new Set();items.forEach(x=>{seen.add(x.icao);const feat=x.icao===S.featured;let m=S.markers.get(x.icao);if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat)}).addTo(map);S.markers.set(x.icao,m)}else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat))}m.bindPopup(`<b>${x.callsign||x.icao.toUpperCase()}</b><br>${x.d.toFixed(1)} km · ${x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft'} · ${x.speed==null?'—':Math.round(x.speed*1.94384)+' kt'}`);let pts=S.tracks.get(x.icao)||[];const last=pts[pts.length-1];if(!last||hav(last[0],last[1],x.lat,x.lon)>0.08){pts=[...pts,[x.lat,x.lon]].slice(-15);S.tracks.set(x.icao,pts)}let line=S.trails.get(x.icao);if(!line){line=L.polyline(pts,{weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'}).addTo(map);S.trails.set(x.icao,line)}else{line.setLatLngs(pts);line.setStyle({weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'})}});S.markers.forEach((m,id)=>{if(!seen.has(id)){map.removeLayer(m);S.markers.delete(id)}});S.trails.forEach((line,id)=>{if(!seen.has(id)){map.removeLayer(line);S.trails.delete(id)}})}
-const SKY_AROUND_ME_NETLIFY='https://magenta-syrniki-2f4749.netlify.app/.netlify/functions/adsb';
+const SKY_AROUND_ME_NETLIFY="https://magenta-syrniki-2f4749.netlify.app/.netlify/functions/adsb";
 
 function updateAdsbDiagnostics(info={}){
   const panel=$("adsbDiagnostics");
@@ -375,53 +375,95 @@ function updateAdsbDiagnostics(info={}){
 }
 if($("adsbDiagnosticsClose"))$("adsbDiagnosticsClose").onclick=()=>$("adsbDiagnostics").hidden=true;
 
+
+function isCommercialAircraft(a){
+  if(!a || typeof a!=='object') return false;
+
+  const flight=String(a.flight||'').trim().toUpperCase();
+  const reg=String(a.r||'').trim().toUpperCase();
+  const type=String(a.t||'').trim().toUpperCase();
+  const desc=String(a.desc||'').trim().toUpperCase();
+  const op=String(a.ownOp||a.operator||'').trim().toUpperCase();
+  const text=[flight,reg,type,desc,op].join(' ');
+
+  // Explicitly exclude common military / government / special-operation
+  // traffic and obvious private/business aircraft.
+  const excludedWords=[
+    'MILITARY','ARMY','AIR FORCE','AIR FORCE ONE','NAVY','MARINES',
+    'COAST GUARD','POLICE','POLICIA','GOVERNMENT','STATE FLIGHT',
+    'USAF','RAF','RCAF','RNLAF','BAF','FRA','GAF','LUXEMBOURG AIR FORCE',
+    'PRIVATE','BUSINESS JET','EXECUTIVE','CORPORATE','CHARTER'
+  ];
+  if(excludedWords.some(w=>text.includes(w))) return false;
+
+  // Common business-jet / private-aircraft ICAO type families.
+  const privateTypes=[
+    /^GLF[1-6]$/,/^G[12]$/, /^CL3[05]$/, /^C56[0-9]$/,
+    /^C550$/, /^C560$/, /^C680$/, /^C700$/, /^C750$/,
+    /^HA4T$/, /^E35L$/, /^E55P$/, /^FA[0-9]{2}$/,
+    /^PC12$/, /^PC24$/, /^BE[0-9]{2}$/
+  ];
+  if(privateTypes.some(rx=>rx.test(type))) return false;
+
+  // Helicopters, light aircraft and most small GA types.
+  const nonAirlinerTypes=[
+    /^R22$/, /^R44$/, /^EC[0-9]/, /^AS3[0-9]/, /^H12[0-9]/,
+    /^S76/, /^S92/, /^AW[0-9]/, /^B06/, /^B407/, /^B429/,
+    /^C1[0-9][0-9]$/, /^C2[0-9][0-9]$/, /^C3[0-9][0-9]$/,
+    /^C4[0-9][0-9]$/, /^C5[0-9][0-9]$/, /^C6[0-9][0-9]$/,
+    /^C7[0-9][0-9]$/, /^C8[0-9][0-9]$/, /^C9[0-9][0-9]$/,
+    /^PA[0-9]/, /^DA[0-9]/, /^SR2[02]$/, /^TB[0-9]/,
+    /^AT[0-9]/, /^DH[0-9]/, /^BN2$/, /^DHC[0-9]/, /^BE[0-9]/
+  ];
+  if(nonAirlinerTypes.some(rx=>rx.test(type))) return false;
+
+  // Commercial airliner families. This deliberately focuses on aircraft
+  // types rather than operator names so the app works internationally.
+  const commercialTypes=[
+    /^A[23][0-9]{2}$/, /^A3[0-9]{2}$/, /^A4[0-9]{2}$/,
+    /^A5[0-9]{2}$/, /^A6[0-9]{2}$/, /^A7[0-9]{2}$/, /^A8[0-9]{2}$/,
+    /^B7[0-9]{2}$/, /^B3[0-9]M?$/, /^B38M$/, /^B39M$/,
+    /^B4[0-9]{2}$/, /^B5[0-9]{2}$/, /^B6[0-9]{2}$/,
+    /^B7[0-9]{2}$/, /^B7[0-9]{2}W$/, /^B8[0-9]{2}$/,
+    /^B9[0-9]{2}$/,
+    /^E17[0-9]$/, /^E19[0-9]$/, /^E2[0-9]{2}$/,
+    /^CRJ[0-9]+$/, /^BCS[0-9]+$/, /^ARJ[0-9]+$/,
+    /^MD[0-9]+$/, /^DC[0-9]+$/, /^IL[0-9]+$/,
+    /^AN[0-9]+$/, /^TU[0-9]+$/, /^SU9[0-9]$/,
+    /^C919$/, /^COMAC/
+  ];
+
+  if(commercialTypes.some(rx=>rx.test(type))) return true;
+
+  // Airline-style callsigns are a useful fallback where the aircraft type
+  // is missing or unusual.
+  const airlinePrefixes=[
+    'BAW','SHT','EZY','RYR','WZZ','TOM','VIR','DLH','AFR','KLM',
+    'SAS','FIN','LOT','AUA','SWR','BEL','IBE','IBS','VLG','TAP',
+    'UAE','QTR','ETD','THY','TK','AAL','UAL','DAL','SWA','JBU',
+    'ACA','ASA','QFA','ANZ','SIA','CPA','ANA','JAL','KAL','EVA',
+    'THA','MAS','CES','CCA','CSN','HDA','HVN','PAL','RAM','SAI'
+  ];
+  if(airlinePrefixes.some(p=>flight.startsWith(p))) return true;
+
+  return false;
+}
+
 async function fetchAircraft(){
   const distKm=Math.min(250,Math.max(1,Number(S.rangeKm)||100));
   const url=`${SKY_AROUND_ME_NETLIFY}?lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${encodeURIComponent(distKm)}`;
   const started=new Date();
   try{
-    const r=await fetch(url,{method:'GET',cache:'no-store',headers:{Accept:'application/json'}});
-    if(!r.ok){
-      updateAdsbDiagnostics({
-        mode:'PROXIED · NETLIFY',
-        url,
-        time:started.toLocaleString(),
-        status:r.status,
-        statusText:r.statusText,
-        result:'Netlify proxy returned HTTP '+r.status,
-        ok:false
-      });
-      const body=await r.text().catch(()=> '');
-      const e=new Error('ADSB.lol via Netlify HTTP '+r.status+(body?' · '+body.slice(0,180):''));
-      e.status=r.status;e.url=url;
-      throw e;
-    }
-
+    const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+    updateAdsbDiagnostics({mode:'PROXIED · NETLIFY',url,time:started.toLocaleString(),status:r.status,statusText:r.statusText,result:r.ok?'Netlify proxy → ADSB.lol succeeded':'Netlify proxy returned HTTP '+r.status,ok:r.ok});
+    if(!r.ok){const e=new Error('ADSB.lol via Netlify HTTP '+r.status);e.status=r.status;e.url=url;throw e}
     const j=await r.json();
     if(j&&j.error)throw new Error(j.message||j.error);
-
     const count=Array.isArray(j.ac)?j.ac.length:0;
-    updateAdsbDiagnostics({
-      mode:'PROXIED · NETLIFY',
-      url,
-      time:started.toLocaleString(),
-      status:r.status,
-      statusText:r.statusText,
-      result:`Netlify proxy → ADSB.lol · ${count} aircraft returned`,
-      ok:true
-    });
-
+    updateAdsbDiagnostics({mode:'PROXIED · NETLIFY',url,time:started.toLocaleString(),status:r.status,statusText:r.statusText,result:`Netlify proxy → ADSB.lol · ${count} aircraft returned`,ok:true});
     return {...j,provider:'ADSB.LOL · NETLIFY PROXY',feedSource:'ADSB.LOL'};
   }catch(e){
-    updateAdsbDiagnostics({
-      mode:'PROXIED · NETLIFY',
-      url,
-      time:started.toLocaleString(),
-      status:e.status||'ERROR',
-      statusText:e.status?e.statusText:'',
-      result:e.message||'Request failed',
-      ok:false
-    });
+    updateAdsbDiagnostics({mode:'PROXIED · NETLIFY',url,time:started.toLocaleString(),status:e.status||'ERROR',result:e.message||'Request failed',ok:false});
     throw e;
   }
 }
