@@ -510,6 +510,8 @@ function renderHeroFlightMap(live,watch){
  if(!canReuse){
   host.innerHTML='<div id="heroFlightMap" class="hero-flight-map"></div><div class="hero-map-brand" id="heroMapBrand"></div><div class="hero-map-status" id="heroMapStatus"></div><button type="button" class="hero-map-recenter" id="heroMapRecenter" title="Recenter featured map">RECENTER</button>';
   host.style.position='relative';host.style.width='100%';host.style.height='100%';
+  const recenterBtn=$('heroMapRecenter');
+  if(recenterBtn)recenterBtn.addEventListener('click',recenterHeroMap);
   const mapEl=$('heroFlightMap');
   if(mapEl){mapEl.style.position='absolute';mapEl.style.inset='0';mapEl.style.width='100%';mapEl.style.height='100%';}
   if(heroFlightMap){try{heroFlightMap.remove()}catch(e){}heroFlightMap=null;heroFlightLayer=null}
@@ -596,6 +598,13 @@ function planeSvg(){return '<div class="route-plane"><svg viewBox="0 0 64 64" ar
 function renderScheduledHome(){
  const next=getNextWatchedFlight();
  const state=next?flightState(next):'NONE';
+ const activeLive=next&&state==='READY TO TRACK'?watchedLiveMatch(next,S.lastAllItems||[]):null;
+ if(activeLive){
+   renderLiveHome(activeLive);
+   $('homeEyebrow').textContent='WATCHED FLIGHT · ACTIVE';
+   $('homeStatus').textContent='LIVE';
+   return;
+ }
  setHeroAircraft(null,null);
  setTextSafe('homeEyebrow','NO LIVE AIRCRAFT');setTextSafe('homeTitle','AIRSPACE QUIET');setTextSafe('homeStatus','NO LIVE TRAFFIC');
  $('airlineBadge').textContent='LIVE';$('operator').textContent='LIVE AIRSPACE · '+S.locationName.toUpperCase();$('callsignNote').textContent='';$('aircraftReg').textContent='—';$('aircraftRegNote').textContent='AIRCRAFT REG';$('flightName').textContent='—';$('aircraftType').textContent='No matching commercial aircraft within the selected range.';
@@ -761,7 +770,33 @@ async function enrichLiveRoute(x){
  liveRoutePending.set(key,task);return task;
 }
 const airlineIcao={FR:'RYR',SQ:'SIA',LH:'DLH',UA:'UAL',DL:'DAL',BA:'BAW',AF:'AFR',KL:'KLM',EI:'EIN',EK:'UAE',QR:'QTR',AA:'AAL',VS:'VIR',LX:'SWR',IB:'IBE',TP:'TAP'};
-function watchedLiveMatch(f,items){const target=normalFlightCode(f.flightNumber||f.flight);if(!target)return null;const direct=items.find(x=>normalFlightCode(x.flightNumber)===target);if(direct)return direct;const m=target.match(/^([A-Z]{2,3})(\d+[A-Z]?)$/);if(!m)return items.find(x=>normalFlightCode(x.callsign)===target)||null;const code=m[1],num=m[2],icao=airlineIcao[code]||code;return items.find(x=>{const c=normalFlightCode(x.callsign);return c===target||c===icao+num||c.endsWith(num)&&c.length<=7})||null}
+const airlineCallsign={FR:'RYR',SQ:'SIA',LH:'DLH',UA:'UAL',DL:'DAL',BA:'BAW',AF:'AFR',KL:'KLM',EI:'EIN',EK:'UAE',QR:'QTR',AA:'AAL',VS:'VIR',LX:'SWR',IB:'IBE',TP:'TAP',U:'EZY',U2:'EZY'};
+function watchedLiveMatch(f,items){
+ const target=normalFlightCode(f?.flightNumber||f?.flight);if(!target||!Array.isArray(items))return null;
+ const direct=items.find(x=>normalFlightCode(x.flightNumber)===target);if(direct)return direct;
+ const aliases=new Set([target]);
+ // easyJet uses IATA code U2 but its ADS-B callsign is normally EZY + flight number.
+ // For example U22777 -> EZY2777.
+ const ez=target.match(/^U2(\d+[A-Z]?)$/);
+ if(ez)aliases.add('EZY'+ez[1]);
+ const one=target.match(/^U(2\d+[A-Z]?)$/);
+ if(one)aliases.add('EZY'+one[1].slice(1));
+ const m=target.match(/^([A-Z]{1,3})(\d+[A-Z]?)$/);
+ if(m){
+   const code=m[1],num=m[2],icao=airlineIcao[code]||code,cs=airlineCallsign[code];
+   aliases.add(icao+num);if(cs)aliases.add(cs+num);
+ }
+ return items.find(x=>{
+   const c=normalFlightCode(x?.callsign),fn=normalFlightCode(x?.flightNumber);
+   if(aliases.has(c)||aliases.has(fn))return true;
+   // Some feeds omit the IATA flight number but retain the airline callsign prefix.
+   for(const a of aliases){
+     const prefix=a.match(/^[A-Z]+/)?.[0]||'',digits=a.slice(prefix.length);
+     if(prefix&&digits&&c===prefix+digits)return true;
+   }
+   return false;
+ })||null;
+}
 function renderHomeWatch(items){
  const next=getNextWatchedFlight();
  const box=$('homeWatchLive');
@@ -770,7 +805,15 @@ function renderHomeWatch(items){
  $('homeWatchTitle').textContent=(next.flightNumber||next.flight||'NO WATCHED FLIGHT').toUpperCase();$('homeWatchFrom').textContent=next.fromCode||'—';$('homeWatchTo').textContent=next.toCode||'—';$('homeWatchNames').textContent=((next.airlineName||'')+(next.airlineName?' · ':'')+((next.from&&next.to)?next.from+' → '+next.to:'Route lookup pending'));$('homeWatchDate').textContent=next.date?((next.departureTime?'DEP '+next.departureTime+' · ':'')+new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})): 'No date set';
  const st=$('homeWatchState');st.className='state '+(live?'live':state==='SCHEDULED'?'wait':'active');st.textContent=live?'LIVE':(next.lookupStatus==='LOOKING UP'?'LOOKING UP':state);
  $('homeWatchCountLabel').textContent=live?'FLIGHT STATUS':state==='SCHEDULED'?'DEPARTS IN':'FLIGHT STATUS';$('homeWatchCount').textContent=live?'IN FLIGHT':state==='SCHEDULED'?countdownText(next):state;
- box.hidden=!live;if(live){$('homeWatchAlt').textContent=live.alt==null?'—':Math.round(live.alt*3.28084).toLocaleString()+' ft';$('homeWatchSpeed').textContent=live.speed==null?'—':Math.round(live.speed*1.94384)+' kt';$('homeWatchHeading').textContent=live.heading==null?'—':Math.round(live.heading)+'°';$('homeWatchDistance').textContent=live.d.toFixed(1)+' km from '+S.locationName}
+ box.hidden=false;
+ if(live){
+   $('homeWatchAlt').textContent=live.alt==null?'—':Math.round(live.alt*3.28084).toLocaleString()+' ft';
+   $('homeWatchSpeed').textContent=live.speed==null?'—':Math.round(live.speed*1.94384)+' kt';
+   $('homeWatchHeading').textContent=live.heading==null?'—':Math.round(live.heading)+'°';
+   $('homeWatchDistance').textContent=live.d.toFixed(1)+' km from '+S.locationName;
+ }else{
+   $('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';
+ }
 }
 function renderWatchlist(){const el=$('watchList');if(!watchlist.length){el.innerHTML='<div class="empty-list">No watched flights yet.</div>';return}
  const rows=watchlist.map((f,i)=>({f,i,state:flightState(f)})).sort((a,b)=>{if(a.state==='COMPLETED'&&b.state!=='COMPLETED')return 1;if(a.state!=='COMPLETED'&&b.state==='COMPLETED')return -1;const da=parseDeparture(a.f),db=parseDeparture(b.f);return (da?da.getTime():Infinity)-(db?db.getTime():Infinity)});
@@ -945,6 +988,6 @@ $('mapStatus').textContent='LIVE'}catch(e){
   // Expected transient feed outage; retry on the next poll without a console error.
 }}
 function refreshHomeDisplay(){const f=choose(S.lastItems||[]);if(f)renderLiveHome(f);else renderScheduledHome();renderHomeWatch(S.lastItems||[])}
-updateSkySettingsUI();loadRouteCache();renderScheduledHome();renderWatchlist();renderHomeWatch(S.lastItems);if($('heroMapRecenter'))$('heroMapRecenter').addEventListener('click',recenterHeroMap);refreshMissingFlightData();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist()},1000);S.timer=setInterval(poll,45000);
+updateSkySettingsUI();loadRouteCache();renderScheduledHome();renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist()},1000);S.timer=setInterval(poll,45000);
 </script>
 </body></html>
