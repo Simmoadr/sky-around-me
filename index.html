@@ -462,15 +462,14 @@ function heroRoutePoints(a,b,count=80){const pts=[];for(let i=0;i<=count;i++)pts
 function heroBearing(a,b){const r=Math.PI/180;const y=Math.sin((b[1]-a[1])*r)*Math.cos(b[0]*r);const x=Math.cos(a[0]*r)*Math.sin(b[0]*r)-Math.sin(a[0]*r)*Math.cos(b[0]*r)*Math.cos((b[1]-a[1])*r);return (Math.atan2(y,x)/r+360)%360}
 function renderHeroFlightMap(live,watch){
  const host=$('heroAircraft');if(!host)return;
- host.innerHTML='<div id="heroFlightMap" class="hero-flight-map"></div><div class="hero-map-brand" id="heroMapBrand"></div><div class="hero-map-status" id="heroMapStatus"></div><div class="hero-map-caption">LIVE FLIGHT POSITION</div>';
+ host.innerHTML='<div id="heroFlightMap" class="hero-flight-map"></div><div class="hero-map-brand" id="heroMapBrand"></div><div class="hero-map-status" id="heroMapStatus"></div>';
  host.style.position='relative';host.style.width='100%';host.style.height='100%';
  const mapEl=$('heroFlightMap');
  if(mapEl){mapEl.style.position='absolute';mapEl.style.inset='0';mapEl.style.width='100%';mapEl.style.height='100%';}
  if(heroFlightMap){try{heroFlightMap.remove()}catch(e){}heroFlightMap=null;heroFlightLayer=null}
  heroFlightMap=L.map(mapEl,{zoomControl:true,attributionControl:true,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,dragging:false,touchZoom:false,keyboard:false,zoomControl:false,minZoom:2,maxZoom:10});
  heroFlightLayer=L.layerGroup().addTo(heroFlightMap);
- L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(heroFlightMap);
- L.control.zoom({position:'bottomright'}).addTo(heroFlightMap);
+ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap contributors © CARTO'}).addTo(heroFlightMap);
  const airline=live?.airlineName||airlineFromCallsign(live?.callsign)||live?.operator||'LIVE AIRCRAFT';
  const model=aircraftFullName(live);
  const flight=(live?.flightNumber||live?.callsign||live?.icao||'').toUpperCase();
@@ -484,7 +483,7 @@ function renderHeroFlightMap(live,watch){
  const hasRoute=!!(a&&b&&a.every(Number.isFinite)&&b.every(Number.isFinite));
  if(status){
    const remaining=hasRoute&&pos?hav(pos[0],pos[1],b[0],b[1]):null;
-   status.innerHTML=`<div><span class="status-dot"></span><b>LIVE POSITION</b></div>${remaining!=null?`<div class="hero-status-detail"><span>DISTANCE TO DESTINATION</span><strong>${remaining.toFixed(0)} km</strong></div>`:''}`;
+   status.innerHTML=`<div><span class="status-dot"></span><b>LIVE POSITION</b></div>${remaining!=null?`<div class="hero-status-detail"><span>DISTANCE TO DESTINATION</span><strong>${Math.round(remaining).toLocaleString('en-GB')} km</strong></div>`:''}`;
  }
  if(!pos){heroFlightMap.setView([S.lat,S.lon],6);setTimeout(()=>heroFlightMap.invalidateSize(),50);return;}
  if(hasRoute){
