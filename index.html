@@ -194,6 +194,26 @@
 .world-hero-radar-tag{color:#8a9291}
 .world-hero-nearby-dot{background:var(--accent)!important;box-shadow:0 0 0 3px rgba(23,111,139,.10)!important}
 
+
+/* PREMIUM LIVE FLIGHT SPOTLIGHT */
+.world-hero{background:radial-gradient(circle at 50% 48%,rgba(23,111,139,.10),transparent 48%),linear-gradient(180deg,rgba(255,255,255,.38),rgba(238,241,238,.18));}
+.world-hero-map{opacity:.27;filter:grayscale(1) contrast(.9) brightness(1.06);mix-blend-mode:multiply;}
+.world-hero:before{width:min(46vw,420px);height:min(46vw,420px);border-color:rgba(23,111,139,.075);box-shadow:0 0 0 28px rgba(23,111,139,.018),0 0 0 72px rgba(23,111,139,.012);}
+.world-hero:after{background:linear-gradient(90deg,transparent,rgba(23,111,139,.075),transparent);box-shadow:0 -72px 0 rgba(23,111,139,.035),0 72px 0 rgba(23,111,139,.035);}
+.world-hero-route .route-glow{stroke:var(--accent);stroke-width:4.5;opacity:.10;filter:blur(4px);}
+.world-hero-route .route-line{stroke:#7d9095;stroke-width:1.8;opacity:.52;stroke-dasharray:1 3;}
+.world-hero-route .route-complete{stroke:var(--accent);stroke-width:3;opacity:1;}
+.world-hero-route .endpoint{fill:#fff;stroke:#176f8b;stroke-width:1.35;filter:drop-shadow(0 2px 4px rgba(23,111,139,.14));}
+.world-hero-plane{width:32px;height:32px;filter:drop-shadow(0 5px 9px rgba(0,0,0,.16));}
+.world-hero-plane .route-plane path{fill:#111;stroke:#fff;stroke-width:2.2;paint-order:stroke fill;}
+.world-hero-label{font-size:8px;letter-spacing:.14em;background:rgba(255,255,255,.94);border:1px solid #d8dfdc;box-shadow:0 5px 16px rgba(23,30,30,.10);padding:6px 9px;}
+.world-hero-caption{top:15px;font-size:7px;letter-spacing:.24em;}
+.world-hero-radar-tag{font-size:7px;letter-spacing:.16em;}
+.journey-progress{position:relative;overflow:visible!important;}
+.progress-plane{position:absolute;left:0;top:50%;width:22px;height:22px;display:grid;place-items:center;transform:translate(-50%,-50%);font-size:14px;line-height:1;color:#111;z-index:3;filter:drop-shadow(0 2px 3px rgba(0,0,0,.16));pointer-events:none;transition:left .6s ease;}
+.progress-plane:before{content:'';position:absolute;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.96);border:1px solid #d7dedb;z-index:-1;box-shadow:0 2px 7px rgba(23,30,30,.10);}
+@media(max-width:700px){.world-hero-plane{width:28px;height:28px}.progress-plane{width:20px;height:20px;font-size:12px}.progress-plane:before{width:22px;height:22px}}
+
 </style>
 </head>
 <body>
@@ -218,7 +238,7 @@
     <div class="metric"><label id="mLabel2">ALTITUDE</label><b id="m2">—</b><small id="m2s">above ground</small></div>
     <div class="metric"><label id="mLabel3">SPEED</label><b id="m3">—</b><small id="m3s">ground speed</small></div>
     <div class="metric"><label id="mLabel4">HEADING</label><b id="m4">—</b><small id="m4s">track</small></div>
-   </div></div><div class="journey-info" id="journeyInfo" hidden><div class="journey-end"><span>FROM</span><b id="journeyFrom">—</b><small id="journeyFromName">—</small></div><div class="journey-center"><div class="journey-percent" id="journeyPercent">—% COMPLETE</div><div class="progress"><i id="flightProgress"></i></div></div><div class="journey-end journey-end-right"><span>TO</span><b id="journeyTo">—</b><small id="journeyToName">—</small></div></div>
+   </div></div><div class="journey-info" id="journeyInfo" hidden><div class="journey-end"><span>FROM</span><b id="journeyFrom">—</b><small id="journeyFromName">—</small></div><div class="journey-center"><div class="journey-percent" id="journeyPercent">—% COMPLETE</div><div class="progress journey-progress"><i id="flightProgress"></i><span class="progress-plane" id="progressPlane" aria-hidden="true">✈</span></div></div><div class="journey-end journey-end-right"><span>TO</span><b id="journeyTo">—</b><small id="journeyToName">—</small></div></div>
    <div class="edit-panel" id="editPanel"><div class="form"><div><label>FLIGHT NUMBER</label><input id="flightInput" placeholder="e.g. SQ23"></div><div><label>DATE</label><input id="dateInput" type="date"></div><div class="wide"><label>NAME</label><input id="nameInput" placeholder="Flight Name"></div><button class="btn primary" id="saveFlight">SAVE WATCHED FLIGHT</button></div></div>
   </div>
  </div>
@@ -344,8 +364,9 @@ function worldHeroSvg(live,watch){
  const nearbyItems=(S.lastItems||[]).filter(a=>a&&a.lat!=null&&a.lon!=null&&a.icao!==live?.icao).slice().sort((a,b)=>a.d-b.d).slice(0,18);
  nearbyItems.forEach(a=>{const q=worldHeroXY([a.lat,a.lon]);const dot=document.createElement('div');dot.className='world-hero-nearby-dot';dot.style.left=q[0]+'%';dot.style.top=q[1]+'%';dot.title=(a.callsign||'Aircraft')+' · '+(a.d?.toFixed?.(0)||'')+' km';nearby.appendChild(dot)});
  inner.appendChild(nearby);
- const a=routePoint(watch?.fromCode),b=routePoint(watch?.toCode);
- if(live?.lat!=null&&live?.lon!=null&&a&&b){
+ const a=(watch?.fromLat!=null&&watch?.fromLon!=null)?[Number(watch.fromLat),Number(watch.fromLon)]:routePoint(watch?.fromCode);
+ const b=(watch?.toLat!=null&&watch?.toLon!=null)?[Number(watch.toLat),Number(watch.toLon)]:routePoint(watch?.toCode);
+ if(live?.lat!=null&&live?.lon!=null&&a&&b&&a.every(Number.isFinite)&&b.every(Number.isFinite)){
    const pts=[];for(let i=0;i<=80;i++)pts.push(greatCirclePoint(a,b,i/80));
    const path=pts.map((p,i)=>{const q=worldHeroXY(p);return(i?'L':'M')+q[0].toFixed(2)+','+q[1].toFixed(2)}).join(' ');
    const start=worldHeroXY(a),end=worldHeroXY(b),progress=routeProgress(watch,live),pos=worldHeroXY([live.lat,live.lon]);
@@ -375,7 +396,7 @@ const airportCoords={
 function routePoint(code){const p=airportCoords[String(code||'').toUpperCase()];return p?[p[0],p[1]]:null}
 function greatCirclePoint(a,b,t){const r=Math.PI/180,A=[a[0]*r,a[1]*r],B=[b[0]*r,b[1]*r];const va=[Math.cos(A[0])*Math.cos(A[1]),Math.cos(A[0])*Math.sin(A[1]),Math.sin(A[0])],vb=[Math.cos(B[0])*Math.cos(B[1]),Math.cos(B[0])*Math.sin(B[1]),Math.sin(B[0])];const dot=Math.max(-1,Math.min(1,va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2])),d=Math.acos(dot);if(d<1e-8)return a.slice();const sd=Math.sin(d);const x=[(Math.sin((1-t)*d)/sd)*va[0]+(Math.sin(t*d)/sd)*vb[0],(Math.sin((1-t)*d)/sd)*va[1]+(Math.sin(t*d)/sd)*vb[1],(Math.sin((1-t)*d)/sd)*va[2]+(Math.sin(t*d)/sd)*vb[2]];return [Math.atan2(x[2],Math.hypot(x[0],x[1]))/r,Math.atan2(x[1],x[0])/r]}
 function routeProgress(f,live){if(!f||!live||live.lat==null||live.lon==null)return 0;const a=f.fromLat!=null?[f.fromLat,f.fromLon]:routePoint(f.fromCode),b=f.toLat!=null?[f.toLat,f.toLon]:routePoint(f.toCode);if(!a||!b)return 0;const done=hav(a[0],a[1],live.lat,live.lon),remaining=hav(live.lat,live.lon,b[0],b[1]);const total=done+remaining;return total?Math.max(0,Math.min(1,done/total)):0}
-function planeSvg(){return '<div class="route-plane"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 L59 41 L92 54 L92 62 L59 58 L59 91 L70 98 L70 103 L50 96 L30 103 L30 98 L41 91 L41 58 L8 62 L8 54 L41 41 Z" fill="#fff" stroke="#111" stroke-width="4" stroke-linejoin="round"/></svg></div>'}
+function planeSvg(){return '<div class="route-plane"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="#111" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></svg></div>'}
 function renderScheduledHome(){
  const next=getNextWatchedFlight();
  const state=next?flightState(next):'NONE';
@@ -479,7 +500,7 @@ function renderLiveHome(x){
  $('airlineBadge').textContent=(x.airlineCode||flightNumber.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('callsignNote').textContent=x.callsign?'CALLSIGN '+x.callsign.toUpperCase():'';$('flightName').textContent=flightNumber||x.callsign||x.icao.toUpperCase();$('aircraftType').textContent=model;
  $('route').innerHTML=journey&&journey.fromCode&&journey.toCode?`<span class="route-live-code">${journey.fromCode} → ${journey.toCode}</span>`:'LIVE AIRCRAFT';$('schedule').textContent=journey&&journey.fromCode&&journey.toCode?airline.toUpperCase()+' · '+model.toUpperCase():S.locationName.toUpperCase()+' · '+x.d.toFixed(1)+' KM AWAY';
  $('mLabel1').textContent='DISTANCE';$('m1').textContent=x.d.toFixed(1)+' km';$('m1s').textContent='from '+S.locationName;$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
- const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=journey.from||journey.fromName||'—';$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=journey.to||journey.toName||'—';$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%'}}
+ const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=journey.from||journey.fromName||'—';$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=journey.to||journey.toName||'—';$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
  if(!journey&&x?.callsign) enrichLiveRoute(x);
  if(x?.callsign&&!x?.flightNumber) lookupFlightIdentity(x);
 }
