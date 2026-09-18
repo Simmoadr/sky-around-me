@@ -970,8 +970,21 @@ async function resolveFlightRoute(flight,date,registration){
 }
 async function refreshMissingFlightData(){
  for(const f of watchlist){
-  if(!f.flight||!f.date||f.lookupStatus==='ROUTE FOUND') continue;
-  try{const route=await resolveFlightRoute(f.flight,f.date,f.registration||f.reg||'');Object.assign(f,route,{lookupStatus:'ROUTE FOUND'});if(watch===f)watch=f;saveState()}catch(e){console.warn('Flight route refresh',e)}
+  if(!f.flight||!f.date) continue;
+  let changed=false;
+  if(f.lookupStatus!=='ROUTE FOUND'){
+   try{const route=await resolveFlightRoute(f.flight,f.date,f.registration||f.reg||'');Object.assign(f,route,{lookupStatus:'ROUTE FOUND'});changed=true}catch(e){console.warn('Flight route refresh',e)}
+  }
+  if(!f.departureTime&&!f.departureUtc){
+   try{const schedule=await lookupWatchedSchedule(f.flight,f.date);if(schedule&&schedule.status==='FOUND'){
+    if(schedule.departureTime)f.departureTime=schedule.departureTime;
+    if(schedule.departureUtc)f.departureUtc=schedule.departureUtc;
+    if(schedule.departureTimezone)f.departureTimezone=schedule.departureTimezone;
+    if(schedule.source)f.scheduleSource=schedule.source;
+    changed=true;
+   }}catch(e){console.warn('Flight schedule refresh',e)}
+  }
+  if(changed){if(watch===f)watch=f;saveState()}
  }
 }
 async function lookupWatchedSchedule(flight,date){
