@@ -26,6 +26,10 @@
 .aircraft-illustration.is-light{transform:scale(.9)}.aircraft-illustration.is-helicopter{transform:scale(.9)}.aircraft-stage-art .airframe{fill:url(#bodyGrad);stroke:#aeb5b2;stroke-width:2}.aircraft-stage-art .wing{fill:#dfe4e1;stroke:#aeb5b2;stroke-width:2}.aircraft-stage-art .window{fill:url(#glassGrad)}.aircraft-stage-art .accent{stroke:var(--accent);stroke-width:9;stroke-linecap:round}.aircraft-stage-art .detail{stroke:#b7bfbc;stroke-width:2;fill:none}.aircraft-sketch{width:100%;height:245px;display:grid;place-items:center;opacity:.98}.aircraft-sketch svg{width:100%;height:100%;overflow:visible}.aircraft-sketch .sketch-shadow{fill:#d8dedb;stroke:none;opacity:.58;transform:translateY(8px)}.aircraft-sketch .sketch-lines{fill:var(--paper);stroke:#1a2021;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}.aircraft-sketch .sketch-lines path{vector-effect:non-scaling-stroke}.aircraft-sketch .sketch-lines ellipse{vector-effect:non-scaling-stroke}.aircraft-sketch .sketch-shadow path,.aircraft-sketch .sketch-shadow ellipse{fill:#d8dedb;stroke:none}.aircraft-sketch:after{content:'LIVE AIRCRAFT';position:absolute;left:50%;bottom:8px;transform:translateX(-50%);font-size:8px;letter-spacing:.18em;font-weight:900;color:#a0a6a4;opacity:.0;pointer-events:none}
 .hero-bottom{margin-top:auto;padding:26px 42px 34px;position:relative;z-index:2}.divider{height:1px;background:var(--line);margin-bottom:24px}.identity{display:flex;justify-content:space-between;gap:30px;align-items:flex-end}.operator{font-size:10px;color:var(--muted);font-weight:850;letter-spacing:.15em}.flight-name{font-size:31px;font-weight:900;letter-spacing:-.035em;margin-top:6px}.aircraft-type{font-size:11px;color:var(--muted);margin-top:5px}.telemetry{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:22px;min-width:520px}.metric label{display:block;font-size:8px;color:var(--muted);letter-spacing:.15em;font-weight:900}.metric b{display:block;font-size:19px;margin-top:5px;letter-spacing:-.02em}.metric small{display:block;font-size:9px;color:var(--muted);margin-top:2px}.progress{margin-top:22px;height:4px;background:#e3e5e1;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .6s ease}.watch-bottom{margin-top:16px;padding:20px 24px;background:var(--paper);border:1px solid #e1e2de;border-radius:22px;box-shadow:0 12px 36px rgba(23,30,30,.07)}.watch-bottom-head{display:flex;justify-content:space-between;align-items:center;gap:18px}.watch-bottom-title{font-size:20px;font-weight:900;letter-spacing:-.025em;margin-top:5px}.watch-bottom-body{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:24px;margin-top:14px}.watch-route{display:flex;align-items:center;gap:10px}.watch-code{font-size:20px;font-weight:900;letter-spacing:.04em}.watch-line{width:54px;height:1px;background:var(--line);position:relative}.watch-line:after{content:'✈';position:absolute;left:50%;top:-8px;transform:translateX(-50%);font-size:12px;color:var(--muted);background:var(--paper);padding:0 5px}.watch-copy{min-width:0}.watch-copy div{font-size:11px;font-weight:750}.watch-copy small{display:block;color:var(--muted);font-size:9px;margin-top:4px}.watch-count{text-align:right;white-space:nowrap}.watch-count label,.watch-live-grid label{display:block;font-size:8px;color:var(--muted);letter-spacing:.15em;font-weight:900}.watch-count b{display:block;font-size:21px;margin-top:4px;letter-spacing:-.025em}.watch-live-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding-top:13px;border-top:1px solid var(--line)}.watch-live-grid b{display:block;font-size:14px;margin-top:4px}.watch-bottom .state{margin-top:0}.watch-bottom .state.live{background:#eef5f2;color:var(--live)}.watch-bottom .state.active{background:var(--accent2);color:#28515e}@media(max-width:1050px){.watch-bottom-body{grid-template-columns:1fr 1fr}.watch-route{grid-column:1}.watch-copy{grid-column:2}.watch-count{grid-column:1/-1;text-align:left}.watch-live-grid{grid-column:1/-1}}@media(max-width:700px){.watch-bottom-body{grid-template-columns:1fr}.watch-route,.watch-copy,.watch-count,.watch-live-grid{grid-column:auto}.watch-count{text-align:left}.watch-live-grid{grid-template-columns:1fr 1fr}}
 
+/* ADSB DIAGNOSTICS */
+.adsb-diagnostics{position:fixed;right:18px;bottom:18px;z-index:2000;width:min(420px,calc(100vw - 36px));background:rgba(10,18,22,.96);color:#eef5f6;border:1px solid rgba(255,255,255,.14);border-radius:14px;box-shadow:0 18px 45px rgba(0,0,0,.28);padding:14px;font-size:10px;line-height:1.4;backdrop-filter:blur(14px)}
+.adsb-diagnostics[hidden]{display:none}.adsb-diagnostics-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}.adsb-diagnostics-title{font-size:9px;letter-spacing:.16em;font-weight:900}.adsb-diagnostics-close{border:0;background:transparent;color:#9eacad;font-size:15px;padding:0 3px}.adsb-diag-grid{display:grid;grid-template-columns:72px 1fr;gap:5px 9px}.adsb-diag-label{color:#91a3aa;font-size:8px;letter-spacing:.1em;font-weight:800}.adsb-diag-value{min-width:0;overflow-wrap:anywhere}.adsb-diag-value.url{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px}.adsb-diag-ok{color:#72e1b0}.adsb-diag-bad{color:#ff9c9c}
+
 /* COMMON */
 .btn{border:1px solid #cfd2cd;background:#fff;color:#111;padding:11px 15px;border-radius:12px;font-size:10px;font-weight:900;letter-spacing:.08em}.btn.primary{background:#111;color:#fff;border-color:#111}.panel{background:var(--paper);border:1px solid #e1e2de;border-radius:24px;box-shadow:var(--shadow)}
 /* PAGE 2 */
@@ -197,6 +201,17 @@
  </div>
 </section>
 </main></div>
+
+<div class="adsb-diagnostics" id="adsbDiagnostics" hidden>
+  <div class="adsb-diagnostics-head"><div class="adsb-diagnostics-title">ADSB.LOL DIAGNOSTICS</div><button class="adsb-diagnostics-close" id="adsbDiagnosticsClose" type="button" aria-label="Close diagnostics">×</button></div>
+  <div class="adsb-diag-grid">
+    <div class="adsb-diag-label">MODE</div><div class="adsb-diag-value" id="diagMode">—</div>
+    <div class="adsb-diag-label">REQUEST</div><div class="adsb-diag-value url" id="diagUrl">—</div>
+    <div class="adsb-diag-label">TIME</div><div class="adsb-diag-value" id="diagTime">—</div>
+    <div class="adsb-diag-label">STATUS</div><div class="adsb-diag-value" id="diagStatus">—</div>
+    <div class="adsb-diag-label">RESULT</div><div class="adsb-diag-value" id="diagResult">—</div>
+  </div>
+</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const savedSkySettings=JSON.parse(localStorage.getItem('skyAroundMeSettings')||'null')||{};
@@ -349,6 +364,19 @@ function choose(items){if(!items.length)return null;const airborne=items.filter(
 const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);L.control.zoom({position:'bottomright'}).addTo(map);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);
 function render(items){const seen=new Set();items.forEach(x=>{seen.add(x.icao);const feat=x.icao===S.featured;let m=S.markers.get(x.icao);if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat)}).addTo(map);S.markers.set(x.icao,m)}else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat))}m.bindPopup(`<b>${x.callsign||x.icao.toUpperCase()}</b><br>${x.d.toFixed(1)} km · ${x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft'} · ${x.speed==null?'—':Math.round(x.speed*1.94384)+' kt'}`);let pts=S.tracks.get(x.icao)||[];const last=pts[pts.length-1];if(!last||hav(last[0],last[1],x.lat,x.lon)>0.08){pts=[...pts,[x.lat,x.lon]].slice(-15);S.tracks.set(x.icao,pts)}let line=S.trails.get(x.icao);if(!line){line=L.polyline(pts,{weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'}).addTo(map);S.trails.set(x.icao,line)}else{line.setLatLngs(pts);line.setStyle({weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'})}});S.markers.forEach((m,id)=>{if(!seen.has(id)){map.removeLayer(m);S.markers.delete(id)}});S.trails.forEach((line,id)=>{if(!seen.has(id)){map.removeLayer(line);S.trails.delete(id)}})}
 const SKY_AROUND_ME_WORKER='https://sky-around-me-api.adrian-simmonds.workers.dev/';
+
+function updateAdsbDiagnostics(info={}){
+  const panel=$("adsbDiagnostics");
+  if(!panel)return;
+  panel.hidden=false;
+  $("diagMode").textContent=info.mode||'—';
+  $("diagUrl").textContent=info.url||'—';
+  $("diagTime").textContent=info.time||new Date().toLocaleString();
+  $("diagStatus").textContent=info.status==null?'—':String(info.status)+(info.statusText?' · '+info.statusText:'');
+  const result=$("diagResult"); result.textContent=info.result||'—'; result.className='adsb-diag-value '+(info.ok?'adsb-diag-ok':info.ok===false?'adsb-diag-bad':'');
+}
+if($("adsbDiagnosticsClose"))$("adsbDiagnosticsClose").onclick=()=>$("adsbDiagnostics").hidden=true;
+
 async function fetchJson(url,label){
   try{
     const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
@@ -384,34 +412,26 @@ function isCommercialAircraft(a){
 }
 
 async function fetchAircraft(){
-  // Commercial traffic only for now. Try ADSB.lol directly from the page first.
-  // If the browser blocks the cross-origin request (for example because of CORS),
-  // fall back to the Cloudflare Worker proxy.
   const radiusNm=Math.min(250,Math.max(1,S.rangeKm/1.852));
   const directUrl=`https://api.adsb.lol/v2/lat/${encodeURIComponent(S.lat)}/lon/${encodeURIComponent(S.lon)}/dist/${radiusNm.toFixed(1)}`;
-  let directError=null;
+  const started=new Date();
   try{
-    const j=await fetchJson(directUrl,'ADSB.lol direct');
+    const r=await fetch(directUrl,{cache:'no-store',headers:{Accept:'application/json'}});
+    updateAdsbDiagnostics({mode:'DIRECT',url:directUrl,time:started.toLocaleString(),status:r.status,statusText:r.statusText,result:r.ok?'Direct ADSB.lol request succeeded':'Direct ADSB.lol request returned HTTP '+r.status,ok:r.ok});
+    if(!r.ok){const e=new Error('ADSB.lol direct HTTP '+r.status);e.status=r.status;e.url=directUrl;throw e}
+    const j=await r.json();
     if(j&&j.error)throw new Error(j.message||j.error);
     return {...j,provider:'ADSB.LOL · DIRECT',feedSource:'ADSB.LOL'};
   }catch(e){
-    directError=e;
-    console.warn('ADSB.lol direct request failed; trying Worker proxy',e);
-  }
-  const adsbUrl=`${SKY_AROUND_ME_WORKER}?source=adsblol&lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${radiusNm.toFixed(1)}`;
-  try{
-    const j=await fetchJson(adsbUrl,'ADSB.lol via Worker');
-    if(j&&j.error)throw new Error(j.message||j.error);
-    return {...j,provider:'ADSB.LOL · WORKER FALLBACK',feedSource:'ADSB.LOL',directError:directError?.message||'Direct request failed'};
-  }catch(proxyError){
-    proxyError.directError=directError?.message||'Direct request failed';
-    throw proxyError;
+    console.warn('ADSB.lol direct request failed',e);
+    throw e;
   }
 }
+
 async function poll(){if(!document.getElementById('map'))return;$('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';try{const j=await fetchAircraft();const raw=(Array.isArray(j.ac)?j.ac:[]).filter(isCommercialAircraft);const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));const items=allItems.filter(x=>x.d<=S.rangeKm);S.lastAllItems=allItems;S.lastItems=items;renderHomeWatch(items);const f=choose(items);S.featured=f?.icao||null;render(items);if(f){renderLiveHome(f);$('status').textContent=j.provider||'LIVE · COMMERCIAL · ADSB.LOL';$('call').textContent=f.callsign||f.icao.toUpperCase();$('detail').textContent=(f.desc||f.type||'Airborne aircraft')+(f.registration?' · '+f.registration:'')+' · ICAO '+f.icao.toUpperCase();$('dist').textContent=f.d.toFixed(1)+' km';$('alt').textContent=f.alt==null?'—':Math.round(f.alt*3.28084).toLocaleString()+' ft';$('speed').textContent=f.speed==null?'—':Math.round(f.speed*1.94384)+' kt';$('heading').textContent=f.heading==null?'—':Math.round(f.heading)+'°';$('pathInfo').textContent=j.provider==='ADSB.LOL · WORKER FALLBACK'?'Direct ADSB.lol request was unavailable ('+(j.directError||'browser/network error')+'). Using the Cloudflare Worker fallback. Commercial aircraft only.':'Live trail shows the recent track of each aircraft. Data source: ADSB.lol direct · commercial aircraft only.'}else{renderScheduledHome();$('status').textContent='NO AIRCRAFT NEARBY';$('call').textContent='—';$('detail').textContent='No matching aircraft within the selected airspace. Home screen has returned to your next scheduled flight.';$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';$('pathInfo').textContent='No matching local traffic right now. Your scheduled flight remains the fallback. Data source: ADSB.lol · commercial aircraft only.'}$('countPill').textContent=`${items.length} aircraft in range · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
 
 $('mapStatus').textContent='LIVE'}catch(e){$('mapStatus').textContent='DATA ERROR';$('status').textContent='LIVE DATA ERROR';$('detail').textContent=e.message;$('pathInfo').textContent='ADSB.lol commercial feed error: '+(e.message||'Unknown network error');console.error('Sky Around Me',e)}}
 function refreshHomeDisplay(){const f=choose(S.lastItems||[]);if(f)renderLiveHome(f);else renderScheduledHome();renderHomeWatch(S.lastItems||[])}
-updateSkySettingsUI();renderScheduledHome();renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();refreshHomeDisplay()},1000);S.timer=setInterval(poll,10000);
+updateSkySettingsUI();renderScheduledHome();renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();refreshHomeDisplay()},1000);S.timer=setInterval(poll,30000);
 </script>
 </body></html>
