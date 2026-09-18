@@ -953,7 +953,7 @@ async function refreshMissingFlightData(){
  }
 }
 async function lookupWatchedSchedule(flight,date){
- const url=`${SKY_AROUND_ME_NETLIFY.replace('/adsb','/global-flight')}?lookup=schedule&flight=${encodeURIComponent(normalFlightCode(flight))}&date=${encodeURIComponent(date)}`;
+ const url=`${SKY_AROUND_ME_NETLIFY}?lookup=schedule&flight=${encodeURIComponent(normalFlightCode(flight))}&date=${encodeURIComponent(date)}`;
  try{return await fetchJson(url,'Flight schedule lookup')}catch(e){return null}
 }
 async function addWatchedFlight(flight,date,name){
@@ -1097,7 +1097,7 @@ async function fetchAircraft(){
 async function searchGlobalWatchedFlight(f){
  if(!f)return null;
  try{
-  const url=`${SKY_AROUND_ME_NETLIFY.replace('/adsb','/global-flight')}?lookup=flight&flight=${encodeURIComponent(normalFlightCode(f.flightNumber||f.flight))}&date=${encodeURIComponent(f.date||'')}`;
+  const url=`${SKY_AROUND_ME_NETLIFY}?lookup=flight&flight=${encodeURIComponent(normalFlightCode(f.flightNumber||f.flight))}&date=${encodeURIComponent(f.date||'')}`;
   const j=await fetchJson(url,'Global watched flight lookup');
   if(j?.status==='FOUND'&&Array.isArray(j.ac)&&j.ac.length){
    const mapped=j.ac.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',flightNumber:f.flightNumber||f.flight,airlineCode:normalFlightCode(f.flightNumber||f.flight).match(/^[A-Z]{1,3}/)?.[0]||'',airlineName:f.airlineName||''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon),watchRef:f,watchGlobal:true}));
