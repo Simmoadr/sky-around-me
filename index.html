@@ -416,7 +416,7 @@ function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
  const from=routeAirport(raw.fromCode,raw.from),to=routeAirport(raw.toCode,raw.to);
  if(Number.isFinite(Number(raw.fromLat)))from.lat=Number(raw.fromLat);if(Number.isFinite(Number(raw.fromLon)))from.lon=Number(raw.fromLon);
  if(Number.isFinite(Number(raw.toLat)))to.lat=Number(raw.toLat);if(Number.isFinite(Number(raw.toLon)))to.lon=Number(raw.toLon);
- return {status:'FOUND',flight,date,from:from.name,to:to.name,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:raw.departureUtc||'',arrivalUtc:raw.arrivalUtc||'',departureTime:raw.departureTime||'',source,resolvedAt:new Date().toISOString()};
+ return {status:'FOUND',flight,date,flightNumber:normalFlightCode(raw.flightNumber||''),airlineCode:normalFlightCode(raw.airlineCode||''),airlineName:raw.airlineName||'',from:from.name,to:to.name,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:raw.departureUtc||'',arrivalUtc:raw.arrivalUtc||'',departureTime:raw.departureTime||'',source,resolvedAt:new Date().toISOString()};
 }
 function liveJourneyFor(x){
  const f=getNextWatchedFlight();
@@ -428,30 +428,52 @@ function flightNumberFromCallsignFallback(callsign){
  const iata={BAW:'BA',SHT:'BA',EIN:'EI',RYR:'FR',SIA:'SQ',DLH:'LH',UAE:'EK',QTR:'QR',AFR:'AF',KLM:'KL',VIR:'VS',AAL:'AA',UAL:'UA',DAL:'DL',SWR:'LX',IBE:'IB',TAP:'TP',THY:'TK',AUA:'OS',FIN:'AY',SAS:'SK',QFA:'QF',CPA:'CX',JAL:'JL',ANA:'NH',KAL:'KE',ACA:'AC',ETH:'ET',ETD:'EY'};
  return (iata[m[1]]||m[1])+m[2];
 }
-function identityCacheKey(x){return normalFlightCode(x?.callsign)+'|'+utcDateKey()}
-function applyIdentity(x,id){if(!id)return;x.flightNumber=id.flightNumber||x.flightNumber||flightNumberFromCallsignFallback(x.callsign);x.airlineCode=id.airlineCode||x.airlineCode||'';x.airlineName=id.airlineName||x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft';x.identityStatus=id.status||'FOUND';}
+const IDENTITY_CACHE_VERSION='identity-v2';
+function identityCacheKey(x){return IDENTITY_CACHE_VERSION+'|'+normalFlightCode(x?.callsign)+'|'+utcDateKey()}
+function applyIdentity(x,id){if(!id)return;x.flightNumber=id.flightNumber||x.flightNumber||'';x.airlineCode=id.airlineCode||x.airlineCode||'';x.airlineName=id.airlineName||x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft';x.identityStatus=id.status||'FOUND';}
+async function fetchAdsbdbCallsign(callsign){
+ const cs=normalFlightCode(callsign);if(!cs)return null;
+ const urls=[
+  'https://api.adsbdb.com/v0/callsign/'+encodeURIComponent(cs),
+  'https://r.jina.ai/http://api.adsbdb.com/v0/callsign/'+encodeURIComponent(cs)
+ ];
+ let lastError=null;
+ for(const url of urls){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
+  try{
+   const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json,text/plain'}});
+   if(!r.ok)throw new Error('ADSBdb HTTP '+r.status);
+   const text=await r.text();
+   let j;try{j=JSON.parse(text)}catch(e){const start=text.indexOf('{'),end=text.lastIndexOf('}');if(start<0||end<=start)throw e;j=JSON.parse(text.slice(start,end+1))}
+   const fr=j?.response?.flightroute;
+   if(fr)return fr;
+   lastError=new Error('ADSBdb returned no flightroute');
+  }catch(e){lastError=e}
+  finally{clearTimeout(timer)}
+ }
+ if(lastError)throw lastError;
+ return null;
+}
 async function lookupFlightIdentity(x){
  const cs=normalFlightCode(x?.callsign);if(!cs)return null;const key=identityCacheKey(x);
  if(S.identityCache.has(key)){const id=S.identityCache.get(key);applyIdentity(x,id);return id}
  if(S.identityPending.has(key))return S.identityPending.get(key);
  const task=(async()=>{
    try{
-     const url='https://r.jina.ai/http://www.flightradar24.com/data/flights/'+encodeURIComponent(cs.toLowerCase());
-     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),5000);
-     try{
-       const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'text/plain'}});if(!r.ok)throw new Error('Identity lookup HTTP '+r.status);const text=await r.text();
-       const esc=cs.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-       let flightNumber='';let m=text.match(new RegExp('\\b([A-Z]{2,3}\\d{1,4}[A-Z]?)\\s*(?:\\/|·|-)?\\s*'+esc+'\\b','i'));
-       if(m)flightNumber=m[1].toUpperCase();else{m=text.match(new RegExp('\\b'+esc+'\\s*(?:\\/|·|-)?\\s*([A-Z]{2,3}\\d{1,4}[A-Z]?)\\b','i'));if(m)flightNumber=m[1].toUpperCase()}
-       const codeMatch=flightNumber.match(/^([A-Z]{2,3})/);const airlineCode=codeMatch?codeMatch[1]:'';const airlineName=airlineNames[airlineCode]||airlineFromCallsign(cs)||x.operator||'Live aircraft';
-       const id={status:flightNumber?'FOUND':'FALLBACK',flightNumber:flightNumber||flightNumberFromCallsignFallback(cs),airlineCode,airlineName,resolvedAt:new Date().toISOString()};S.identityCache.set(key,id);applyIdentity(x,id);if(S.featured===x.icao)renderLiveHome(x);return id;
-     }finally{clearTimeout(timer)}
-   }catch(e){const id={status:'FALLBACK',flightNumber:flightNumberFromCallsignFallback(cs),airlineCode:'',airlineName:airlineFromCallsign(cs)||x.operator||'Live aircraft'};S.identityCache.set(key,id);applyIdentity(x,id);if(S.featured===x.icao)renderLiveHome(x);return id}
-   finally{S.identityPending.delete(key)}
+     const fr=await fetchAdsbdbCallsign(cs);
+     const flightNumber=normalFlightCode(fr?.callsign_iata||'');
+     const airlineCode=normalFlightCode(fr?.airline?.iata||'')||((flightNumber.match(/^[A-Z]{2,3}/)||[])[0]||'');
+     const airlineName=fr?.airline?.name||airlineNames[airlineCode]||airlineFromCallsign(cs)||x.operator||'Live aircraft';
+     const id={status:flightNumber?'FOUND':'ROUTE_ONLY',flightNumber,airlineCode,airlineName,resolvedAt:new Date().toISOString()};
+     S.identityCache.set(key,id);applyIdentity(x,id);if(S.featured===x.icao)renderLiveHome(x);return id;
+   }catch(e){
+     const id={status:'PENDING',flightNumber:'',airlineCode:'',airlineName:airlineFromCallsign(cs)||x.operator||'Live aircraft',resolvedAt:new Date().toISOString()};
+     S.identityCache.set(key,id);applyIdentity(x,id);if(S.featured===x.icao)renderLiveHome(x);return id;
+   }finally{S.identityPending.delete(key)}
  })();S.identityPending.set(key,task);return task;
 }
 function renderLiveHome(x){
- const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=x.flightNumber||flightNumberFromCallsignFallback(x.callsign);
+ const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=x.flightNumber||'';
  setHeroAircraft(x,journey);
  $('homeEyebrow').textContent='NEAREST AIRCRAFT';$('homeTitle').textContent=(flightNumber||x.callsign||x.icao.toUpperCase()).toUpperCase();$('homeStatus').textContent='LIVE';
  $('airlineBadge').textContent=(x.airlineCode||flightNumber.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('callsignNote').textContent=x.callsign?'CALLSIGN '+x.callsign.toUpperCase():'';$('flightName').textContent=flightNumber||x.callsign||x.icao.toUpperCase();$('aircraftType').textContent=model;
@@ -481,13 +503,22 @@ function putCachedRoute(key,route){liveRouteCache.set(key,route);try{const raw=J
 async function enrichLiveRoute(x){
  const cs=normalFlightCode(x?.callsign);if(!cs)return;
  const date=utcDateKey(),key=routeCacheKey(cs,date);
- if(liveRouteCache.has(key)){x.liveRoute=liveRouteCache.get(key);return}
- const stored=getCachedRoute(key);if(stored!==undefined){liveRouteCache.set(key,stored);x.liveRoute=stored;return}
+ if(liveRouteCache.has(key)){
+  const cached=liveRouteCache.get(key);x.liveRoute=cached;
+  if(cached?.status==='FOUND'){if(cached.flightNumber)x.flightNumber=cached.flightNumber;if(cached.airlineCode)x.airlineCode=cached.airlineCode;if(cached.airlineName)x.airlineName=cached.airlineName;}
+  if(S.featured===x.icao)renderLiveHome(x);return
+ }
+ const stored=getCachedRoute(key);if(stored!==undefined){liveRouteCache.set(key,stored);x.liveRoute=stored;if(stored?.status==='FOUND'){if(stored.flightNumber)x.flightNumber=stored.flightNumber;if(stored.airlineCode)x.airlineCode=stored.airlineCode;if(stored.airlineName)x.airlineName=stored.airlineName;}if(S.featured===x.icao)renderLiveHome(x);return}
  if(liveRoutePending.has(key))return liveRoutePending.get(key);
  const task=(async()=>{
    try{
      const route=await lookupFlightRoute(cs,date);
      putCachedRoute(key,route);x.liveRoute=route;
+     if(route?.status==='FOUND'){
+       if(route.flightNumber)x.flightNumber=route.flightNumber;
+       if(route.airlineCode)x.airlineCode=route.airlineCode;
+       if(route.airlineName)x.airlineName=route.airlineName;
+     }
      if(S.featured===x.icao)renderLiveHome(x);
      return route;
    }catch(e){
@@ -522,16 +553,13 @@ async function lookupFlightRoute(flight,date){
  // callsign directly to origin/destination airports and coordinates.
  if(cs){
   try{
-   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
-   try{
-    const r=await fetch('https://api.adsbdb.com/v0/callsign/'+encodeURIComponent(cs),{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
-    if(r.ok){
-     const j=await r.json();const fr=j?.response?.flightroute;const o=fr?.origin,d=fr?.destination;
-     if(o?.iata_code&&d?.iata_code){
-      return normaliseRoute({from:o.municipality||o.name||o.iata_code,fromCode:o.iata_code,fromLat:o.latitude,fromLon:o.longitude,to:d.municipality||d.name||d.iata_code,toCode:d.iata_code,toLat:d.latitude,toLon:d.longitude},cs,date,'ADSBdb');
-     }
-    }
-   }finally{clearTimeout(timer)}
+   const fr=await fetchAdsbdbCallsign(cs);
+   const o=fr?.origin,d=fr?.destination;
+   if(o?.iata_code&&d?.iata_code){
+    const flightNumber=normalFlightCode(fr?.callsign_iata||'');
+    const airlineCode=normalFlightCode(fr?.airline?.iata||'')||((flightNumber.match(/^[A-Z]{2,3}/)||[])[0]||'');
+    return normaliseRoute({from:o.municipality||o.name||o.iata_code,fromCode:o.iata_code,fromLat:o.latitude,fromLon:o.longitude,to:d.municipality||d.name||d.iata_code,toCode:d.iata_code,toLat:d.latitude,toLon:d.longitude,flightNumber,airlineCode,airlineName:fr?.airline?.name||airlineNames[airlineCode]||''},cs,date,'ADSBdb');
+   }
   }catch(e){console.debug('ADSBdb route lookup failed',e)}
  }
  // Secondary best-effort lookup for anything missing from ADSBdb.
@@ -549,12 +577,7 @@ async function lookupFlightRoute(flight,date){
   return normaliseRoute({from:m[1].trim(),fromCode:m[2],to:m[3].trim(),toCode:m[4],departureUtc,departureTime},cs,date,'FlightRouteLookup');
  }finally{clearTimeout(timer)}
 }
-const routeCache={
- 'FR6010|2026-09-18':{from:'Beziers',fromCode:'BZR',to:'Bristol',toCode:'BRS',departureUtc:'2026-09-18T07:55:00Z',departureTime:'07:55 UTC'}
-};
 async function resolveFlightRoute(flight,date){
- const key=(flight||'').toUpperCase()+'|'+date;
- if(routeCache[key]) return {...routeCache[key]};
  return lookupFlightRoute(flight,date);
 }
 async function refreshMissingFlightData(){
