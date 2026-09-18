@@ -412,9 +412,11 @@ function routeAirport(code,name){
   return {code:c,name:String(name||known[c]||c),lat:point?.[0]??null,lon:point?.[1]??null};
 }
 function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
-  if(!raw || !raw.fromCode || !raw.toCode) return {status:'NOT_FOUND',flight,date,source,resolvedAt:new Date().toISOString()};
-  const from=routeAirport(raw.fromCode,raw.from),to=routeAirport(raw.toCode,raw.to);
-  return {status:'FOUND',flight,date,from,to,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:raw.departureUtc||'',arrivalUtc:raw.arrivalUtc||'',departureTime:raw.departureTime||'',source,resolvedAt:new Date().toISOString()};
+ if(!raw||!raw.fromCode||!raw.toCode)return {status:'NOT_FOUND',flight,date,source,resolvedAt:new Date().toISOString()};
+ const from=routeAirport(raw.fromCode,raw.from),to=routeAirport(raw.toCode,raw.to);
+ if(Number.isFinite(Number(raw.fromLat)))from.lat=Number(raw.fromLat);if(Number.isFinite(Number(raw.fromLon)))from.lon=Number(raw.fromLon);
+ if(Number.isFinite(Number(raw.toLat)))to.lat=Number(raw.toLat);if(Number.isFinite(Number(raw.toLon)))to.lon=Number(raw.toLon);
+ return {status:'FOUND',flight,date,from:from.name,to:to.name,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:raw.departureUtc||'',arrivalUtc:raw.arrivalUtc||'',departureTime:raw.departureTime||'',source,resolvedAt:new Date().toISOString()};
 }
 function liveJourneyFor(x){
  const f=getNextWatchedFlight();
@@ -465,7 +467,7 @@ const ROUTE_TIMEOUT=5000;
 const liveRouteCache=new Map();
 const liveRoutePending=new Map();
 function utcDateKey(){return new Date().toISOString().slice(0,10)}
-function routeCacheKey(flight,date){return normalFlightCode(flight)+'|'+date}
+function routeCacheKey(flight,date){return 'route-v2|'+normalFlightCode(flight)+'|'+date}
 function loadRouteCache(){
  try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');const now=Date.now();Object.entries(raw).forEach(([k,v])=>{if(v&&v.cachedAt&&now-v.cachedAt<ROUTE_CACHE_TTL){liveRouteCache.set(k,v.route||null)}})}catch(e){console.debug('Route cache load failed',e)}
 }
@@ -515,19 +517,36 @@ function renderWatchlist(){const el=$('watchList');if(!watchlist.length){el.inne
  el.innerHTML=rows.map(({f,i,state})=>{const route=(f.fromCode&&f.toCode)?f.fromCode+' → '+f.toCode:'LOOKING UP ROUTE';const names=(f.from&&f.to)?f.from+' → '+f.to:'Route will be filled automatically';const dep=f.departureTime?` · <span class="flight-time">DEP ${f.departureTime}</span>`:'';const cd=state==='UPCOMING'?`<div class="flight-countdown">${countdownText(f)}</div>`:'';const status=state==='COMPLETED'?'COMPLETED':(f.lookupStatus||state);const rowClass=state==='COMPLETED'?' completed':'';return '<div class="flight-row'+rowClass+'"><div class="flight-main"><div class="route-badge">✈</div><div><strong>'+((f.flightNumber||f.flight||'FLIGHT').toUpperCase())+'</strong><small>'+(f.name||'Watched flight')+' · '+route+' · '+(f.date||'No date')+dep+'<br>'+names+'</small>'+cd+'</div></div><div><span class="state '+(state==='UPCOMING'?'wait ':'')+(state==='COMPLETED'?'completed ':'')+(f.lookupStatus==='LOOKING UP'?'lookup':'')+'">'+status+'</span><button class="remove" data-remove="'+i+'" title="Remove">REMOVE</button></div></div>'}).join('');el.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{watchlist.splice(Number(btn.dataset.remove),1);if(!watchlist.length)watch={};else if(watchlist[0])watch=watchlist[0];saveState()}))}
 function monthShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/^0/,'')}
 async function lookupFlightRoute(flight,date){
- const url='https://r.jina.ai/http://www.flightradar24.com/data/flights/'+encodeURIComponent(flight.toLowerCase());
+ const cs=normalFlightCode(flight);
+ // ADSBdb is the primary route enrichment source. It resolves the live
+ // callsign directly to origin/destination airports and coordinates.
+ if(cs){
+  try{
+   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
+   try{
+    const r=await fetch('https://api.adsbdb.com/v0/callsign/'+encodeURIComponent(cs),{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
+    if(r.ok){
+     const j=await r.json();const fr=j?.response?.flightroute;const o=fr?.origin,d=fr?.destination;
+     if(o?.iata_code&&d?.iata_code){
+      return normaliseRoute({from:o.municipality||o.name||o.iata_code,fromCode:o.iata_code,fromLat:o.latitude,fromLon:o.longitude,to:d.municipality||d.name||d.iata_code,toCode:d.iata_code,toLat:d.latitude,toLon:d.longitude},cs,date,'ADSBdb');
+     }
+    }
+   }finally{clearTimeout(timer)}
+  }catch(e){console.debug('ADSBdb route lookup failed',e)}
+ }
+ // Secondary best-effort lookup for anything missing from ADSBdb.
+ const url='https://r.jina.ai/http://www.flightradar24.com/data/flights/'+encodeURIComponent(cs.toLowerCase());
  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
  try{
-   const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'text/plain'}});
-   if(!r.ok){const e=new Error('Flight lookup HTTP '+r.status);e.status=r.status;throw e}
-   const text=await r.text();
-   const target=monthShort(date);const esc=target.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-   const routeRe=new RegExp(esc+'[^\\n]{0,700}?FROM\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)\\s+TO\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)','i');
-   const m=text.match(routeRe);if(!m) return normaliseRoute(null,flight,date);
-   const cs=normalFlightCode(flight);const escCs=cs.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');let flightNumber='';let fm=text.match(new RegExp('\\b([A-Z]{2,3}\\d{1,4}[A-Z]?)\\s*(?:\\/|·|-)?\\s*'+escCs+'\\b','i'));if(fm)flightNumber=fm[1].toUpperCase();else{fm=text.match(new RegExp('\\b'+escCs+'\\s*(?:\\/|·|-)?\\s*([A-Z]{2,3}\\d{1,4}[A-Z]?)\\b','i'));if(fm)flightNumber=fm[1].toUpperCase()}
-   const before=text.slice(Math.max(0,m.index-160),m.index+120);const timeMatch=(before+' '+m[0]).match(/Scheduled\\s+STD\\s+(\\d{2}:\\d{2})/i);
-   let departureUtc='',departureTime='';if(timeMatch){departureTime=timeMatch[1]+' UTC';departureUtc=date+'T'+timeMatch[1]+':00Z';}
-   return {...normaliseRoute({from:m[1].trim(),fromCode:m[2],to:m[3].trim(),toCode:m[4],departureUtc,departureTime},flight,date),flightNumber:flightNumber||flightNumberFromCallsignFallback(flight)};
+  const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'text/plain'}});
+  if(!r.ok){const e=new Error('Flight lookup HTTP '+r.status);e.status=r.status;throw e}
+  const text=await r.text();
+  const target=monthShort(date);const esc=target.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const routeRe=new RegExp(esc+'[^\\n]{0,700}?FROM\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)\\s+TO\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)','i');
+  const m=text.match(routeRe);if(!m)return normaliseRoute(null,cs,date);
+  const before=text.slice(Math.max(0,m.index-160),m.index+120);const timeMatch=(before+' '+m[0]).match(/Scheduled\\s+STD\\s+(\\d{2}:\\d{2})/i);
+  let departureUtc='',departureTime='';if(timeMatch){departureTime=timeMatch[1]+' UTC';departureUtc=date+'T'+timeMatch[1]+':00Z'}
+  return normaliseRoute({from:m[1].trim(),fromCode:m[2],to:m[3].trim(),toCode:m[4],departureUtc,departureTime},cs,date,'FlightRouteLookup');
  }finally{clearTimeout(timer)}
 }
 const routeCache={
