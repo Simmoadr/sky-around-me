@@ -577,3 +577,5 @@ $('mapStatus').textContent='LIVE'}catch(e){
 }}
 function refreshHomeDisplay(){const f=choose(S.lastItems||[]);if(f)renderLiveHome(f);else renderScheduledHome();renderHomeWatch(S.lastItems||[])}
 updateSkySettingsUI();renderScheduledHome();renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();refreshHomeDisplay()},1000);S.timer=setInterval(poll,45000);
+</script>
+</body></html>
