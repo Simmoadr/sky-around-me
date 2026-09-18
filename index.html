@@ -268,6 +268,7 @@ function aircraftHeroSvg(x){
  </g>`;
  return `<div class="aircraft-illustration is-fixed" aria-label="Aircraft illustration"><svg viewBox="0 0 800 250" role="img" aria-hidden="true"><defs><linearGradient id="aircraftBody" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe4e1"/></linearGradient><linearGradient id="aircraftGlass" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8d9da1"/><stop offset="1" stop-color="#35484d"/></linearGradient></defs><g class="aircraft-shadow">${body}</g><g class="aircraft-main">${body}</g></svg></div>`;
 }
+function worldHeroXY(p){const lon=Number(p?.[1]),lat=Number(p?.[0]);return [((lon+180)/360)*100,((90-lat)/180)*100]}
 function worldHeroSvg(live,watch){
  const el=document.createElement('div');el.className='world-hero';
  const inner=document.createElement('div');inner.className='world-hero-zoom';el.appendChild(inner);
@@ -275,10 +276,9 @@ function worldHeroSvg(live,watch){
  const a=routePoint(watch?.fromCode),b=routePoint(watch?.toCode);
  if(live?.lat!=null&&live?.lon!=null&&a&&b){
    const pts=[];for(let i=0;i<=60;i++)pts.push(greatCirclePoint(a,b,i/60));
-   const xy=p=>[((p[1]+180)/360)*100,((90-p[0])/180)*100];
-   const path=pts.map((p,i)=>{const q=xy(p);return(i?'L':'M')+q[0].toFixed(2)+','+q[1].toFixed(2)}).join(' ');
-   const start=xy(a),end=xy(b),progress=routeProgress(watch,live),pos=xy(greatCirclePoint(a,b,progress));
-   const prev=xy(greatCirclePoint(a,b,Math.max(0,progress-.01))),nxt=xy(greatCirclePoint(a,b,Math.min(1,progress+.01)));
+   const path=pts.map((p,i)=>{const q=worldHeroXY(p);return(i?'L':'M')+q[0].toFixed(2)+','+q[1].toFixed(2)}).join(' ');
+   const start=worldHeroXY(a),end=worldHeroXY(b),progress=routeProgress(watch,live),pos=worldHeroXY(greatCirclePoint(a,b,progress));
+   const prev=worldHeroXY(greatCirclePoint(a,b,Math.max(0,progress-.01))),nxt=worldHeroXY(greatCirclePoint(a,b,Math.min(1,progress+.01)));
    const angle=Math.atan2(nxt[1]-prev[1],nxt[0]-prev[0])*180/Math.PI+90;
    const ns='http://www.w3.org/2000/svg';
    const svg=document.createElementNS(ns,'svg');svg.setAttribute('class','world-hero-route');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
@@ -293,7 +293,7 @@ function worldHeroSvg(live,watch){
    inner.style.transform=`translate(${50-cx}%,${50-cy}%) scale(${scale})`;
  } else if(live?.lat!=null&&live?.lon!=null){
    // A live aircraft without route data still gets a useful local zoom.
-   const pos=xy([live.lat,live.lon]);
+   const pos=worldHeroXY([live.lat,live.lon]);
    inner.style.transform=`translate(${50-pos[0]}%,${50-pos[1]}%) scale(2.15)`;
    const plane=document.createElement('div');plane.className='world-hero-plane';plane.style.left=pos[0]+'%';plane.style.top=pos[1]+'%';plane.style.transform='translate(-50%,-50%)';plane.innerHTML=planeSvg();inner.appendChild(plane);
  }
