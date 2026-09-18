@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Sky Around Me</title>
-<!-- Sky Around Me v36: post-departure tracking grace window + v35 nearest-aircraft passenger flight identity resolver + v33 schedule logic
+<!-- Sky Around Me v35: nearest-aircraft passenger flight identity resolver + v33 schedule logic
 <!-- Sky Around Me v18: registration-aware flight identity + smooth route hero -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -441,7 +441,6 @@ function watchHasLive(f){return !!(f&&S.watchLive&&S.watchTarget&&watchKey(f)===
 function watchPostDepartureGraceActive(f){
  const now=Date.now();
  if(!f?.date||dateKeyFromValue(f.date)!==todayKeyLocal())return false;
- if(!(f.departureUtc||f.departureTime))return false;
  const d=parseDeparture(f);
  if(!d)return false;
  const elapsed=now-d.getTime();
@@ -667,7 +666,7 @@ function renderScheduledHome(){
    const future=dateKeyFromValue(next.date)>todayKeyLocal();
    setTextSafe('homeEyebrow',future?'NEXT WATCHED FLIGHT':'NEXT WATCHED FLIGHT');
    setTextSafe('homeTitle',(next.flightNumber||next.flight||'WATCHED FLIGHT').toUpperCase());
-   setTextSafe('homeStatus',future?'UPCOMING':state==='TRACKING PENDING'?'LIVE TRACKING PENDING':state==='SCHEDULED'?'SCHEDULED':'COMPLETED');
+   setTextSafe('homeStatus',future?'UPCOMING':state==='SCHEDULED'?'SCHEDULED':'COMPLETED');
    $('airlineBadge').textContent=(next.airlineCode||((next.flight||'').match(/^[A-Z]{1,3}/)?.[0])||'WATCH').toUpperCase();
    $('operator').textContent=(next.airlineName||'WATCHED FLIGHT').toUpperCase();
    $('callsignNote').textContent='SAVED FLIGHT';
@@ -945,7 +944,7 @@ function watchedLiveMatch(f,items){
 }
 function renderHomeWatch(items){
  const today=scheduledTodayFlights();
- const next=today.find(f=>watchHasLive(f))||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
+ const next=today.find(f=>watchHasLive(f))||today.find(f=>watchPostDepartureGraceActive(f))||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
  const box=$('homeWatchLive');
  if(!next){
   $('homeWatchTitle').textContent='NO SAVED FLIGHT';$('homeWatchName').textContent='';$('homeWatchFrom').textContent='—';$('homeWatchTo').textContent='—';$('homeWatchNames').textContent='Add a flight in My Flights';$('homeWatchDate').textContent='Your saved flights will appear here.';
@@ -961,17 +960,16 @@ function renderHomeWatch(items){
  $('homeWatchNames').textContent=((next.airlineName||'')+(next.airlineName?' · ':'')+((next.from&&next.to)?next.from+' → '+next.to:'Route lookup pending'));
  const dep=formatDepartureDisplay(next);
  $('homeWatchDate').innerHTML=(next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}):'No date set')+`<br><span class="departure-primary">${escapeHtml(dep.primary)}</span><span class="departure-secondary">${escapeHtml(dep.secondary)}</span>`;
- const pending=state==='TRACKING PENDING';
- const st=$('homeWatchState');st.className='state '+(live?'live':future||state==='SCHEDULED'||pending?'wait':'active');st.textContent=live?'LIVE':future?'SCHEDULED':pending?'LIVE TRACKING PENDING':(state==='SCHEDULED'?'SCHEDULED':state);
- $('homeWatchCountLabel').textContent=live?'FLIGHT STATUS':pending?'LIVE TRACKING':state==='SCHEDULED'?'DEPARTS IN':'FLIGHT STATUS';
- $('homeWatchCount').textContent=live?'IN FLIGHT':pending?'WAITING…':state==='SCHEDULED'?countdownText(next):state;
+ const st=$('homeWatchState');st.className='state '+(live?'live':future?'wait':state==='SCHEDULED'?'wait':'active');st.textContent=live?'LIVE':future?'SCHEDULED':(state==='SCHEDULED'?'SCHEDULED':state);
+ $('homeWatchCountLabel').textContent=live?'FLIGHT STATUS':state==='SCHEDULED'?'DEPARTS IN':'FLIGHT STATUS';
+ $('homeWatchCount').textContent=live?'IN FLIGHT':state==='SCHEDULED'?countdownText(next):state;
  if(live){$('homeWatchAlt').textContent=live.alt==null?'—':Math.round(live.alt*3.28084).toLocaleString()+' ft';$('homeWatchSpeed').textContent=live.speed==null?'—':Math.round(live.speed*1.94384)+' kt';$('homeWatchHeading').textContent=live.heading==null?'—':Math.round(live.heading)+'°';$('homeWatchDistance').textContent=live.d.toFixed(1)+' km from '+S.locationName;}
  else{$('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';}
  box.hidden=false;
 }
 function renderWatchlist(){const el=$('watchList');if(!watchlist.length){el.innerHTML='<div class="empty-list">No watched flights yet.</div>';return}
  const rows=watchlist.map((f,i)=>({f,i,state:flightState(f)})).sort((a,b)=>{if(a.state==='COMPLETED'&&b.state!=='COMPLETED')return 1;if(a.state!=='COMPLETED'&&b.state==='COMPLETED')return -1;const da=parseDeparture(a.f),db=parseDeparture(b.f);return (da?da.getTime():Infinity)-(db?db.getTime():Infinity)});
- el.innerHTML=rows.map(({f,i,state})=>{const route=(f.fromCode&&f.toCode)?f.fromCode+' → '+f.toCode:'LOOKING UP ROUTE';const names=(f.from&&f.to)?f.from+' → '+f.to:'Route will be filled automatically';const dep=f.departureTime?` · <span class="flight-time">DEP ${f.departureTime}</span>`:'';const cd=state==='SCHEDULED'?`<div class="flight-countdown">${countdownText(f)}</div>`:'';const status=state==='COMPLETED'?'COMPLETED':(state==='SCHEDULED'?'SCHEDULED':(state==='TRACKING PENDING'?'LIVE TRACKING PENDING':(f.lookupStatus||state)));const rowClass=state==='COMPLETED'?' completed':'';return '<div class="flight-row'+rowClass+'"><div class="flight-main"><div class="route-badge">✈</div><div><strong>'+((f.flightNumber||f.flight||'FLIGHT').toUpperCase())+'</strong><small>'+(f.name||'Watched flight')+' · '+route+' · '+(f.date||'No date')+dep+'<br>'+names+'</small>'+cd+'</div></div><div><span class="state '+(state==='SCHEDULED'?'wait ':'')+(state==='COMPLETED'?'completed ':'')+(f.lookupStatus==='LOOKING UP'?'lookup':'')+'">'+status+'</span><button class="remove" data-remove="'+i+'" title="Remove">REMOVE</button></div></div>'}).join('');el.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{watchlist.splice(Number(btn.dataset.remove),1);if(!watchlist.length)watch={};else if(watchlist[0])watch=watchlist[0];saveState()}))}
+ el.innerHTML=rows.map(({f,i,state})=>{const route=(f.fromCode&&f.toCode)?f.fromCode+' → '+f.toCode:'LOOKING UP ROUTE';const names=(f.from&&f.to)?f.from+' → '+f.to:'Route will be filled automatically';const dep=f.departureTime?` · <span class="flight-time">DEP ${f.departureTime}</span>`:'';const cd=(state==='SCHEDULED'||state==='TRACKING PENDING')?`<div class="flight-countdown">${countdownText(f)}</div>`:'';const status=state==='COMPLETED'?'COMPLETED':(state==='SCHEDULED'?'SCHEDULED':(f.lookupStatus||state));const rowClass=state==='COMPLETED'?' completed':'';return '<div class="flight-row'+rowClass+'"><div class="flight-main"><div class="route-badge">✈</div><div><strong>'+((f.flightNumber||f.flight||'FLIGHT').toUpperCase())+'</strong><small>'+(f.name||'Watched flight')+' · '+route+' · '+(f.date||'No date')+dep+'<br>'+names+'</small>'+cd+'</div></div><div><span class="state '+(state==='SCHEDULED'?'wait ':'')+(state==='COMPLETED'?'completed ':'')+(f.lookupStatus==='LOOKING UP'?'lookup':'')+'">'+status+'</span><button class="remove" data-remove="'+i+'" title="Remove">REMOVE</button></div></div>'}).join('');el.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{watchlist.splice(Number(btn.dataset.remove),1);if(!watchlist.length)watch={};else if(watchlist[0])watch=watchlist[0];saveState()}))}
 function monthShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/^0/,'').replace(' Sept ',' Sep ')}
 async function fetchFreeFlightRoute(flight,date,registration){
  const cs=normalFlightCode(flight);if(!cs)return null;
@@ -1187,7 +1185,8 @@ async function refreshWatchStream(){
  const today=scheduledTodayFlights();
  let target=today.find(f=>watchHasLive(f));
  if(!target)target=today.find(f=>watchPostDepartureGraceActive(f));
- if(!target)target=today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
+ if(!target)target=today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()});
+ if(!target)target=nextFutureWatchedFlight();
  S.watchTarget=target||null;
  if(!target){S.watchLive=null;renderHomeWatch();return null;}
  // Future flights are display-only. They must never enter the global live search.
