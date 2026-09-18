@@ -834,7 +834,7 @@ $('listSave').onclick=async()=>{const f=$('listFlight').value.trim().toUpperCase
 function hav(a,b,c,d){const R=6371,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,q=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
 function icon(x,featured){return L.divIcon({className:'',html:`<div class="${featured?'featured-icon':'aircraft-icon'}" style="transform:rotate(${Number.isFinite(x.heading)?x.heading:0}deg)">✈</div>`,iconSize:[featured?34:24,featured?34:24],iconAnchor:[featured?17:17,12]})}
 function choose(items){if(!items.length)return null;const airborne=items.filter(x=>(x.alt!=null&&x.alt>140)||(x.speed!=null&&x.speed>80));return (airborne.length?airborne:items).slice().sort((a,b)=>a.d-b.d)[0]}
-const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);L.control.zoom({position:'bottomright'}).addTo(map);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);
+const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);
 function render(items){const seen=new Set();items.forEach(x=>{seen.add(x.icao);const feat=x.icao===S.featured;let m=S.markers.get(x.icao);if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat)}).addTo(map);S.markers.set(x.icao,m)}else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat))}m.bindPopup(`<b>${x.flightNumber||x.callsign||x.icao.toUpperCase()}</b>${x.flightNumber&&x.callsign?`<br><span style="font-size:10px;color:#737878">CALLSIGN ${x.callsign}</span>`:''}<br>${x.d.toFixed(1)} km · ${x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft'} · ${x.speed==null?'—':Math.round(x.speed*1.94384)+' kt'}`);let pts=S.tracks.get(x.icao)||[];const last=pts[pts.length-1];if(!last||hav(last[0],last[1],x.lat,x.lon)>0.08){pts=[...pts,[x.lat,x.lon]].slice(-15);S.tracks.set(x.icao,pts)}let line=S.trails.get(x.icao);if(!line){line=L.polyline(pts,{weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'}).addTo(map);S.trails.set(x.icao,line)}else{line.setLatLngs(pts);line.setStyle({weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'})}});S.markers.forEach((m,id)=>{if(!seen.has(id)){map.removeLayer(m);S.markers.delete(id)}});S.trails.forEach((line,id)=>{if(!seen.has(id)){map.removeLayer(line);S.trails.delete(id)}})}
 const SKY_AROUND_ME_NETLIFY='https://magenta-syrniki-2f4749.netlify.app/.netlify/functions/adsb';
 const AIRPLANES_LIVE_BASE='https://api.airplanes.live/v2/point';
@@ -926,46 +926,14 @@ function isCommercialAircraft(a){
 
 async function fetchAircraft(){
   const distKm=Math.min(250,Math.max(1,Number(S.rangeKm)||100));
-  const radiusNm=Math.min(135,Math.max(5,distKm/1.852));
   const adsbUrl=`${SKY_AROUND_ME_NETLIFY}?lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${encodeURIComponent(distKm)}`;
-
-  // ADSB.lol is the preferred source, but its rate limits are dynamic.
-  // When it returns 429, back off for two minutes instead of immediately
-  // hammering it again on every poll.
-  if(Date.now()>=adsbPrimaryCooldownUntil){
-    try{
-      const j=await fetchJson(adsbUrl,'ADSB.lol via Netlify');
-      if(j&&j.error)throw new Error(j.message||j.error);
-      adsbPrimaryCooldownUntil=0;
-      lastSuccessfulFeed=j;
-      return {...j,provider:'ADSB.LOL · NETLIFY PROXY',feedSource:'ADSB.LOL'};
-    }catch(e){
-      if(Number(e.status)===429){
-        adsbPrimaryCooldownUntil=Date.now()+120000;
-        console.warn('ADSB.lol rate limited; backing off for 2 minutes and using fallback feed.',e);
-      }else{
-        console.warn('ADSB.lol unavailable; using fallback feed.',e);
-      }
-    }
-  }
-
-  // Airplanes.live is the first fallback and uses the same /point response
-  // shape, so the existing normalisation/filtering can be reused.
   try{
-    const j=await fetchJson(`${AIRPLANES_LIVE_BASE}/${S.lat}/${S.lon}/${radiusNm.toFixed(1)}`,'Airplanes.live');
+    const j=await fetchJson(adsbUrl,'Live aircraft proxy');
+    if(j&&j.error)throw new Error(j.message||j.error);
     lastSuccessfulFeed=j;
-    return {...j,provider:'Airplanes.live fallback',feedSource:'AIRPLANES.LIVE'};
+    return {...j,provider:j._skyProvider||'LIVE AIRSPACE',feedSource:j._skyProvider||'LIVE'};
   }catch(e){
-    console.warn('Airplanes.live unavailable; using IntelSky fallback.',e);
-  }
-
-  // IntelSky is the final fallback we already have behind the Cloudflare Worker.
-  try{
-    const j=await fetchJson(INTELSKY_FALLBACK,'IntelSky');
-    lastSuccessfulFeed=j;
-    return {...j,provider:'IntelSky fallback',feedSource:'INTELSKY'};
-  }catch(e){
-    console.warn('All live feeds unavailable.',e);
+    console.warn('Live aircraft proxy unavailable; retaining last successful positions.',e);
     throw e;
   }
 }
@@ -974,7 +942,7 @@ async function fetchAircraft(){
 async function poll(){if(!document.getElementById('map'))return;$('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';try{const j=await fetchAircraft();const raw=(Array.isArray(j.ac)?j.ac:[]).filter(isCommercialAircraft);const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));const items=allItems.filter(x=>x.d<=S.rangeKm);S.lastAllItems=allItems;S.lastItems=items;renderHomeWatch(items);const f=choose(items);S.featured=f?.icao||null;render(items);watchlist.filter(w=>flightState(w)!=='COMPLETED').forEach(w=>{const candidates=items.filter(x=>{const p=normalFlightCode(w.flight||w.flightNumber),c=normalFlightCode(x.callsign);return p&&c&&((c.startsWith('BAW')&&p.startsWith('BA'))||(c.startsWith('SIA')&&p.startsWith('SQ'))||(c.startsWith('UAE')&&p.startsWith('EK'))||(c.startsWith('QTR')&&p.startsWith('QR'))||(c.startsWith('RYR')&&p.startsWith('FR'))||(c.startsWith('DLH')&&p.startsWith('LH'))||(c.startsWith('AFR')&&p.startsWith('AF'))||(c.startsWith('KLM')&&p.startsWith('KL'))||(c.startsWith('VIR')&&p.startsWith('VS'))||(c.startsWith('AAL')&&p.startsWith('AA'))||(c.startsWith('UAL')&&p.startsWith('UA'))||(c.startsWith('DAL')&&p.startsWith('DL')))||c===p});if(candidates.length===1)lookupFlightIdentity(candidates[0])});
 // Resolve the actual passenger flight number for the aircraft the user can see.
 // Never invent an IATA number from the ATC callsign; unresolved aircraft keep their callsign.
-items.slice().sort((a,b)=>a.d-b.d).slice(0,12).forEach(x=>{if(x.callsign&&!x.flightNumber)lookupFlightIdentity(x)});if(f){renderLiveHome(f);$('status').textContent=j.provider||'LIVE · COMMERCIAL · ADSB.LOL';$('call').textContent=f.flightNumber||f.callsign||f.icao.toUpperCase();$('detail').textContent=(f.desc||f.type||'Airborne aircraft')+(f.registration?' · '+f.registration:'')+(f.callsign?' · CALLSIGN '+f.callsign:'')+' · ICAO '+f.icao.toUpperCase();$('dist').textContent=f.d.toFixed(1)+' km';$('alt').textContent=f.alt==null?'—':Math.round(f.alt*3.28084).toLocaleString()+' ft';$('speed').textContent=f.speed==null?'—':Math.round(f.speed*1.94384)+' kt';$('heading').textContent=f.heading==null?'—':Math.round(f.heading)+'°';$('pathInfo').textContent='Live trail shows the recent track of each aircraft. Data source: ADSB.lol via Netlify proxy · commercial aircraft only.'}else{renderScheduledHome();$('status').textContent='NO AIRCRAFT NEARBY';$('call').textContent='—';$('detail').textContent='No matching aircraft within the selected airspace. Home screen has returned to your next scheduled flight.';$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';$('pathInfo').textContent='No matching local traffic right now. Your scheduled flight remains the fallback. Data source: ADSB.lol via Netlify proxy · commercial aircraft only.'}$('countPill').textContent=`${items.length} aircraft in range · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+items.slice().sort((a,b)=>a.d-b.d).slice(0,12).forEach(x=>{if(x.callsign&&!x.flightNumber)lookupFlightIdentity(x)});if(f){renderLiveHome(f);$('status').textContent=j.provider||'LIVE · COMMERCIAL';$('call').textContent=f.flightNumber||f.callsign||f.icao.toUpperCase();$('detail').textContent=(f.desc||f.type||'Airborne aircraft')+(f.registration?' · '+f.registration:'')+(f.callsign?' · CALLSIGN '+f.callsign:'')+' · ICAO '+f.icao.toUpperCase();$('dist').textContent=f.d.toFixed(1)+' km';$('alt').textContent=f.alt==null?'—':Math.round(f.alt*3.28084).toLocaleString()+' ft';$('speed').textContent=f.speed==null?'—':Math.round(f.speed*1.94384)+' kt';$('heading').textContent=f.heading==null?'—':Math.round(f.heading)+'°';$('pathInfo').textContent='Live trail shows the recent track of each aircraft. Commercial aircraft only.'}else{renderScheduledHome();$('status').textContent='NO AIRCRAFT NEARBY';$('call').textContent='—';$('detail').textContent='No matching aircraft within the selected airspace. Home screen has returned to your next scheduled flight.';$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';$('pathInfo').textContent='No matching local traffic right now. Your scheduled flight remains the fallback. Commercial aircraft only.'}$('countPill').textContent=`${items.length} aircraft in range · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
 
 $('mapStatus').textContent='LIVE'}catch(e){
   // A temporary feed failure should never wipe the aircraft already on the map.
