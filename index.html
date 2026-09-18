@@ -402,8 +402,18 @@ function choose(items){if(!items.length)return null;const airborne=items.filter(
 const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);L.control.zoom({position:'bottomright'}).addTo(map);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);
 function render(items){const seen=new Set();items.forEach(x=>{seen.add(x.icao);const feat=x.icao===S.featured;let m=S.markers.get(x.icao);if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat)}).addTo(map);S.markers.set(x.icao,m)}else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat))}m.bindPopup(`<b>${x.callsign||x.icao.toUpperCase()}</b><br>${x.d.toFixed(1)} km · ${x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft'} · ${x.speed==null?'—':Math.round(x.speed*1.94384)+' kt'}`);let pts=S.tracks.get(x.icao)||[];const last=pts[pts.length-1];if(!last||hav(last[0],last[1],x.lat,x.lon)>0.08){pts=[...pts,[x.lat,x.lon]].slice(-15);S.tracks.set(x.icao,pts)}let line=S.trails.get(x.icao);if(!line){line=L.polyline(pts,{weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'}).addTo(map);S.trails.set(x.icao,line)}else{line.setLatLngs(pts);line.setStyle({weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'})}});S.markers.forEach((m,id)=>{if(!seen.has(id)){map.removeLayer(m);S.markers.delete(id)}});S.trails.forEach((line,id)=>{if(!seen.has(id)){map.removeLayer(line);S.trails.delete(id)}})}
 const SKY_AROUND_ME_NETLIFY='https://magenta-syrniki-2f4749.netlify.app/.netlify/functions/adsb';
+const AIRPLANES_LIVE_BASE='https://api.airplanes.live/v2/point';
+const INTELSKY_FALLBACK='https://sky-around-me-api.adrian-simmonds.workers.dev/?source=intelsky';
+let adsbPrimaryCooldownUntil=0;
+let lastSuccessfulFeed=null;
 
-function updateAdsbDiagnostics(info={}){ /* diagnostics removed from the production UI */ }
+function updateAdsbDiagnostics(info={}){ /* diagnostics intentionally hidden in production */ }
+
+async function fetchJson(url,label){
+  const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+  if(!r.ok){const e=new Error(label+' HTTP '+r.status);e.status=r.status;e.url=url;throw e}
+  return await r.json();
+}
 
 
 function isCommercialAircraft(a){
@@ -481,27 +491,63 @@ function isCommercialAircraft(a){
 
 async function fetchAircraft(){
   const distKm=Math.min(250,Math.max(1,Number(S.rangeKm)||100));
-  const url=`${SKY_AROUND_ME_NETLIFY}?lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${encodeURIComponent(distKm)}`;
-  const started=new Date();
+  const radiusNm=Math.min(135,Math.max(5,distKm/1.852));
+  const adsbUrl=`${SKY_AROUND_ME_NETLIFY}?lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${encodeURIComponent(distKm)}`;
+
+  // ADSB.lol is the preferred source, but its rate limits are dynamic.
+  // When it returns 429, back off for two minutes instead of immediately
+  // hammering it again on every poll.
+  if(Date.now()>=adsbPrimaryCooldownUntil){
+    try{
+      const j=await fetchJson(adsbUrl,'ADSB.lol via Netlify');
+      if(j&&j.error)throw new Error(j.message||j.error);
+      adsbPrimaryCooldownUntil=0;
+      lastSuccessfulFeed=j;
+      return {...j,provider:'ADSB.LOL · NETLIFY PROXY',feedSource:'ADSB.LOL'};
+    }catch(e){
+      if(Number(e.status)===429){
+        adsbPrimaryCooldownUntil=Date.now()+120000;
+        console.warn('ADSB.lol rate limited; backing off for 2 minutes and using fallback feed.',e);
+      }else{
+        console.warn('ADSB.lol unavailable; using fallback feed.',e);
+      }
+    }
+  }
+
+  // Airplanes.live is the first fallback and uses the same /point response
+  // shape, so the existing normalisation/filtering can be reused.
   try{
-    const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
-    updateAdsbDiagnostics({mode:'PROXIED · NETLIFY',url,time:started.toLocaleString(),status:r.status,statusText:r.statusText,result:r.ok?'Netlify proxy → ADSB.lol succeeded':'Netlify proxy returned HTTP '+r.status,ok:r.ok});
-    if(!r.ok){const e=new Error('ADSB.lol via Netlify HTTP '+r.status);e.status=r.status;e.url=url;throw e}
-    const j=await r.json();
-    if(j&&j.error)throw new Error(j.message||j.error);
-    const count=Array.isArray(j.ac)?j.ac.length:0;
-    updateAdsbDiagnostics({mode:'PROXIED · NETLIFY',url,time:started.toLocaleString(),status:r.status,statusText:r.statusText,result:`Netlify proxy → ADSB.lol · ${count} aircraft returned`,ok:true});
-    return {...j,provider:'ADSB.LOL · NETLIFY PROXY',feedSource:'ADSB.LOL'};
+    const j=await fetchJson(`${AIRPLANES_LIVE_BASE}/${S.lat}/${S.lon}/${radiusNm.toFixed(1)}`,'Airplanes.live');
+    lastSuccessfulFeed=j;
+    return {...j,provider:'Airplanes.live fallback',feedSource:'AIRPLANES.LIVE'};
   }catch(e){
-    updateAdsbDiagnostics({mode:'PROXIED · NETLIFY',url,time:started.toLocaleString(),status:e.status||'ERROR',result:e.message||'Request failed',ok:false});
+    console.warn('Airplanes.live unavailable; using IntelSky fallback.',e);
+  }
+
+  // IntelSky is the final fallback we already have behind the Cloudflare Worker.
+  try{
+    const j=await fetchJson(INTELSKY_FALLBACK,'IntelSky');
+    lastSuccessfulFeed=j;
+    return {...j,provider:'IntelSky fallback',feedSource:'INTELSKY'};
+  }catch(e){
+    console.warn('All live feeds unavailable.',e);
     throw e;
   }
 }
 
+
 async function poll(){if(!document.getElementById('map'))return;$('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';try{const j=await fetchAircraft();const raw=(Array.isArray(j.ac)?j.ac:[]).filter(isCommercialAircraft);const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));const items=allItems.filter(x=>x.d<=S.rangeKm);S.lastAllItems=allItems;S.lastItems=items;renderHomeWatch(items);const f=choose(items);S.featured=f?.icao||null;render(items);if(f){renderLiveHome(f);$('status').textContent=j.provider||'LIVE · COMMERCIAL · ADSB.LOL';$('call').textContent=f.callsign||f.icao.toUpperCase();$('detail').textContent=(f.desc||f.type||'Airborne aircraft')+(f.registration?' · '+f.registration:'')+' · ICAO '+f.icao.toUpperCase();$('dist').textContent=f.d.toFixed(1)+' km';$('alt').textContent=f.alt==null?'—':Math.round(f.alt*3.28084).toLocaleString()+' ft';$('speed').textContent=f.speed==null?'—':Math.round(f.speed*1.94384)+' kt';$('heading').textContent=f.heading==null?'—':Math.round(f.heading)+'°';$('pathInfo').textContent='Live trail shows the recent track of each aircraft. Data source: ADSB.lol via Netlify proxy · commercial aircraft only.'}else{renderScheduledHome();$('status').textContent='NO AIRCRAFT NEARBY';$('call').textContent='—';$('detail').textContent='No matching aircraft within the selected airspace. Home screen has returned to your next scheduled flight.';$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';$('pathInfo').textContent='No matching local traffic right now. Your scheduled flight remains the fallback. Data source: ADSB.lol via Netlify proxy · commercial aircraft only.'}$('countPill').textContent=`${items.length} aircraft in range · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
 
-$('mapStatus').textContent='LIVE'}catch(e){$('mapStatus').textContent='DATA ERROR';$('status').textContent='LIVE DATA ERROR';$('detail').textContent=e.message;$('pathInfo').textContent='ADSB.lol commercial feed error: '+(e.message||'Unknown network error');console.error('Sky Around Me',e)}}
+$('mapStatus').textContent='LIVE'}catch(e){
+  // A temporary feed failure should never wipe the aircraft already on the map.
+  // Keep the last successful positions/details and quietly retry on the next poll.
+  $('mapStatus').textContent='RETRYING';
+  $('status').textContent=S.lastItems&&S.lastItems.length?'LIVE · UPDATING':'CONNECTING TO LIVE AIRSPACE';
+  $('detail').textContent=S.lastItems&&S.lastItems.length?'Live positions retained while the data feed reconnects.':'Waiting for a live aircraft feed…';
+  $('pathInfo').textContent='Live data temporarily unavailable. Retrying automatically.';
+  console.warn('Sky Around Me live feed',e);
+}}
 function refreshHomeDisplay(){const f=choose(S.lastItems||[]);if(f)renderLiveHome(f);else renderScheduledHome();renderHomeWatch(S.lastItems||[])}
-updateSkySettingsUI();renderScheduledHome();renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();refreshHomeDisplay()},1000);S.timer=setInterval(poll,30000);
+updateSkySettingsUI();renderScheduledHome();renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();refreshHomeDisplay()},1000);S.timer=setInterval(poll,45000);
 </script>
 </body></html>
