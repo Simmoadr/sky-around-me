@@ -333,7 +333,7 @@ const airportCoords={
 };
 function routePoint(code){const p=airportCoords[String(code||'').toUpperCase()];return p?[p[0],p[1]]:null}
 function greatCirclePoint(a,b,t){const r=Math.PI/180,A=[a[0]*r,a[1]*r],B=[b[0]*r,b[1]*r];const va=[Math.cos(A[0])*Math.cos(A[1]),Math.cos(A[0])*Math.sin(A[1]),Math.sin(A[0])],vb=[Math.cos(B[0])*Math.cos(B[1]),Math.cos(B[0])*Math.sin(B[1]),Math.sin(B[0])];const dot=Math.max(-1,Math.min(1,va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2])),d=Math.acos(dot);if(d<1e-8)return a.slice();const sd=Math.sin(d);const x=[(Math.sin((1-t)*d)/sd)*va[0]+(Math.sin(t*d)/sd)*vb[0],(Math.sin((1-t)*d)/sd)*va[1]+(Math.sin(t*d)/sd)*vb[1],(Math.sin((1-t)*d)/sd)*va[2]+(Math.sin(t*d)/sd)*vb[2]];return [Math.atan2(x[2],Math.hypot(x[0],x[1]))/r,Math.atan2(x[1],x[0])/r]}
-function routeProgress(f,live){if(live&&f?.fromCode&&f?.toCode){const a=routePoint(f.fromCode),b=routePoint(f.toCode);if(a&&b&&live.lat!=null&&live.lon!=null){const done=hav(a[0],a[1],live.lat,live.lon),remaining=hav(live.lat,live.lon,b[0],b[1]);const total=done+remaining;return total?Math.max(0,Math.min(1,done/total)):0}}if(f?.departureUtc&&f?.date){const d=new Date(f.departureUtc),now=new Date();const duration=10*60*60*1000;return Math.max(0,Math.min(1,(now-d)/duration))}return 0}
+function routeProgress(f,live){if(!f||!live||live.lat==null||live.lon==null)return 0;const a=f.fromLat!=null?[f.fromLat,f.fromLon]:routePoint(f.fromCode),b=f.toLat!=null?[f.toLat,f.toLon]:routePoint(f.toCode);if(!a||!b)return 0;const done=hav(a[0],a[1],live.lat,live.lon),remaining=hav(live.lat,live.lon,b[0],b[1]);const total=done+remaining;return total?Math.max(0,Math.min(1,done/total)):0}
 function planeSvg(){return '<div class="route-plane"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 L59 41 L92 54 L92 62 L59 58 L59 91 L70 98 L70 103 L50 96 L30 103 L30 98 L41 91 L41 58 L8 62 L8 54 L41 41 Z" fill="#fff" stroke="#111" stroke-width="4" stroke-linejoin="round"/></svg></div>'}
 function renderScheduledHome(){
  const next=getNextWatchedFlight();
@@ -356,29 +356,75 @@ const aircraftModels={A318:'Airbus A318',A319:'Airbus A319',A320:'Airbus A320',A
 function airlineFromCallsign(cs){const code=normalFlightCode(cs).match(/^([A-Z]{2,3})/);return code?(airlineNames[code[1]]||''):''}
 function aircraftFullName(x){const t=String(x?.type||'').toUpperCase();return aircraftModels[t]||x?.desc||x?.type||'Aircraft model unavailable'}
 function liveJourneyFor(x){const f=getNextWatchedFlight();if(f&&watchedLiveMatch(f,[x]))return f;return x?.liveRoute||null}
-function renderLiveHome(x){
- const journey=liveJourneyFor(x),airline=airlineFromCallsign(x.callsign)||x.operator||'Airline unavailable',model=aircraftFullName(x);
- setHeroAircraft(x,journey);$('homeEyebrow').textContent='NEAREST AIRCRAFT';$('homeTitle').textContent=(x.callsign||x.icao.toUpperCase()).toUpperCase();$('homeStatus').textContent='LIVE';$('operator').textContent=airline.toUpperCase();$('flightName').textContent=x.callsign||x.icao.toUpperCase();$('aircraftType').textContent=model;$('route').textContent=journey?(journey.fromCode+' → '+journey.toCode):'LIVE AIRCRAFT';$('schedule').textContent=journey?airline.toUpperCase()+' · '+model.toUpperCase():S.locationName.toUpperCase()+' · '+x.d.toFixed(1)+' KM AWAY';
- $('mLabel1').textContent='DISTANCE';$('m1').textContent=x.d.toFixed(1)+' km';$('m1s').textContent='from '+S.locationName;$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
- const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode||'—';$('journeyFromName').textContent=journey.from||'—';$('journeyTo').textContent=journey.toCode||'—';$('journeyToName').textContent=journey.to||'—';$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent='ROUTE LOOKUP';$('journeyTo').textContent='—';$('journeyToName').textContent='ROUTE LOOKUP';$('journeyPercent').textContent='ROUTE PENDING';$('flightProgress').style.width='0%'}}
- if(!journey && x?.callsign) enrichLiveRoute(x);
+function routeStatusLabel(route){
+  if(!route) return 'ROUTE PENDING';
+  if(route.status==='STALE') return 'ROUTE CACHED';
+  if(route.status==='NOT_FOUND') return 'ROUTE UNAVAILABLE';
+  if(route.status==='TIMEOUT'||route.status==='ERROR') return 'ROUTE TEMPORARILY UNAVAILABLE';
+  return 'ROUTE READY';
 }
+function routeAirport(code,name){
+  const c=String(code||'').toUpperCase();
+  const point=routePoint(c);
+  const known={LHR:'London Heathrow',JFK:'New York JFK',SIN:'Singapore Changi',BRS:'Bristol',BZR:'Béziers',CDG:'Paris Charles de Gaulle',AMS:'Amsterdam Schiphol',FRA:'Frankfurt',MUC:'Munich',CLT:'Charlotte',RDU:'Raleigh-Durham',LGA:'New York LaGuardia',EWR:'Newark',MEX:'Mexico City',SAF:'Santa Fe',SFO:'San Francisco',LAX:'Los Angeles',ORD:'Chicago O’Hare',DFW:'Dallas/Fort Worth',DXB:'Dubai',DOH:'Doha',HND:'Tokyo Haneda',NRT:'Tokyo Narita',SYD:'Sydney'};
+  return {code:c,name:String(name||known[c]||c),lat:point?.[0]??null,lon:point?.[1]??null};
+}
+function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
+  if(!raw || !raw.fromCode || !raw.toCode) return {status:'NOT_FOUND',flight,date,source,resolvedAt:new Date().toISOString()};
+  const from=routeAirport(raw.fromCode,raw.from),to=routeAirport(raw.toCode,raw.to);
+  return {status:'FOUND',flight,date,from,to,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:raw.departureUtc||'',arrivalUtc:raw.arrivalUtc||'',departureTime:raw.departureTime||'',source,resolvedAt:new Date().toISOString()};
+}
+function liveJourneyFor(x){
+ const f=getNextWatchedFlight();
+ if(f&&watchedLiveMatch(f,[x])) return f;
+ return x?.liveRoute||null;
+}
+function renderLiveHome(x){
+ const journey=liveJourneyFor(x),airline=airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x);
+ setHeroAircraft(x,journey);$('homeEyebrow').textContent='NEAREST AIRCRAFT';$('homeTitle').textContent=(x.callsign||x.icao.toUpperCase()).toUpperCase();$('homeStatus').textContent='LIVE';$('operator').textContent=airline.toUpperCase();$('flightName').textContent=x.callsign||x.icao.toUpperCase();$('aircraftType').textContent=model;$('route').textContent=journey&&journey.fromCode&&journey.toCode?(journey.fromCode+' → '+journey.toCode):'LIVE AIRCRAFT';$('schedule').textContent=journey&&journey.fromCode&&journey.toCode?airline.toUpperCase()+' · '+model.toUpperCase():S.locationName.toUpperCase()+' · '+x.d.toFixed(1)+' KM AWAY';
+ $('mLabel1').textContent='DISTANCE';$('m1').textContent=x.d.toFixed(1)+' km';$('m1s').textContent='from '+S.locationName;$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
+ const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=journey.from||journey.fromName||'—';$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=journey.to||journey.toName||'—';$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%'}}
+ if(!journey&&x?.callsign) enrichLiveRoute(x);
+}
+const ROUTE_CACHE_TTL=30*60*1000;
+const ROUTE_FAILURE_TTL=5*60*1000;
+const ROUTE_TIMEOUT=5000;
 const liveRouteCache=new Map();
-const liveRoutePending=new Set();
+const liveRoutePending=new Map();
 function utcDateKey(){return new Date().toISOString().slice(0,10)}
+function routeCacheKey(flight,date){return normalFlightCode(flight)+'|'+date}
+function loadRouteCache(){
+ try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');const now=Date.now();Object.entries(raw).forEach(([k,v])=>{if(v&&v.cachedAt&&now-v.cachedAt<ROUTE_CACHE_TTL){liveRouteCache.set(k,v.route||null)}})}catch(e){console.debug('Route cache load failed',e)}
+}
+function persistRouteCache(){
+ try{const out={};liveRouteCache.forEach((route,key)=>{out[key]={route,cachedAt:Date.now()}});localStorage.setItem('skyAroundMeRouteCache',JSON.stringify(out))}catch(e){/* cache is optional */}
+}
+function getCachedRoute(key){
+ try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');const v=raw[key];if(!v||!v.cachedAt)return undefined;const age=Date.now()-v.cachedAt;const ttl=v.route?.status==='FOUND'||v.route?.status==='STALE'?ROUTE_CACHE_TTL:ROUTE_FAILURE_TTL;if(age>ttl)return undefined;return v.route||null}catch(e){return undefined}
+}
+function putCachedRoute(key,route){liveRouteCache.set(key,route);try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');raw[key]={route,cachedAt:Date.now()};localStorage.setItem('skyAroundMeRouteCache',JSON.stringify(raw))}catch(e){/* optional */}}
 async function enrichLiveRoute(x){
  const cs=normalFlightCode(x?.callsign);if(!cs)return;
- const key=cs+'|'+utcDateKey();if(liveRouteCache.has(key)){x.liveRoute=liveRouteCache.get(key)||null;return}
- if(liveRoutePending.has(key))return;
- liveRoutePending.add(key);
- try{
-   const route=await lookupFlightRoute(cs,utcDateKey());
-   liveRouteCache.set(key,route);x.liveRoute=route;
-   if(S.featured===x.icao)renderLiveHome(x);
- }catch(e){liveRouteCache.set(key,null);console.debug('Live route lookup unavailable',cs,e.message||e)}
- finally{liveRoutePending.delete(key)}
+ const date=utcDateKey(),key=routeCacheKey(cs,date);
+ if(liveRouteCache.has(key)){x.liveRoute=liveRouteCache.get(key);return}
+ const stored=getCachedRoute(key);if(stored!==undefined){liveRouteCache.set(key,stored);x.liveRoute=stored;return}
+ if(liveRoutePending.has(key))return liveRoutePending.get(key);
+ const task=(async()=>{
+   try{
+     const route=await lookupFlightRoute(cs,date);
+     putCachedRoute(key,route);x.liveRoute=route;
+     if(S.featured===x.icao)renderLiveHome(x);
+     return route;
+   }catch(e){
+     const status=e?.name==='AbortError'?'TIMEOUT':(e?.status?'ERROR':'NOT_FOUND');
+     const route={status,flight:cs,date,source:'FlightRouteLookup',error:e?.message||String(e),resolvedAt:new Date().toISOString()};
+     putCachedRoute(key,route);x.liveRoute=route;
+     if(S.featured===x.icao)renderLiveHome(x);
+     return route;
+   }finally{liveRoutePending.delete(key)}
+ })();
+ liveRoutePending.set(key,task);return task;
 }
-function normalFlightCode(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'')}
 const airlineIcao={FR:'RYR',SQ:'SIA',LH:'DLH',UA:'UAL',DL:'DAL',BA:'BAW',AF:'AFR',KL:'KLM',EI:'EIN',EK:'UAE',QR:'QTR',AA:'AAL',VS:'VIR',LX:'SWR',IB:'IBE',TP:'TAP'};
 function watchedLiveMatch(f,items){const target=normalFlightCode(f.flight);if(!target)return null;const m=target.match(/^([A-Z0-9]{2,3})(\d+[A-Z]?)$/);if(!m)return items.find(x=>normalFlightCode(x.callsign)===target)||null;const code=m[1],num=m[2],icao=airlineIcao[code]||code;return items.find(x=>{const c=normalFlightCode(x.callsign);return c===target||c===icao+num||c.endsWith(num)&&c.length<=7})||null}
 function renderHomeWatch(items){
@@ -397,14 +443,18 @@ function renderWatchlist(){const el=$('watchList');if(!watchlist.length){el.inne
 function monthShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/^0/,'')}
 async function lookupFlightRoute(flight,date){
  const url='https://r.jina.ai/http://www.flightradar24.com/data/flights/'+encodeURIComponent(flight.toLowerCase());
- const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('Flight lookup HTTP '+r.status);const text=await r.text();
- const target=monthShort(date);const esc=target.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
- const routeRe=new RegExp(esc+'[^\\n]{0,700}?FROM\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)\\s+TO\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)','i');
- const m=text.match(routeRe);if(!m)throw new Error('No scheduled route found for '+target);
- const before=text.slice(Math.max(0,m.index-120),m.index+120);const timeMatch=(before+' '+m[0]).match(/Scheduled\\s+STD\\s+(\\d{2}:\\d{2})/i);
- let departureUtc='';let departureTime='';
- if(timeMatch){departureTime=timeMatch[1]+' UTC';departureUtc=date+'T'+timeMatch[1]+':00Z';}
- return {from:m[1].trim(),fromCode:m[2].toUpperCase(),to:m[3].trim(),toCode:m[4].toUpperCase(),departureUtc,departureTime};
+ const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
+ try{
+   const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'text/plain'}});
+   if(!r.ok){const e=new Error('Flight lookup HTTP '+r.status);e.status=r.status;throw e}
+   const text=await r.text();
+   const target=monthShort(date);const esc=target.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+   const routeRe=new RegExp(esc+'[^\\n]{0,700}?FROM\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)\\s+TO\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)','i');
+   const m=text.match(routeRe);if(!m) return normaliseRoute(null,flight,date);
+   const before=text.slice(Math.max(0,m.index-160),m.index+120);const timeMatch=(before+' '+m[0]).match(/Scheduled\\s+STD\\s+(\\d{2}:\\d{2})/i);
+   let departureUtc='',departureTime='';if(timeMatch){departureTime=timeMatch[1]+' UTC';departureUtc=date+'T'+timeMatch[1]+':00Z';}
+   return normaliseRoute({from:m[1].trim(),fromCode:m[2],to:m[3].trim(),toCode:m[4],departureUtc,departureTime},flight,date);
+ }finally{clearTimeout(timer)}
 }
 const routeCache={
  'FR6010|2026-09-18':{from:'Beziers',fromCode:'BZR',to:'Bristol',toCode:'BRS',departureUtc:'2026-09-18T07:55:00Z',departureTime:'07:55 UTC'}
