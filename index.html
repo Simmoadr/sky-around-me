@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Sky Around Me</title>
-<!-- Sky Around Me v10: registration-aware flight identity + smooth route hero -->
+<!-- Sky Around Me v18: registration-aware flight identity + smooth route hero -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--bg:#eeeee9;--paper:#f8f8f4;--ink:#111416;--muted:#737878;--line:#d9dbd6;--accent:#176f8b;--accent2:#dcecf0;--live:#197b55;--nav:#e3e5e0;--shadow:0 24px 70px rgba(23,30,30,.12)}
@@ -271,7 +271,7 @@
 .aircraft-stage{position:absolute;inset:0;left:0;right:0;top:0;height:100%;display:block}
 .aircraft-stage-art{width:100%;height:100%;display:block}
 .hero-flight-map{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;background:#eaf0ee;z-index:1;overflow:hidden}
-.hero-flight-map .leaflet-tile-pane{filter:grayscale(1) saturate(.30) brightness(1.12) contrast(.82);opacity:.72}
+.hero-flight-map .leaflet-tile-pane{filter:grayscale(1) saturate(.18) brightness(1.12) contrast(.82);opacity:.72}
 .hero-flight-map .leaflet-control-attribution{font-size:7px;background:rgba(248,248,244,.58)!important;color:#6e7777;padding:1px 4px}
 .hero-flight-map .leaflet-control-zoom{margin:0 16px 16px 0!important;border:0!important;box-shadow:0 7px 18px rgba(23,30,30,.10)!important}
 .hero-flight-map .leaflet-control-zoom a{width:32px!important;height:32px!important;line-height:32px!important;border:0!important;background:rgba(255,255,255,.92)!important;color:#202626!important;font-size:18px!important}
@@ -461,16 +461,24 @@ function heroAircraftIcon(angle){
 }
 function heroRoutePoints(a,b,count=80){const pts=[];for(let i=0;i<=count;i++)pts.push(greatCirclePoint(a,b,i/count));return pts}
 function heroBearing(a,b){const r=Math.PI/180;const y=Math.sin((b[1]-a[1])*r)*Math.cos(b[0]*r);const x=Math.cos(a[0]*r)*Math.sin(b[0]*r)-Math.sin(a[0]*r)*Math.cos(b[0]*r)*Math.cos((b[1]-a[1])*r);return (Math.atan2(y,x)/r+360)%360}
+// Featured uses the same interactive Leaflet map behaviour as Live Sky. Keep the user's zoom/pan between live polling refreshes.
 function renderHeroFlightMap(live,watch){
  const host=$('heroAircraft');if(!host)return;
- host.innerHTML='<div id="heroFlightMap" class="hero-flight-map"></div><div class="hero-map-brand" id="heroMapBrand"></div><div class="hero-map-status" id="heroMapStatus"></div>';
- host.style.position='relative';host.style.width='100%';host.style.height='100%';
- const mapEl=$('heroFlightMap');
- if(mapEl){mapEl.style.position='absolute';mapEl.style.inset='0';mapEl.style.width='100%';mapEl.style.height='100%';}
- if(heroFlightMap){try{heroFlightMap.remove()}catch(e){}heroFlightMap=null;heroFlightLayer=null}
- heroFlightMap=L.map(mapEl,{zoomControl:true,attributionControl:true,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,dragging:false,touchZoom:false,keyboard:false,zoomControl:false,minZoom:2,maxZoom:10});
- heroFlightLayer=L.layerGroup().addTo(heroFlightMap);
- L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(heroFlightMap);
+ const mapKey=[live?.icao||live?.hex||live?.registration||'',watch?.fromCode||'',watch?.toCode||''].join('|');
+ const canReuse=!!(heroFlightMap&&heroFlightLayer&&document.getElementById('heroFlightMap')&&heroFlightMap._skyMapKey===mapKey);
+ if(!canReuse){
+  host.innerHTML='<div id="heroFlightMap" class="hero-flight-map"></div><div class="hero-map-brand" id="heroMapBrand"></div><div class="hero-map-status" id="heroMapStatus"></div>';
+  host.style.position='relative';host.style.width='100%';host.style.height='100%';
+  const mapEl=$('heroFlightMap');
+  if(mapEl){mapEl.style.position='absolute';mapEl.style.inset='0';mapEl.style.width='100%';mapEl.style.height='100%';}
+  if(heroFlightMap){try{heroFlightMap.remove()}catch(e){}heroFlightMap=null;heroFlightLayer=null}
+  heroFlightMap=L.map(mapEl,{zoomControl:false,attributionControl:true,scrollWheelZoom:true,doubleClickZoom:true,boxZoom:false,dragging:true,touchZoom:true,keyboard:true,minZoom:2,maxZoom:18,zoomDelta:1,zoomSnap:1});
+  heroFlightMap._skyMapKey=mapKey;
+  heroFlightLayer=L.layerGroup().addTo(heroFlightMap);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(heroFlightMap);
+ }else{
+  heroFlightLayer.clearLayers();
+ }
  const airline=live?.airlineName||airlineFromCallsign(live?.callsign)||live?.operator||'LIVE AIRCRAFT';
  const model=aircraftFullName(live);
  const flight=(live?.flightNumber||live?.callsign||live?.icao||'').toUpperCase();
@@ -507,11 +515,13 @@ function renderHeroFlightMap(live,watch){
    const nextPoint=greatCirclePoint(a,b,Math.min(1,progress+.015));
    const angle=heroBearing(pathPoint,progress<.99?nextPoint:b);
    L.marker(pathPoint,{icon:heroAircraftIcon(angle),interactive:false}).addTo(heroFlightLayer);
-   const bounds=L.latLngBounds([a,b,pathPoint]);heroFlightMap.fitBounds(bounds,{paddingTopLeft:[90,55],paddingBottomRight:[90,55],maxZoom:6.2});
+   if(!canReuse){
+    const bounds=L.latLngBounds([a,b,pathPoint]);heroFlightMap.fitBounds(bounds,{paddingTopLeft:[90,55],paddingBottomRight:[90,55],maxZoom:6.2});
+   }
  }else{
    L.circleMarker(pos,{radius:8,color:'#176f8b',weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
    L.marker(pos,{icon:heroAircraftIcon(live.heading),interactive:false}).addTo(heroFlightLayer);
-   heroFlightMap.setView(pos,7);
+   if(!canReuse)heroFlightMap.setView(pos,7);
  }
  setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),60);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),300);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),900);
 }
@@ -571,21 +581,25 @@ function liveJourneyFor(x){
  if(f&&watchedLiveMatch(f,[x])) return f;
  return x?.liveRoute||null;
 }
-async function fetchFreeFlightIdentity(callsign){
- const cs=normalFlightCode(callsign);if(!cs)return null;
- const url=`${SKY_AROUND_ME_NETLIFY}?lookup=callsign&value=${encodeURIComponent(cs)}`;
+async function fetchFreeFlightIdentity(callsign,registration){
+ const cs=normalFlightCode(callsign);const reg=String(registration||'').trim().toUpperCase();if(!cs&&!reg)return null;
+ const params=reg?`lookup=identity&callsign=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}`:`lookup=callsign&value=${encodeURIComponent(cs)}`;
+ const url=`${SKY_AROUND_ME_NETLIFY}?${params}`;
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
  try{
   const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
   if(!r.ok){const e=new Error('Free flight lookup HTTP '+r.status);e.status=r.status;throw e}
   const j=await r.json();
   const fr=j?.flightroute||null;
-  if(!fr)return null;
-  const airline=fr.airline||{};
-  const flightNumber=normalFlightCode(fr.callsign_iata||'');
+  if(!fr&&!j?.flightNumber)return null;
+  const airline=fr?.airline||{};
+  // Prefer the exact active passenger flight resolved from the aircraft's
+  // registration. ADSBdb's callsign_iata can be the radio callsign-derived
+  // value (e.g. FR82FQ), which is NOT necessarily the scheduled flight.
+  const flightNumber=normalFlightCode(j?.flightNumber||fr?.callsign_iata||'');
   const airlineCode=normalFlightCode(airline.iata||'')||'';
   const airlineName=airline.name||'';
-  const origin=fr.origin||{},destination=fr.destination||{};
+  const origin=fr?.origin||{},destination=fr?.destination||{};
   const fromCode=String(origin.iata_code||'').toUpperCase();
   const toCode=String(destination.iata_code||'').toUpperCase();
   const route=(fromCode&&toCode)?{
@@ -596,10 +610,10 @@ async function fetchFreeFlightIdentity(callsign){
    toLat:destination.latitude,toLon:destination.longitude,
    flightNumber,airlineCode,airlineName,source:'ADSBdb'
   }:null;
-  return {status:(flightNumber||route)?'FOUND':'UNVERIFIED',flightNumber,airlineCode,airlineName,route,source:'ADSBdb'};
+  return {status:(flightNumber||route)?'FOUND':'UNVERIFIED',flightNumber,airlineCode,airlineName,route,source:j?._skyProvider||'ADSBdb'};
  }finally{clearTimeout(timer)}
 }
-const IDENTITY_CACHE_VERSION='identity-free-v1';
+const IDENTITY_CACHE_VERSION='identity-free-v2';
 function identityCacheKey(x){return IDENTITY_CACHE_VERSION+'|'+normalFlightCode(x?.callsign)+'|'+normalFlightCode(x?.registration||x?.r||'')}
 function applyIdentity(x,id){if(!id)return;x.flightNumber=id.flightNumber||x.flightNumber||'';x.airlineCode=id.airlineCode||x.airlineCode||'';x.airlineName=id.airlineName||x.airlineName||x.operator||'Live aircraft';x.identityStatus=id.status||'UNVERIFIED';if(id.route)x.liveRoute=normaliseRoute({...id.route,flightNumber:id.flightNumber,airlineCode:id.airlineCode,airlineName:id.airlineName},x.callsign,utcDateKey(),'ADSBdb')}
 async function lookupFlightIdentity(x){
@@ -613,7 +627,7 @@ async function lookupFlightIdentity(x){
  if(S.identityPending.has(key))return S.identityPending.get(key);
  const task=(async()=>{
   try{
-   const id=await fetchFreeFlightIdentity(cs)||{status:'UNVERIFIED',flightNumber:'',airlineCode:'',airlineName:x.operator||'Live aircraft',route:null};
+   const id=await fetchFreeFlightIdentity(cs,x?.registration||x?.r||'')||{status:'UNVERIFIED',flightNumber:'',airlineCode:'',airlineName:x.operator||'Live aircraft',route:null};
    id.resolvedAt=new Date().toISOString();
    S.identityCache.set(key,id);applyIdentity(x,id);
    if(S.featured===x.icao)renderLiveHome(x);
