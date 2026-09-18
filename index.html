@@ -1062,16 +1062,49 @@ function isCommercialAircraft(a){
 
 async function fetchAircraft(){
   const distKm=Math.min(250,Math.max(1,Number(S.rangeKm)||100));
-  const adsbUrl=`${SKY_AROUND_ME_NETLIFY}?lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${encodeURIComponent(distKm)}`;
+  const distNm=Math.min(250,Math.max(1,distKm/1.852));
+  const lat=encodeURIComponent(S.lat),lon=encodeURIComponent(S.lon);
+  const errors=[];
+
+  // Primary: our Netlify proxy. This keeps the normal architecture and lets
+  // the server-side provider selection do the heavy lifting.
   try{
-    const j=await fetchJson(adsbUrl,'Live aircraft proxy');
+    const j=await fetchJson(`${SKY_AROUND_ME_NETLIFY}?lat=${lat}&lon=${lon}&dist=${encodeURIComponent(distKm)}`,'Live aircraft proxy');
     if(j&&j.error)throw new Error(j.message||j.error);
     lastSuccessfulFeed=j;
     return {...j,provider:j._skyProvider||'LIVE AIRSPACE',feedSource:j._skyProvider||'LIVE'};
   }catch(e){
-    // Expected transient upstream throttling; do not spam the browser console.
-    throw e;
+    errors.push('Netlify: '+(e?.message||String(e)));
   }
+
+  // Fallback: Airplanes.live can be queried directly from the browser.
+  // Its point endpoint uses nautical miles, not kilometres.
+  try{
+    const j=await fetchJson(`${AIRPLANES_LIVE_BASE}/${lat}/${lon}/${encodeURIComponent(distNm.toFixed(1))}`,'Airplanes.live fallback');
+    if(j&&j.error)throw new Error(j.message||j.error);
+    const normalised={...j,_skyProvider:'AIRPLANES.LIVE',_skyFallback:true};
+    lastSuccessfulFeed=normalised;
+    return { ...normalised, provider:'AIRPLANES.LIVE', feedSource:'AIRPLANES.LIVE' };
+  }catch(e){
+    errors.push('Airplanes.live: '+(e?.message||String(e)));
+  }
+
+  // Final fallback: ADSB.fi exposes the same readsb-style aircraft fields.
+  try{
+    const j=await fetchJson(`https://opendata.adsb.fi/api/v2/lat/${lat}/lon/${lon}/dist/${encodeURIComponent(distNm.toFixed(1))}`,'ADSB.fi fallback');
+    if(j&&j.error)throw new Error(j.message||j.error);
+    const ac=Array.isArray(j?.ac)?j.ac:(Array.isArray(j?.aircraft)?j.aircraft:[]);
+    if(!ac.length)throw new Error('No aircraft returned');
+    const normalised={...j,ac,_skyProvider:'ADSB.FI',_skyFallback:true};
+    lastSuccessfulFeed=normalised;
+    return { ...normalised, provider:'ADSB.FI', feedSource:'ADSB.FI' };
+  }catch(e){
+    errors.push('ADSB.fi: '+(e?.message||String(e)));
+  }
+
+  const err=new Error('All live aircraft feeds failed: '+errors.join(' | '));
+  err.feedErrors=errors;
+  throw err;
 }
 
 
