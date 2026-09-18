@@ -1037,9 +1037,14 @@ async function fetchAircraft(){
 
 
 async function poll(){if(!document.getElementById('map'))return;$('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';try{const j=await fetchAircraft();const raw=(Array.isArray(j.ac)?j.ac:[]).filter(isCommercialAircraft);let allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));
- const nextWatch=getNextWatchedFlight();
- if(nextWatch){
-   const watchedLive=await fetchWatchedLive(nextWatch);
+ // Check every active watched flight, not only the next scheduled one.
+ // A later flight (e.g. SQ24) must not hide an earlier flight that is already
+ // airborne (e.g. FR1183/U22777). The previous build only performed the live
+ // lookup for getNextWatchedFlight(), so the bottom card could incorrectly stay
+ // on the later scheduled flight.
+ const activeWatches=watchlist.filter(w=>flightState(w)!=='COMPLETED');
+ for(const watchedFlight of activeWatches){
+   const watchedLive=await fetchWatchedLive(watchedFlight);
    for(const wx of watchedLive){if(!allItems.some(x=>x.icao===wx.icao))allItems.push(wx);else allItems=allItems.map(x=>x.icao===wx.icao?{...x,...wx}:x)}
  }
  const items=allItems.filter(x=>x.d<=S.rangeKm);S.lastAllItems=allItems;S.lastItems=items;renderHomeWatch(allItems);const f=choose(items);S.featured=f?.icao||null;render(items);watchlist.filter(w=>flightState(w)!=='COMPLETED').forEach(w=>{const candidates=allItems.filter(x=>{const p=normalFlightCode(w.flight||w.flightNumber),c=normalFlightCode(x.callsign),fn=normalFlightCode(x.flightNumber);return p&&((fn===p)||(c===p)||(c==='RYR'+p.replace(/^FR/,'')&&p.startsWith('FR'))||(c==='EZY'+p.replace(/^U2?/,'')&&p.match(/^U2?\d/))||(c.startsWith('BAW')&&p.startsWith('BA'))||(c.startsWith('SIA')&&p.startsWith('SQ'))||(c.startsWith('UAE')&&p.startsWith('EK'))||(c.startsWith('QTR')&&p.startsWith('QR'))||(c.startsWith('RYR')&&p.startsWith('FR'))||(c.startsWith('DLH')&&p.startsWith('LH'))||(c.startsWith('AFR')&&p.startsWith('AF'))||(c.startsWith('KLM')&&p.startsWith('KL'))||(c.startsWith('VIR')&&p.startsWith('VS'))||(c.startsWith('AAL')&&p.startsWith('AA'))||(c.startsWith('UAL')&&p.startsWith('UA'))||(c.startsWith('DAL')&&p.startsWith('DL')))});if(candidates.length===1)lookupFlightIdentity(candidates[0])});
