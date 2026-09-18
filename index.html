@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Sky Around Me</title>
+<!-- Sky Around Me v10: registration-aware flight identity + smooth route hero -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--bg:#eeeee9;--paper:#f8f8f4;--ink:#111416;--muted:#737878;--line:#d9dbd6;--accent:#176f8b;--accent2:#dcecf0;--live:#197b55;--nav:#e3e5e0;--shadow:0 24px 70px rgba(23,30,30,.12)}
@@ -490,17 +491,23 @@ function renderHeroFlightMap(live,watch){
    const pts=heroRoutePoints(a,b,96);
    const progress=routeProgress(watch,live);
    const cut=Math.max(1,Math.min(96,Math.round(progress*96)));
-   const completed=pts.slice(0,cut+1);completed.push(pos);
+   const completed=pts.slice(0,cut+1);
    L.polyline(pts,{color:'#a8b8bb',weight:2,dashArray:'4 7',opacity:.72,interactive:false}).addTo(heroFlightLayer);
    L.polyline(completed,{color:'#176f8b',weight:4,opacity:.94,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
    L.circleMarker(a,{radius:6,color:'#176f8b',weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
    L.circleMarker(b,{radius:6,color:'#176f8b',weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
    L.marker(a,{icon:heroMapAirportIcon(watch.fromCode,watch.from,'from'),interactive:false}).addTo(heroFlightLayer);
    L.marker(b,{icon:heroMapAirportIcon(watch.toCode,watch.to,'to'),interactive:false}).addTo(heroFlightLayer);
+   // The live aircraft's raw ADS-B position can sit a few kilometres off the
+   // idealised airport-to-airport route. Do not connect that raw point to the
+   // route: doing so creates the ugly sharp corner seen in the previous build.
+   // Use the calculated journey progress to place the aircraft directly on the
+   // smooth great-circle route instead.
    const pathPoint=greatCirclePoint(a,b,progress);
-   const angle=heroBearing(progress<.99?pathPoint:b,progress<.99?greatCirclePoint(a,b,Math.min(1,progress+.015)):b);
-   L.marker(pos,{icon:heroAircraftIcon(angle),interactive:false}).addTo(heroFlightLayer);
-   const bounds=L.latLngBounds([a,b,pos]);heroFlightMap.fitBounds(bounds,{paddingTopLeft:[90,55],paddingBottomRight:[90,55],maxZoom:6.2});
+   const nextPoint=greatCirclePoint(a,b,Math.min(1,progress+.015));
+   const angle=heroBearing(pathPoint,progress<.99?nextPoint:b);
+   L.marker(pathPoint,{icon:heroAircraftIcon(angle),interactive:false}).addTo(heroFlightLayer);
+   const bounds=L.latLngBounds([a,b,pathPoint]);heroFlightMap.fitBounds(bounds,{paddingTopLeft:[90,55],paddingBottomRight:[90,55],maxZoom:6.2});
  }else{
    L.circleMarker(pos,{radius:8,color:'#176f8b',weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
    L.marker(pos,{icon:heroAircraftIcon(live.heading),interactive:false}).addTo(heroFlightLayer);
@@ -576,12 +583,22 @@ const IDENTITY_CACHE_VERSION='identity-v4';
 function identityCacheKey(x){return IDENTITY_CACHE_VERSION+'|'+normalFlightCode(x?.callsign)+'|'+normalFlightCode(x?.registration||x?.r||'')+'|'+utcDateKey()}
 function applyIdentity(x,id){if(!id)return;x.flightNumber=id.flightNumber||x.flightNumber||'';x.airlineCode=id.airlineCode||x.airlineCode||'';x.airlineName=id.airlineName||x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft';x.identityStatus=id.status||'FOUND';}
 function extractIataFlightNumber(text,callsign){
- const cs=normalFlightCode(callsign),icao=(cs.match(/^[A-Z]{3}/)||[])[0]||'',iata=CALLSIGN_IATA[icao];
+ const raw=String(text||''),cs=normalFlightCode(callsign),icao=(cs.match(/^[A-Z]{3}/)||[])[0]||'',iata=CALLSIGN_IATA[icao];
  if(!iata)return '';
- const esc=iata.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
- const re=new RegExp('\\b'+esc+'\\s*([0-9]{1,4}[A-Z]?)\\b','gi');
+ const escIata=iata.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+ const escIcao=icao.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+ // Prefer an explicit IATA-flight-number / ATC-callsign pairing. For example
+ // Plane Finder can expose "FR1182 / RYR760L"; RYR760L is the ATC callsign,
+ // while FR1182 is the passenger flight number we want to display.
+ const pairRe=new RegExp('\\b'+escIata+'\\s*([0-9]{1,4}[A-Z]?)\\s*(?:[/|·-])?\\s*'+escIcao+'[0-9]{1,4}[A-Z]?\\b','i');
+ const pair=raw.match(pairRe);
+ if(pair)return normalFlightCode(iata+pair[1]);
+ const reverseRe=new RegExp('\\b'+escIcao+'[0-9]{1,4}[A-Z]?\\s*(?:[/|·-])?\\s*'+escIata+'\\s*([0-9]{1,4}[A-Z]?)\\b','i');
+ const reverse=raw.match(reverseRe);
+ if(reverse)return normalFlightCode(iata+reverse[1]);
+ const re=new RegExp('\\b'+escIata+'\\s*([0-9]{1,4}[A-Z]?)\\b','gi');
  const matches=[];let m;
- while((m=re.exec(text||''))!==null)matches.push(normalFlightCode(iata+m[1]));
+ while((m=re.exec(raw))!==null)matches.push(normalFlightCode(iata+m[1]));
  return matches[0]||'';
 }
 async function fetchFr24FlightData(callsign,date){
@@ -735,7 +752,7 @@ function renderHomeWatch(items){
 function renderWatchlist(){const el=$('watchList');if(!watchlist.length){el.innerHTML='<div class="empty-list">No watched flights yet.</div>';return}
  const rows=watchlist.map((f,i)=>({f,i,state:flightState(f)})).sort((a,b)=>{if(a.state==='COMPLETED'&&b.state!=='COMPLETED')return 1;if(a.state!=='COMPLETED'&&b.state==='COMPLETED')return -1;const da=parseDeparture(a.f),db=parseDeparture(b.f);return (da?da.getTime():Infinity)-(db?db.getTime():Infinity)});
  el.innerHTML=rows.map(({f,i,state})=>{const route=(f.fromCode&&f.toCode)?f.fromCode+' → '+f.toCode:'LOOKING UP ROUTE';const names=(f.from&&f.to)?f.from+' → '+f.to:'Route will be filled automatically';const dep=f.departureTime?` · <span class="flight-time">DEP ${f.departureTime}</span>`:'';const cd=state==='UPCOMING'?`<div class="flight-countdown">${countdownText(f)}</div>`:'';const status=state==='COMPLETED'?'COMPLETED':(f.lookupStatus||state);const rowClass=state==='COMPLETED'?' completed':'';return '<div class="flight-row'+rowClass+'"><div class="flight-main"><div class="route-badge">✈</div><div><strong>'+((f.flightNumber||f.flight||'FLIGHT').toUpperCase())+'</strong><small>'+(f.name||'Watched flight')+' · '+route+' · '+(f.date||'No date')+dep+'<br>'+names+'</small>'+cd+'</div></div><div><span class="state '+(state==='UPCOMING'?'wait ':'')+(state==='COMPLETED'?'completed ':'')+(f.lookupStatus==='LOOKING UP'?'lookup':'')+'">'+status+'</span><button class="remove" data-remove="'+i+'" title="Remove">REMOVE</button></div></div>'}).join('');el.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{watchlist.splice(Number(btn.dataset.remove),1);if(!watchlist.length)watch={};else if(watchlist[0])watch=watchlist[0];saveState()}))}
-function monthShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/^0/,'')}
+function monthShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/^0/,'').replace(' Sept ',' Sep ')}
 async function fetchPlaneFinderAircraftData(registration,date,callsign){
  const reg=String(registration||'').trim().toUpperCase();
  if(!reg)return null;
@@ -751,8 +768,9 @@ async function fetchPlaneFinderAircraftData(registration,date,callsign){
   for(const line of lines){
    if(!line.includes(target))continue;
    const cells=line.split('|').map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
+   const pairFlight=extractIataFlightNumber(text.slice(Math.max(0,text.indexOf(line)-900),Math.min(text.length,text.indexOf(line)+1200)),callsign);
    const flightCell=cells.find(x=>/^[A-Z]{2}\s*\d{1,4}[A-Z]?$/.test(x.replace(/[^A-Z0-9 ]/g,'').trim()))||'';
-   const flight=normalFlightCode(flightCell);
+   const flight=pairFlight||normalFlightCode(flightCell);
    if(!flight)continue;
    const codes=[];
    for(const cell of cells){
