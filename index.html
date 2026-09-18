@@ -771,6 +771,36 @@ async function enrichLiveRoute(x){
 }
 const airlineIcao={FR:'RYR',SQ:'SIA',LH:'DLH',UA:'UAL',DL:'DAL',BA:'BAW',AF:'AFR',KL:'KLM',EI:'EIN',EK:'UAE',QR:'QTR',AA:'AAL',VS:'VIR',LX:'SWR',IB:'IBE',TP:'TAP'};
 const airlineCallsign={FR:'RYR',SQ:'SIA',LH:'DLH',UA:'UAL',DL:'DAL',BA:'BAW',AF:'AFR',KL:'KLM',EI:'EIN',EK:'UAE',QR:'QTR',AA:'AAL',VS:'VIR',LX:'SWR',IB:'IBE',TP:'TAP',U:'EZY',U2:'EZY'};
+function watchedLookupCallsigns(f){
+ const target=normalFlightCode(f?.flightNumber||f?.flight);
+ if(!target)return [];
+ const out=[];
+ const push=v=>{v=normalFlightCode(v);if(v&&!out.includes(v))out.push(v)};
+ const ez=target.match(/^U2(\d+[A-Z]?)$/);
+ if(ez)push('EZY'+ez[1]);
+ const one=target.match(/^U(2\d+[A-Z]?)$/);
+ if(one)push('EZY'+one[1].slice(1));
+ const m=target.match(/^([A-Z]{1,3})(\d+[A-Z]?)$/);
+ if(m){
+   const code=m[1],num=m[2];
+   push((airlineCallsign[code]||airlineIcao[code]||code)+num);
+ }
+ push(target);
+ return out;
+}
+async function fetchWatchedLive(f){
+ const callsigns=watchedLookupCallsigns(f);
+ for(const cs of callsigns){
+   try{
+     const j=await fetchJson(`${SKY_AROUND_ME_NETLIFY}?lookup=live&callsign=${encodeURIComponent(cs)}`,'Watched flight live lookup');
+     const raw=(Array.isArray(j?.ac)?j.ac:[]).filter(isCommercialAircraft);
+     if(raw.length){
+       return raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',flightNumber:f.flightNumber||f.flight||'',airlineCode:normalFlightCode(f.flightNumber||f.flight).match(/^[A-Z]{1,3}/)?.[0]||'',airlineName:f.airlineName||airlineFromCallsign(a.flight||'')||''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));
+     }
+   }catch(e){}
+ }
+ return [];
+}
 function watchedLiveMatch(f,items){
  const target=normalFlightCode(f?.flightNumber||f?.flight);if(!target||!Array.isArray(items))return null;
  const direct=items.find(x=>normalFlightCode(x.flightNumber)===target);if(direct)return direct;
@@ -973,7 +1003,13 @@ async function fetchAircraft(){
 }
 
 
-async function poll(){if(!document.getElementById('map'))return;$('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';try{const j=await fetchAircraft();const raw=(Array.isArray(j.ac)?j.ac:[]).filter(isCommercialAircraft);const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));const items=allItems.filter(x=>x.d<=S.rangeKm);S.lastAllItems=allItems;S.lastItems=items;renderHomeWatch(items);const f=choose(items);S.featured=f?.icao||null;render(items);watchlist.filter(w=>flightState(w)!=='COMPLETED').forEach(w=>{const candidates=items.filter(x=>{const p=normalFlightCode(w.flight||w.flightNumber),c=normalFlightCode(x.callsign);return p&&c&&((c.startsWith('BAW')&&p.startsWith('BA'))||(c.startsWith('SIA')&&p.startsWith('SQ'))||(c.startsWith('UAE')&&p.startsWith('EK'))||(c.startsWith('QTR')&&p.startsWith('QR'))||(c.startsWith('RYR')&&p.startsWith('FR'))||(c.startsWith('DLH')&&p.startsWith('LH'))||(c.startsWith('AFR')&&p.startsWith('AF'))||(c.startsWith('KLM')&&p.startsWith('KL'))||(c.startsWith('VIR')&&p.startsWith('VS'))||(c.startsWith('AAL')&&p.startsWith('AA'))||(c.startsWith('UAL')&&p.startsWith('UA'))||(c.startsWith('DAL')&&p.startsWith('DL')))||c===p});if(candidates.length===1)lookupFlightIdentity(candidates[0])});
+async function poll(){if(!document.getElementById('map'))return;$('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';try{const j=await fetchAircraft();const raw=(Array.isArray(j.ac)?j.ac:[]).filter(isCommercialAircraft);let allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));
+ const nextWatch=getNextWatchedFlight();
+ if(nextWatch){
+   const watchedLive=await fetchWatchedLive(nextWatch);
+   for(const wx of watchedLive){if(!allItems.some(x=>x.icao===wx.icao))allItems.push(wx);else allItems=allItems.map(x=>x.icao===wx.icao?{...x,...wx}:x)}
+ }
+ const items=allItems.filter(x=>x.d<=S.rangeKm);S.lastAllItems=allItems;S.lastItems=items;renderHomeWatch(allItems);const f=choose(items);S.featured=f?.icao||null;render(items);watchlist.filter(w=>flightState(w)!=='COMPLETED').forEach(w=>{const candidates=allItems.filter(x=>{const p=normalFlightCode(w.flight||w.flightNumber),c=normalFlightCode(x.callsign),fn=normalFlightCode(x.flightNumber);return p&&((fn===p)||(c===p)||(c==='RYR'+p.replace(/^FR/,'')&&p.startsWith('FR'))||(c==='EZY'+p.replace(/^U2?/,'')&&p.match(/^U2?\d/))||(c.startsWith('BAW')&&p.startsWith('BA'))||(c.startsWith('SIA')&&p.startsWith('SQ'))||(c.startsWith('UAE')&&p.startsWith('EK'))||(c.startsWith('QTR')&&p.startsWith('QR'))||(c.startsWith('RYR')&&p.startsWith('FR'))||(c.startsWith('DLH')&&p.startsWith('LH'))||(c.startsWith('AFR')&&p.startsWith('AF'))||(c.startsWith('KLM')&&p.startsWith('KL'))||(c.startsWith('VIR')&&p.startsWith('VS'))||(c.startsWith('AAL')&&p.startsWith('AA'))||(c.startsWith('UAL')&&p.startsWith('UA'))||(c.startsWith('DAL')&&p.startsWith('DL')))});if(candidates.length===1)lookupFlightIdentity(candidates[0])});
 // Resolve the actual passenger flight number for the aircraft the user can see.
 // Never invent an IATA number from the ATC callsign; unresolved aircraft keep their callsign.
 if(f&&f.callsign&&!f.flightNumber)lookupFlightIdentity(f);if(f){renderLiveHome(f);$('status').textContent=j.provider||'LIVE · COMMERCIAL';$('call').textContent=f.flightNumber||f.callsign||f.icao.toUpperCase();$('detail').textContent=(f.desc||f.type||'Airborne aircraft')+(f.registration?' · '+f.registration:'')+(f.callsign?' · CALLSIGN '+f.callsign:'')+' · ICAO '+f.icao.toUpperCase()+(f.identityStatus==='FOUND'?' · FLIGHT DATA VERIFIED':'');const liveRoute=f.liveRoute&&f.liveRoute.status==='FOUND'?f.liveRoute:null;$('liveFrom').textContent=liveRoute?.fromCode||'—';$('liveFromName').textContent=liveRoute?.from||'ROUTE UNAVAILABLE';$('liveTo').textContent=liveRoute?.toCode||'—';$('liveToName').textContent=liveRoute?.to||'';$('dist').textContent=f.d.toFixed(1)+' km';$('alt').textContent=f.alt==null?'—':Math.round(f.alt*3.28084).toLocaleString()+' ft';$('speed').textContent=f.speed==null?'—':Math.round(f.speed*1.94384)+' kt';$('heading').textContent=f.heading==null?'—':Math.round(f.heading)+'°';$('pathInfo').textContent='Live trail shows the recent track of each aircraft. Commercial aircraft only.'}else{renderScheduledHome();$('status').textContent='NO AIRCRAFT NEARBY';$('call').textContent='—';$('detail').textContent='No matching aircraft within the selected airspace. Home screen has returned to your next scheduled flight.';$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';$('liveFrom').textContent='—';$('liveFromName').textContent='ROUTE UNAVAILABLE';$('liveTo').textContent='—';$('liveToName').textContent='';$('pathInfo').textContent='No matching local traffic right now. Your scheduled flight remains the fallback. Commercial aircraft only.'}$('countPill').textContent=`${items.length} aircraft in range · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
