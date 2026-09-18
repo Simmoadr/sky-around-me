@@ -361,7 +361,7 @@ function icon(x,featured){return L.divIcon({className:'',html:`<div class="${fea
 function choose(items){if(!items.length)return null;const airborne=items.filter(x=>(x.alt!=null&&x.alt>140)||(x.speed!=null&&x.speed>80));return (airborne.length?airborne:items).slice().sort((a,b)=>a.d-b.d)[0]}
 const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);L.control.zoom({position:'bottomright'}).addTo(map);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);
 function render(items){const seen=new Set();items.forEach(x=>{seen.add(x.icao);const feat=x.icao===S.featured;let m=S.markers.get(x.icao);if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat)}).addTo(map);S.markers.set(x.icao,m)}else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat))}m.bindPopup(`<b>${x.callsign||x.icao.toUpperCase()}</b><br>${x.d.toFixed(1)} km · ${x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft'} · ${x.speed==null?'—':Math.round(x.speed*1.94384)+' kt'}`);let pts=S.tracks.get(x.icao)||[];const last=pts[pts.length-1];if(!last||hav(last[0],last[1],x.lat,x.lon)>0.08){pts=[...pts,[x.lat,x.lon]].slice(-15);S.tracks.set(x.icao,pts)}let line=S.trails.get(x.icao);if(!line){line=L.polyline(pts,{weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'}).addTo(map);S.trails.set(x.icao,line)}else{line.setLatLngs(pts);line.setStyle({weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'})}});S.markers.forEach((m,id)=>{if(!seen.has(id)){map.removeLayer(m);S.markers.delete(id)}});S.trails.forEach((line,id)=>{if(!seen.has(id)){map.removeLayer(line);S.trails.delete(id)}})}
-const SKY_AROUND_ME_NETLIFY="https://magenta-syrniki-2f4749.netlify.app/.netlify/functions/adsb";
+const SKY_AROUND_ME_NETLIFY='https://magenta-syrniki-2f4749.netlify.app/.netlify/functions/adsb';
 
 function updateAdsbDiagnostics(info={}){
   const panel=$("adsbDiagnostics");
@@ -380,16 +380,48 @@ async function fetchAircraft(){
   const url=`${SKY_AROUND_ME_NETLIFY}?lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${encodeURIComponent(distKm)}`;
   const started=new Date();
   try{
-    const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
-    updateAdsbDiagnostics({mode:'PROXIED · NETLIFY',url,time:started.toLocaleString(),status:r.status,statusText:r.statusText,result:r.ok?'Netlify proxy → ADSB.lol succeeded':'Netlify proxy returned HTTP '+r.status,ok:r.ok});
-    if(!r.ok){const e=new Error('ADSB.lol via Netlify HTTP '+r.status);e.status=r.status;e.url=url;throw e}
+    const r=await fetch(url,{method:'GET',cache:'no-store',headers:{Accept:'application/json'}});
+    if(!r.ok){
+      updateAdsbDiagnostics({
+        mode:'PROXIED · NETLIFY',
+        url,
+        time:started.toLocaleString(),
+        status:r.status,
+        statusText:r.statusText,
+        result:'Netlify proxy returned HTTP '+r.status,
+        ok:false
+      });
+      const body=await r.text().catch(()=> '');
+      const e=new Error('ADSB.lol via Netlify HTTP '+r.status+(body?' · '+body.slice(0,180):''));
+      e.status=r.status;e.url=url;
+      throw e;
+    }
+
     const j=await r.json();
     if(j&&j.error)throw new Error(j.message||j.error);
+
     const count=Array.isArray(j.ac)?j.ac.length:0;
-    updateAdsbDiagnostics({mode:'PROXIED · NETLIFY',url,time:started.toLocaleString(),status:r.status,statusText:r.statusText,result:`Netlify proxy → ADSB.lol · ${count} aircraft returned`,ok:true});
+    updateAdsbDiagnostics({
+      mode:'PROXIED · NETLIFY',
+      url,
+      time:started.toLocaleString(),
+      status:r.status,
+      statusText:r.statusText,
+      result:`Netlify proxy → ADSB.lol · ${count} aircraft returned`,
+      ok:true
+    });
+
     return {...j,provider:'ADSB.LOL · NETLIFY PROXY',feedSource:'ADSB.LOL'};
   }catch(e){
-    updateAdsbDiagnostics({mode:'PROXIED · NETLIFY',url,time:started.toLocaleString(),status:e.status||'ERROR',result:e.message||'Request failed',ok:false});
+    updateAdsbDiagnostics({
+      mode:'PROXIED · NETLIFY',
+      url,
+      time:started.toLocaleString(),
+      status:e.status||'ERROR',
+      statusText:e.status?e.statusText:'',
+      result:e.message||'Request failed',
+      ok:false
+    });
     throw e;
   }
 }
