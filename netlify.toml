@@ -1,0 +1,7 @@
+TOML
+[build}
+publish = "."
+
+[functions]
+directory = "netlify/functions"
+node_builder = "esbuild"
