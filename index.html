@@ -264,9 +264,9 @@
 /* FINAL PREMIUM IPAD LANDSCAPE HERO */
 .home{padding-top:10px}
 .home-head{display:none!important}
-.hero{height:calc(100vh - 265px);min-height:495px;max-height:665px;border-radius:26px;overflow:hidden}
+.hero{height:calc(100vh - 285px);min-height:475px;max-height:635px;border-radius:26px;overflow:hidden}
 .hero-top{display:none!important}
-.sky{position:relative;inset:auto;height:350px;min-height:350px;flex:1;overflow:hidden;background:#eaf0ee}
+.sky{position:relative;inset:auto;height:300px;min-height:300px;flex:1 1 auto;overflow:hidden;background:#eaf0ee}
 .aircraft-stage{position:absolute;inset:0;left:0;right:0;top:0;height:100%;display:block}
 .aircraft-stage-art{width:100%;height:100%;display:block}
 .hero-flight-map{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;background:#eaf0ee;z-index:1;overflow:hidden}
@@ -289,6 +289,19 @@
 @media (min-width:701px) and (orientation:landscape) and (max-height:760px){.hero{height:calc(100vh - 230px);min-height:455px}.hero-bottom{padding:11px 28px 12px}.hero .flight-name{font-size:27px}.identity{grid-template-columns:minmax(230px,1.25fr) minmax(125px,.55fr) minmax(430px,2.4fr);gap:18px}.metric b{font-size:16px}.journey-info{margin-top:8px;padding-top:8px}.watch-bottom{margin-top:6px;padding:9px 16px}.watch-bottom-body{margin-top:6px}.watch-live-grid{padding-top:6px}}
 @media(max-width:1100px) and (min-width:801px){.identity{grid-template-columns:minmax(220px,1fr) minmax(120px,.55fr) minmax(390px,1.8fr);gap:16px}.telemetry{gap:12px}.hero-map-brand{left:16px}.hero-map-status{right:16px}}
 @media(max-width:800px){.home{padding-top:8px}.hero{min-height:650px;height:auto}.sky{height:320px;min-height:320px}.hero-bottom{padding:16px 22px 20px}.identity{grid-template-columns:1fr;gap:12px}.aircraft-registration{padding-left:0;border-left:0;border-top:1px solid #dfe1dd;padding-top:10px}.telemetry{grid-template-columns:repeat(2,1fr);width:100%}.hero-map-brand{left:14px;top:14px}.hero-map-status{right:14px;top:14px;min-width:145px}.hero-map-caption{top:14px}.hero-airport-label span{font-size:10px}}
+
+
+/* FINAL COMPACT LANDSCAPE / IPAD FIT */
+@media (min-width:701px) and (orientation:landscape) and (max-height:900px){
+  .hero{height:calc(100vh - 285px);min-height:475px;max-height:635px}
+  .sky,.aircraft-stage,.aircraft-stage-art{height:285px;min-height:285px}
+  .hero-bottom{padding:12px 30px 14px}
+  .hero-bottom .divider{margin-bottom:11px}
+  .identity{gap:16px}
+  .hero .flight-name{font-size:28px;margin-top:4px}
+  .aircraft-registration b{font-size:18px}
+  .journey-info{margin-top:9px;padding-top:9px}
+}
 
 </style>
 </head>
@@ -373,6 +386,7 @@ const initialPlace=places[savedPlace];
 const initialMode=savedSkySettings.locationMode||'device';
 const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,featured:null,recent:[],markers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],rangeKm:Math.min(250,Math.max(10,Number(savedSkySettings.rangeKm)||100)),identityCache:new Map(),identityPending:new Map()};
 const $=id=>document.getElementById(id);
+function setTextSafe(id,value){const el=$(id);if(el)el.textContent=value??'';}
 function saveSkySettings(){localStorage.setItem('skyAroundMeSettings',JSON.stringify({rangeKm:S.rangeKm,location:S.locationMode,locationName:S.locationName,lat:S.lat,lon:S.lon}))}
 function updateSkySettingsUI(){if($('rangeInput'))$('rangeInput').value=S.rangeKm;if($('rangeNumber'))$('rangeNumber').value=S.rangeKm;if($('rangeValue'))$('rangeValue').textContent=S.rangeKm+' KM';if($('rangePill'))$('rangePill').textContent=S.rangeKm+' KM AIRSPACE RADIUS';if($('mapLocation'))$('mapLocation').textContent=S.locationName.toUpperCase();if($('locationSelect'))$('locationSelect').value=S.locationMode==='device'?'device':(places[S.locationMode]?S.locationMode:'custom');if($('currentLocation'))$('currentLocation').textContent=S.locationName;if($('customLocation'))$('customLocation').hidden=S.locationMode!=='custom';if($('locationSelect')&&S.locationMode==='device')$('locationSelect').value='device'}
 function applyLocation(lat,lon,name,mode){S.lat=Number(lat);S.lon=Number(lon);S.locationName=name;S.locationMode=mode;saveSkySettings();updateSkySettingsUI();if(typeof me!=='undefined'){me.setLatLng([S.lat,S.lon]);rangeCircle.setLatLng([S.lat,S.lon]);map.setView([S.lat,S.lon],8)};S.lastItems=[];S.lastAllItems=[];S.tracks.clear();S.trails.forEach(x=>map.removeLayer(x));S.trails.clear();S.markers.forEach(x=>map.removeLayer(x));S.markers.clear();poll()}
