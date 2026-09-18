@@ -448,11 +448,24 @@ function flightState(f,liveItems){
  return 'COMPLETED';
 }
 function getNextWatchedFlight(){
- const active=watchlist.filter(f=>flightState(f)!=='COMPLETED');
- const live=active.find(f=>flightState(f)==='READY TO TRACK');
+ const now=new Date();
+ const candidates=watchlist.filter(f=>{
+  if(!f)return false;
+  const state=flightState(f);
+  if(state==='READY TO TRACK')return true;
+  if(state!=='SCHEDULED')return false;
+  const d=parseDeparture(f);
+  // Date-only flights remain eligible throughout their selected day.
+  if(d)return d.getTime()>=now.getTime();
+  const day=localDateOnly(f);return !!day&&day.getTime()>=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+ });
+ const live=candidates.find(f=>flightState(f)==='READY TO TRACK');
  if(live)return live;
- return active.filter(f=>flightState(f)==='SCHEDULED').sort((a,b)=>{
-  const da=parseDeparture(a),db=parseDeparture(b);return (da?da.getTime():Infinity)-(db?db.getTime():Infinity)
+ return candidates.sort((a,b)=>{
+  const da=parseDeparture(a),db=parseDeparture(b);
+  const ta=da?da.getTime():(localDateOnly(a)?.getTime()||Infinity);
+  const tb=db?db.getTime():(localDateOnly(b)?.getTime()||Infinity);
+  return ta-tb;
  })[0]||null;
 }
 function countdownText(f){
@@ -606,7 +619,27 @@ function renderScheduledHome(){
    return;
  }
  setHeroAircraft(null,null);
- setTextSafe('homeEyebrow','NO LIVE AIRCRAFT');setTextSafe('homeTitle','AIRSPACE QUIET');setTextSafe('homeStatus','NO LIVE TRAFFIC');
+ if(next){
+   setTextSafe('homeEyebrow','NEXT WATCHED FLIGHT');
+   setTextSafe('homeTitle',(next.flightNumber||next.flight||'WATCHED FLIGHT').toUpperCase());
+   setTextSafe('homeStatus',state==='SCHEDULED'?'SCHEDULED':'ACTIVE');
+   $('airlineBadge').textContent=(next.airlineCode||((next.flight||'').match(/^[A-Z]{2,3}/)?.[0])||'WATCH').toUpperCase();
+   $('operator').textContent=(next.airlineName||'WATCHED FLIGHT').toUpperCase();
+   $('callsignNote').textContent='SCHEDULED FLIGHT';
+   $('aircraftReg').textContent=next.registration||next.reg||'—';
+   $('aircraftRegNote').textContent='REGISTRATION';
+   $('flightName').textContent=(next.fromCode&&next.toCode)?next.fromCode+' → '+next.toCode:(next.flightNumber||next.flight||'WATCHED FLIGHT');
+   $('aircraftType').textContent=next.aircraftDesc||'Scheduled flight · live position will appear when airborne';
+   $('route').textContent=(next.from||next.fromCode||'DEPARTURE')+'  →  '+(next.to||next.toCode||'ARRIVAL');
+   $('schedule').textContent=next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}).toUpperCase()+(next.departureTime?' · DEP '+next.departureTime:''):'SCHEDULED';
+   $('mLabel1').textContent='STATUS';$('m1').textContent='SCHEDULED';$('m1s').textContent=countdownText(next);
+   $('mLabel2').textContent='DEPARTURE';$('m2').textContent=next.fromCode||'—';$('m2s').textContent=next.from||'—';
+   $('mLabel3').textContent='ARRIVAL';$('m3').textContent=next.toCode||'—';$('m3s').textContent=next.to||'—';
+   $('mLabel4').textContent='FLIGHT';$('m4').textContent=(next.flightNumber||next.flight||'—').toUpperCase();$('m4s').textContent=next.airlineName||'WATCHED FLIGHT';
+   $('flightProgress').style.width='0%';if($('journeyInfo'))$('journeyInfo').hidden=true;
+ }else{
+  setTextSafe('homeEyebrow','NO LIVE AIRCRAFT');setTextSafe('homeTitle','AIRSPACE QUIET');setTextSafe('homeStatus','NO LIVE TRAFFIC');
+ }
  $('airlineBadge').textContent='LIVE';$('operator').textContent='LIVE AIRSPACE · '+S.locationName.toUpperCase();$('callsignNote').textContent='';$('aircraftReg').textContent='—';$('aircraftRegNote').textContent='AIRCRAFT REG';$('flightName').textContent='—';$('aircraftType').textContent='No matching commercial aircraft within the selected range.';
  $('route').textContent='NO LIVE AIRCRAFT DETECTED';$('schedule').textContent=S.locationName.toUpperCase()+' · '+S.rangeKm+' KM WATCH';
  $('mLabel1').textContent='STATUS';$('m1').textContent='QUIET';$('m1s').textContent='no live traffic';$('mLabel2').textContent='RANGE';$('m2').textContent=S.rangeKm+' km';$('m2s').textContent='selected airspace';$('mLabel3').textContent='WATCH';$('m3').textContent=next?.flight||'—';$('m3s').textContent=state==='READY TO TRACK'?'active flight':state==='SCHEDULED'?'next flight':'—';$('mLabel4').textContent='STATUS';$('m4').textContent=next?state:'NONE';$('m4s').textContent=next?'next watched flight':'no active watched flight';$('flightProgress').style.width='0%';if($('journeyInfo'))$('journeyInfo').hidden=true;
