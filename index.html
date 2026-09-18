@@ -214,6 +214,33 @@
 .progress-plane:before{content:'';position:absolute;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.96);border:1px solid #d7dedb;z-index:-1;box-shadow:0 2px 7px rgba(23,30,30,.10);}
 @media(max-width:700px){.world-hero-plane{width:28px;height:28px}.progress-plane{width:20px;height:20px;font-size:12px}.progress-plane:before{width:22px;height:22px}}
 
+
+/* PREMIUM FLIGHT SPOTLIGHT v2 */
+.hero{min-height:590px}
+.aircraft-stage{top:58px;height:275px;left:3%;right:3%;}
+.aircraft-stage-art{height:275px;width:100%;}
+.world-hero{position:relative;width:100%;height:275px;margin:0 auto;overflow:hidden;background:linear-gradient(180deg,#f7f8f5 0%,#edf2ef 100%);border-radius:24px}
+.world-hero:before{content:"";position:absolute;inset:12% 14%;border:1px solid rgba(23,111,139,.08);border-radius:50%;box-shadow:0 0 0 35px rgba(23,111,139,.018),0 0 0 75px rgba(23,111,139,.012);pointer-events:none;z-index:1}
+.world-hero:after{content:"";position:absolute;left:12%;right:12%;top:50%;height:1px;background:linear-gradient(90deg,transparent,rgba(23,111,139,.08),transparent);pointer-events:none;z-index:1}
+.world-hero-map{display:none}
+.world-hero-zoom{position:absolute;inset:0;transition:opacity .4s ease;z-index:2}
+.world-hero-map-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.world-hero-map-svg .land{opacity:.42;filter:grayscale(1)}
+.world-hero-map-svg .route-glow{fill:none;stroke:#176f8b;stroke-width:2.8;stroke-linecap:round;opacity:.12;filter:blur(2.5px)}
+.world-hero-map-svg .route-line{fill:none;stroke:#aebfc2;stroke-width:1.15;stroke-dasharray:1.5 2.8;stroke-linecap:round;opacity:.9}
+.world-hero-map-svg .route-complete{fill:none;stroke:#176f8b;stroke-width:2.15;stroke-linecap:round;opacity:.95}
+.world-hero-map-svg .endpoint{fill:#fff;stroke:#176f8b;stroke-width:1.2}
+.world-hero-map-svg .airport-label-bg{fill:rgba(248,248,244,.94);stroke:#d7dedb;stroke-width:.55}
+.world-hero-map-svg .airport-label{fill:#111416;font-size:3.4px;font-weight:900;letter-spacing:.8px}
+.world-hero-map-svg .airport-city{fill:#737878;font-size:2.2px;font-weight:700;letter-spacing:.35px}
+.world-hero-map-svg .route-aircraft{fill:#111416;stroke:#fff;stroke-width:.9;filter:drop-shadow(0 1.5px 2px rgba(0,0,0,.18))}
+.world-hero-map-svg .route-aircraft-ring{fill:#fff;stroke:#d7dedb;stroke-width:.65}
+.world-hero-map-svg .route-aircraft-pulse{fill:none;stroke:#176f8b;stroke-width:.45;opacity:.22}
+.world-hero-caption{position:absolute;z-index:8;left:50%;top:15px;transform:translateX(-50%);font-size:8px;letter-spacing:.22em;color:#687b7f;font-weight:900;white-space:nowrap}
+.world-hero-radar-tag{position:absolute;z-index:8;right:20px;bottom:15px;font-size:7px;letter-spacing:.16em;color:#7b8787;font-weight:900}
+.world-hero-nearby{display:none}
+.world-hero-grid,.world-hero-sweep{display:none}
+@media(max-width:700px){.aircraft-stage{left:0;right:0;top:54px;height:250px}.aircraft-stage-art{height:250px}.world-hero{height:250px}.world-hero-caption{top:10px}.world-hero-radar-tag{right:10px;bottom:9px}}
 </style>
 </head>
 <body>
@@ -356,38 +383,29 @@ const WORLD_MAP_BASE64='iVBORw0KGgoAAAANSUhEUgAABu4AAAN3CAYAAADd2qx3AAEAAElEQVR4
 function worldHeroSvg(live,watch){
  const el=document.createElement('div');el.className='world-hero';
  const caption=document.createElement('div');caption.className='world-hero-caption';caption.textContent=(watch?.fromCode&&watch?.toCode)?'LIVE FLIGHT PATH · GEOGRAPHIC POSITION':'LIVE AIRSPACE · RADAR VIEW';el.appendChild(caption);
- const grid=document.createElement('div');grid.className='world-hero-grid';el.appendChild(grid);
- const sweep=document.createElement('div');sweep.className='world-hero-sweep';el.appendChild(sweep);
- const inner=document.createElement('div');inner.className='world-hero-zoom';el.appendChild(inner);
- const img=document.createElement('img');img.className='world-hero-map';img.alt='World airspace outline';img.src='data:image/png;base64,'+WORLD_MAP_BASE64;inner.appendChild(img);
- const nearby=document.createElement('div');nearby.className='world-hero-nearby';
- const nearbyItems=(S.lastItems||[]).filter(a=>a&&a.lat!=null&&a.lon!=null&&a.icao!==live?.icao).slice().sort((a,b)=>a.d-b.d).slice(0,18);
- nearbyItems.forEach(a=>{const q=worldHeroXY([a.lat,a.lon]);const dot=document.createElement('div');dot.className='world-hero-nearby-dot';dot.style.left=q[0]+'%';dot.style.top=q[1]+'%';dot.title=(a.callsign||'Aircraft')+' · '+(a.d?.toFixed?.(0)||'')+' km';nearby.appendChild(dot)});
- inner.appendChild(nearby);
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','world-hero-map-svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+ const bg=document.createElementNS('http://www.w3.org/2000/svg','image');bg.setAttribute('href','data:image/png;base64,'+WORLD_MAP_BASE64);bg.setAttribute('x','0');bg.setAttribute('y','0');bg.setAttribute('width','100');bg.setAttribute('height','100');bg.setAttribute('preserveAspectRatio','none');bg.setAttribute('class','land');svg.appendChild(bg);
  const a=(watch?.fromLat!=null&&watch?.fromLon!=null)?[Number(watch.fromLat),Number(watch.fromLon)]:routePoint(watch?.fromCode);
  const b=(watch?.toLat!=null&&watch?.toLon!=null)?[Number(watch.toLat),Number(watch.toLon)]:routePoint(watch?.toCode);
- if(live?.lat!=null&&live?.lon!=null&&a&&b&&a.every(Number.isFinite)&&b.every(Number.isFinite)){
-   const pts=[];for(let i=0;i<=80;i++)pts.push(greatCirclePoint(a,b,i/80));
-   const path=pts.map((p,i)=>{const q=worldHeroXY(p);return(i?'L':'M')+q[0].toFixed(2)+','+q[1].toFixed(2)}).join(' ');
-   const start=worldHeroXY(a),end=worldHeroXY(b),progress=routeProgress(watch,live),pos=worldHeroXY([live.lat,live.lon]);
-   const donePts=pts.slice(0,Math.max(2,Math.round(progress*(pts.length-1))+1));
-   const donePath=donePts.map((p,i)=>{const q=worldHeroXY(p);return(i?'L':'M')+q[0].toFixed(2)+','+q[1].toFixed(2)}).join(' ');
-   const prev=worldHeroXY(greatCirclePoint(a,b,Math.max(0,progress-.012))),nxt=worldHeroXY(greatCirclePoint(a,b,Math.min(1,progress+.012)));
-   const angle=Math.atan2(nxt[1]-prev[1],nxt[0]-prev[0])*180/Math.PI+90;
-   const ns='http://www.w3.org/2000/svg';const svg=document.createElementNS(ns,'svg');svg.setAttribute('class','world-hero-route');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
-   svg.innerHTML=`<path class="route-glow" d="${path}"/><path class="route-line" d="${path}"/><path class="route-complete" d="${donePath}"/><circle class="endpoint" cx="${start[0]}" cy="${start[1]}" r="1.35"/><circle class="endpoint" cx="${end[0]}" cy="${end[1]}" r="1.35"/>`;
-   inner.appendChild(svg);
-   const plane=document.createElement('div');plane.className='world-hero-plane';plane.style.left=pos[0]+'%';plane.style.top=pos[1]+'%';plane.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;plane.innerHTML=planeSvg();inner.appendChild(plane);
-   const lf=document.createElement('div');lf.className='world-hero-label from';lf.style.left=start[0]+'%';lf.style.top=start[1]+'%';lf.textContent=watch.fromCode;inner.appendChild(lf);
-   const lt=document.createElement('div');lt.className='world-hero-label to';lt.style.left=end[0]+'%';lt.style.top=end[1]+'%';lt.textContent=watch.toCode;inner.appendChild(lt);
-   const all=[start,end,pos],xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys),cx=(minX+maxX)/2,cy=(minY+maxY)/2,spanX=Math.max(8,maxX-minX),spanY=Math.max(8,maxY-minY),scale=Math.min(2.55,Math.max(1.2,Math.min(82/spanX,70/spanY)));inner.style.transform=`translate(${50-cx}%,${50-cy}%) scale(${scale})`;
- } else if(live?.lat!=null&&live?.lon!=null){
-   const pos=worldHeroXY([live.lat,live.lon]);inner.style.transform=`translate(${50-pos[0]}%,${50-pos[1]}%) scale(2.05)`;
-   const plane=document.createElement('div');plane.className='world-hero-plane';plane.style.left=pos[0]+'%';plane.style.top=pos[1]+'%';plane.style.transform=`translate(-50%,-50%) rotate(${Number.isFinite(live.heading)?live.heading:0}deg)`;plane.innerHTML=planeSvg();inner.appendChild(plane);
-   const ring=document.createElementNS('http://www.w3.org/2000/svg','svg');ring.setAttribute('class','world-hero-route');ring.setAttribute('viewBox','0 0 100 100');ring.innerHTML=`<circle class="endpoint" cx="${pos[0]}" cy="${pos[1]}" r="1.5"/>`;inner.appendChild(ring);
- }
- const tag=document.createElement('div');tag.className='world-hero-radar-tag';tag.textContent='ADSB.LOL · LIVE COMMERCIAL TRAFFIC';el.appendChild(tag);
- return el.outerHTML;
+ const livePos=live?.lat!=null&&live?.lon!=null?[Number(live.lat),Number(live.lon)]:null;
+ if(livePos&&a&&b&&a.every(Number.isFinite)&&b.every(Number.isFinite)){
+   const pts=[];for(let i=0;i<=96;i++)pts.push(greatCirclePoint(a,b,i/96));
+   const progress=routeProgress(watch,live),pos=worldHeroXY(livePos),start=worldHeroXY(a),end=worldHeroXY(b);
+   const makePath=arr=>arr.map((p,i)=>{const q=worldHeroXY(p);return(i?'L':'M')+q[0].toFixed(2)+','+q[1].toFixed(2)}).join(' ');
+   const path=makePath(pts),donePath=makePath(pts.slice(0,Math.max(2,Math.round(progress*(pts.length-1))+1)));
+   const routeGlow=document.createElementNS('http://www.w3.org/2000/svg','path');routeGlow.setAttribute('class','route-glow');routeGlow.setAttribute('d',path);svg.appendChild(routeGlow);
+   const routeLine=document.createElementNS('http://www.w3.org/2000/svg','path');routeLine.setAttribute('class','route-line');routeLine.setAttribute('d',path);svg.appendChild(routeLine);
+   const routeComplete=document.createElementNS('http://www.w3.org/2000/svg','path');routeComplete.setAttribute('class','route-complete');routeComplete.setAttribute('d',donePath);svg.appendChild(routeComplete);
+   [start,end].forEach(p=>{const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('class','endpoint');c.setAttribute('cx',p[0]);c.setAttribute('cy',p[1]);c.setAttribute('r','1.25');svg.appendChild(c)});
+   const addAirportLabel=(p,code,name,side)=>{const g=document.createElementNS('http://www.w3.org/2000/svg','g');const x=p[0],y=p[1]+(side==='top'?-8:8);const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('class','airport-label-bg');bg.setAttribute('x',x-8);bg.setAttribute('y',y-5);bg.setAttribute('width','16');bg.setAttribute('height','8');bg.setAttribute('rx','2');g.appendChild(bg);const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('class','airport-label');t.setAttribute('x',x);t.setAttribute('y',y-1.1);t.setAttribute('text-anchor','middle');t.textContent=code||'';g.appendChild(t);const c=document.createElementNS('http://www.w3.org/2000/svg','text');c.setAttribute('class','airport-city');c.setAttribute('x',x);c.setAttribute('y',y+2.5);c.setAttribute('text-anchor','middle');c.textContent=(name||'').split(' ').slice(0,2).join(' ');g.appendChild(c);svg.appendChild(g)};
+   addAirportLabel(start,watch.fromCode,watch.from,'top');addAirportLabel(end,watch.toCode,watch.to,'top');
+   const prev=worldHeroXY(greatCirclePoint(a,b,Math.max(0,progress-.012))),next=worldHeroXY(greatCirclePoint(a,b,Math.min(1,progress+.012)));const angle=Math.atan2(next[1]-prev[1],next[0]-prev[0])*180/Math.PI+90;
+   const pulse=document.createElementNS('http://www.w3.org/2000/svg','circle');pulse.setAttribute('class','route-aircraft-pulse');pulse.setAttribute('cx',pos[0]);pulse.setAttribute('cy',pos[1]);pulse.setAttribute('r','3.3');svg.appendChild(pulse);
+   const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');ring.setAttribute('class','route-aircraft-ring');ring.setAttribute('cx',pos[0]);ring.setAttribute('cy',pos[1]);ring.setAttribute('r','2.6');svg.appendChild(ring);
+   const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class','route-aircraft');g.setAttribute('transform',`translate(${pos[0]} ${pos[1]}) rotate(${angle}) scale(.9)`);const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d','M0 -6 C1.1 -6 1.5 -4.7 1.5 -3 L1.8 -1.2 L6 1 L6 2.4 L1.8 1.7 L1.8 4.8 L3.4 6.5 L3.4 7.3 L0 5.4 L-3.4 7.3 L-3.4 6.5 L-1.8 4.8 L-1.8 1.7 L-6 2.4 L-6 1 L-1.8 -1.2 L-1.5 -3 C-1.5 -4.7 -1.1 -6 0 -6 Z');g.appendChild(p);svg.appendChild(g);
+   const minX=Math.min(start[0],end[0],pos[0]),maxX=Math.max(start[0],end[0],pos[0]),minY=Math.min(start[1],end[1],pos[1]),maxY=Math.max(start[1],end[1],pos[1]);const spanX=Math.max(14,maxX-minX),spanY=Math.max(12,maxY-minY);const padX=spanX*.20,padY=spanY*.42;const vx=Math.max(0,minX-padX),vy=Math.max(0,minY-padY),vw=Math.min(100-vx,spanX+padX*2),vh=Math.min(100-vy,spanY+padY*2);svg.setAttribute('viewBox',`${vx} ${vy} ${vw} ${vh}`);
+ }else if(livePos){const pos=worldHeroXY(livePos);const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');ring.setAttribute('class','route-aircraft-ring');ring.setAttribute('cx',pos[0]);ring.setAttribute('cy',pos[1]);ring.setAttribute('r','2.6');svg.appendChild(ring);const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class','route-aircraft');g.setAttribute('transform',`translate(${pos[0]} ${pos[1]}) rotate(${Number.isFinite(live.heading)?live.heading:0}) scale(.9)`);const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d','M0 -6 C1.1 -6 1.5 -4.7 1.5 -3 L1.8 -1.2 L6 1 L6 2.4 L1.8 1.7 L1.8 4.8 L3.4 6.5 L3.4 7.3 L0 5.4 L-3.4 7.3 L-3.4 6.5 L-1.8 4.8 L-1.8 1.7 L-6 2.4 L-6 1 L-1.8 -1.2 L-1.5 -3 C-1.5 -4.7 -1.1 -6 0 -6 Z');g.appendChild(p);svg.appendChild(g);svg.setAttribute('viewBox',`${Math.max(0,pos[0]-18)} ${Math.max(0,pos[1]-14)} ${Math.min(100,36)} ${Math.min(100,28)}`)}
+ el.appendChild(svg);const tag=document.createElement('div');tag.className='world-hero-radar-tag';tag.textContent='LIVE · GEOGRAPHIC POSITION';el.appendChild(tag);return el.outerHTML;
 }
 function setHeroAircraft(x,watch){const el=$('heroAircraft');if(el)el.innerHTML=worldHeroSvg(x,watch); }
 const airportCoords={
@@ -445,12 +463,48 @@ function liveJourneyFor(x){
  return x?.liveRoute||null;
 }
 function flightNumberFromCallsignFallback(callsign){
- const c=normalFlightCode(callsign);const m=c.match(/^([A-Z]{2,3})(\d+[A-Z]?)$/);if(!m)return c||'';
+ const c=normalFlightCode(callsign);
+ const m=c.match(/^([A-Z]{2,3})(\d+)$/);
+ if(!m)return '';
  const iata={BAW:'BA',SHT:'BA',EIN:'EI',RYR:'FR',SIA:'SQ',DLH:'LH',UAE:'EK',QTR:'QR',AFR:'AF',KLM:'KL',VIR:'VS',AAL:'AA',UAL:'UA',DAL:'DL',SWR:'LX',IBE:'IB',TAP:'TP',THY:'TK',AUA:'OS',FIN:'AY',SAS:'SK',QFA:'QF',CPA:'CX',JAL:'JL',ANA:'NH',KAL:'KE',ACA:'AC',ETH:'ET',ETD:'EY'};
- return (iata[m[1]]||m[1])+m[2];
+ return (iata[m[1]]||'')+m[2];
 }
-const IDENTITY_CACHE_VERSION='identity-v2';
+const CALLSIGN_IATA={BAW:'BA',SHT:'BA',EIN:'EI',RYR:'FR',SIA:'SQ',DLH:'LH',UAE:'EK',QTR:'QR',AFR:'AF',KLM:'KL',VIR:'VS',AAL:'AA',UAL:'UA',DAL:'DL',SWR:'LX',IBE:'IB',TAP:'TP',THY:'TK',AUA:'OS',FIN:'AY',SAS:'SK',QFA:'QF',CPA:'CX',JAL:'JL',ANA:'NH',KAL:'KE',ACA:'AC',ETH:'ET',ETD:'EY',EZY:'U2',ICE:'FI',TOM:'BY',TUI:'BY'};
+const IDENTITY_CACHE_VERSION='identity-v3';
 function identityCacheKey(x){return IDENTITY_CACHE_VERSION+'|'+normalFlightCode(x?.callsign)+'|'+utcDateKey()}
+function applyIdentity(x,id){if(!id)return;x.flightNumber=id.flightNumber||x.flightNumber||'';x.airlineCode=id.airlineCode||x.airlineCode||'';x.airlineName=id.airlineName||x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft';x.identityStatus=id.status||'FOUND';}
+function extractIataFlightNumber(text,callsign){
+ const cs=normalFlightCode(callsign),icao=(cs.match(/^[A-Z]{3}/)||[])[0]||'',iata=CALLSIGN_IATA[icao];
+ if(!iata)return '';
+ const esc=iata.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+ const re=new RegExp('\\b'+esc+'\\s*([0-9]{1,4}[A-Z]?)\\b','gi');
+ const matches=[];let m;
+ while((m=re.exec(text||''))!==null)matches.push(normalFlightCode(iata+m[1]));
+ return matches[0]||'';
+}
+async function fetchFr24FlightData(callsign,date){
+ const cs=normalFlightCode(callsign);if(!cs)return null;
+ const url='https://r.jina.ai/http://www.flightradar24.com/data/flights/'+encodeURIComponent(cs.toLowerCase());
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
+ try{
+  const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'text/plain'}});
+  if(!r.ok){const e=new Error('Flight lookup HTTP '+r.status);e.status=r.status;throw e}
+  const text=await r.text();
+  const target=monthShort(date),escDate=target.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const routeRe=new RegExp(escDate+'[^\\n]{0,700}?FROM\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)\\s+TO\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)','i');
+  const m=text.match(routeRe);
+  const flightNumber=extractIataFlightNumber(text.slice(Math.max(0,(m?.index||0)-1200),m?m.index+800:text.length),cs);
+  const airlineCode=(CALLSIGN_IATA[(cs.match(/^[A-Z]{3}/)||[])[0]||'']||'');
+  if(!m&&!flightNumber)return null;
+  let departureUtc='',departureTime='';
+  if(m){
+   const before=text.slice(Math.max(0,m.index-260),m.index+180);
+   const timeMatch=(before+' '+m[0]).match(/Scheduled\\s+STD\\s+(\\d{2}:\\d{2})/i);
+   if(timeMatch){departureTime=timeMatch[1]+' UTC';departureUtc=date+'T'+timeMatch[1]+':00Z'}
+  }
+  return {status:'FOUND',flightNumber,airlineCode,airlineName:airlineNames[airlineCode]||airlineFromCallsign(cs)||'',from:m?.[1]?.trim()||'',fromCode:m?.[2]||'',to:m?.[3]?.trim()||'',toCode:m?.[4]||'',departureUtc,departureTime,source:'FlightRouteLookup'};
+ }finally{clearTimeout(timer)}
+}
 function applyIdentity(x,id){if(!id)return;x.flightNumber=id.flightNumber||x.flightNumber||'';x.airlineCode=id.airlineCode||x.airlineCode||'';x.airlineName=id.airlineName||x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft';x.identityStatus=id.status||'FOUND';}
 async function fetchAdsbdbCallsign(callsign){
  const cs=normalFlightCode(callsign);if(!cs)return null;
@@ -481,14 +535,25 @@ async function lookupFlightIdentity(x){
  if(S.identityPending.has(key))return S.identityPending.get(key);
  const task=(async()=>{
    try{
-     const fr=await fetchAdsbdbCallsign(cs);
-     const flightNumber=normalFlightCode(fr?.callsign_iata||'');
-     const airlineCode=normalFlightCode(fr?.airline?.iata||'')||((flightNumber.match(/^[A-Z]{2,3}/)||[])[0]||'');
-     const airlineName=fr?.airline?.name||airlineNames[airlineCode]||airlineFromCallsign(cs)||x.operator||'Live aircraft';
-     const id={status:flightNumber?'FOUND':'ROUTE_ONLY',flightNumber,airlineCode,airlineName,resolvedAt:new Date().toISOString()};
+     let fr=null;
+     try{fr=await fetchAdsbdbCallsign(cs)}catch(e){console.debug('ADSBdb identity lookup failed',e)}
+     let flightNumber=normalFlightCode(fr?.callsign_iata||'');
+     let airlineCode=normalFlightCode(fr?.airline?.iata||'')||CALLSIGN_IATA[(cs.match(/^[A-Z]{3}/)||[])[0]||'']||'';
+     let airlineName=fr?.airline?.name||airlineNames[airlineCode]||airlineFromCallsign(cs)||x.operator||'Live aircraft';
+     if(!flightNumber){
+       try{
+         const fr24=await fetchFr24FlightData(cs,utcDateKey());
+         if(fr24?.flightNumber)flightNumber=fr24.flightNumber;
+         if(fr24?.airlineCode)airlineCode=fr24.airlineCode;
+         if(fr24?.airlineName)airlineName=fr24.airlineName;
+         if(fr24?.fromCode&&fr24?.toCode&&!x.liveRoute){x.liveRoute=normaliseRoute(fr24,cs,utcDateKey(),'FlightRouteLookup')}
+       }catch(e){console.debug('FlightRoute identity lookup failed',e)}
+     }
+     if(!flightNumber)flightNumber=flightNumberFromCallsignFallback(cs);
+     const id={status:flightNumber?'FOUND':'PENDING',flightNumber,airlineCode,airlineName,resolvedAt:new Date().toISOString()};
      S.identityCache.set(key,id);applyIdentity(x,id);if(S.featured===x.icao)renderLiveHome(x);return id;
    }catch(e){
-     const id={status:'PENDING',flightNumber:'',airlineCode:'',airlineName:airlineFromCallsign(cs)||x.operator||'Live aircraft',resolvedAt:new Date().toISOString()};
+     const id={status:'PENDING',flightNumber:flightNumberFromCallsignFallback(cs),airlineCode:CALLSIGN_IATA[(cs.match(/^[A-Z]{3}/)||[])[0]||'']||'',airlineName:airlineFromCallsign(cs)||x.operator||'Live aircraft',resolvedAt:new Date().toISOString()};
      S.identityCache.set(key,id);applyIdentity(x,id);if(S.featured===x.icao)renderLiveHome(x);return id;
    }finally{S.identityPending.delete(key)}
  })();S.identityPending.set(key,task);return task;
@@ -510,7 +575,7 @@ const ROUTE_TIMEOUT=5000;
 const liveRouteCache=new Map();
 const liveRoutePending=new Map();
 function utcDateKey(){return new Date().toISOString().slice(0,10)}
-function routeCacheKey(flight,date){return 'route-v2|'+normalFlightCode(flight)+'|'+date}
+function routeCacheKey(flight,date){return 'route-v3|'+normalFlightCode(flight)+'|'+date}
 function loadRouteCache(){
  try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');const now=Date.now();Object.entries(raw).forEach(([k,v])=>{if(v&&v.cachedAt&&now-v.cachedAt<ROUTE_CACHE_TTL){liveRouteCache.set(k,v.route||null)}})}catch(e){console.debug('Route cache load failed',e)}
 }
@@ -570,33 +635,33 @@ function renderWatchlist(){const el=$('watchList');if(!watchlist.length){el.inne
 function monthShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/^0/,'')}
 async function lookupFlightRoute(flight,date){
  const cs=normalFlightCode(flight);
- // ADSBdb is the primary route enrichment source. It resolves the live
- // callsign directly to origin/destination airports and coordinates.
+ let adsbRoute=null;
  if(cs){
   try{
    const fr=await fetchAdsbdbCallsign(cs);
    const o=fr?.origin,d=fr?.destination;
    if(o?.iata_code&&d?.iata_code){
     const flightNumber=normalFlightCode(fr?.callsign_iata||'');
-    const airlineCode=normalFlightCode(fr?.airline?.iata||'')||((flightNumber.match(/^[A-Z]{2,3}/)||[])[0]||'');
-    return normaliseRoute({from:o.municipality||o.name||o.iata_code,fromCode:o.iata_code,fromLat:o.latitude,fromLon:o.longitude,to:d.municipality||d.name||d.iata_code,toCode:d.iata_code,toLat:d.latitude,toLon:d.longitude,flightNumber,airlineCode,airlineName:fr?.airline?.name||airlineNames[airlineCode]||''},cs,date,'ADSBdb');
+    const airlineCode=normalFlightCode(fr?.airline?.iata||'')||CALLSIGN_IATA[(cs.match(/^[A-Z]{3}/)||[])[0]||'']||'';
+    adsbRoute=normaliseRoute({from:o.municipality||o.name||o.iata_code,fromCode:o.iata_code,fromLat:o.latitude,fromLon:o.longitude,to:d.municipality||d.name||d.iata_code,toCode:d.iata_code,toLat:d.latitude,toLon:d.longitude,flightNumber,airlineCode,airlineName:fr?.airline?.name||airlineNames[airlineCode]||''},cs,date,'ADSBdb');
+    if(flightNumber)return adsbRoute;
    }
   }catch(e){console.debug('ADSBdb route lookup failed',e)}
  }
- // Secondary best-effort lookup for anything missing from ADSBdb.
- const url='https://r.jina.ai/http://www.flightradar24.com/data/flights/'+encodeURIComponent(cs.toLowerCase());
- const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
  try{
-  const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'text/plain'}});
-  if(!r.ok){const e=new Error('Flight lookup HTTP '+r.status);e.status=r.status;throw e}
-  const text=await r.text();
-  const target=monthShort(date);const esc=target.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  const routeRe=new RegExp(esc+'[^\\n]{0,700}?FROM\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)\\s+TO\\s+(.+?)\\s+\\(([A-Z0-9]{3,4})\\)','i');
-  const m=text.match(routeRe);if(!m)return normaliseRoute(null,cs,date);
-  const before=text.slice(Math.max(0,m.index-160),m.index+120);const timeMatch=(before+' '+m[0]).match(/Scheduled\\s+STD\\s+(\\d{2}:\\d{2})/i);
-  let departureUtc='',departureTime='';if(timeMatch){departureTime=timeMatch[1]+' UTC';departureUtc=date+'T'+timeMatch[1]+':00Z'}
-  return normaliseRoute({from:m[1].trim(),fromCode:m[2],to:m[3].trim(),toCode:m[4],departureUtc,departureTime},cs,date,'FlightRouteLookup');
- }finally{clearTimeout(timer)}
+  const fr24=await fetchFr24FlightData(cs,date);
+  if(fr24?.fromCode&&fr24?.toCode){
+   const route=normaliseRoute({...fr24,flightNumber:fr24.flightNumber||adsbRoute?.flightNumber||'',airlineCode:fr24.airlineCode||adsbRoute?.airlineCode||'',airlineName:fr24.airlineName||adsbRoute?.airlineName||''},cs,date,'FlightRouteLookup');
+   return route;
+  }
+  if(adsbRoute){
+   if(fr24?.flightNumber)adsbRoute.flightNumber=fr24.flightNumber;
+   if(fr24?.airlineCode)adsbRoute.airlineCode=fr24.airlineCode;
+   if(fr24?.airlineName)adsbRoute.airlineName=fr24.airlineName;
+   return adsbRoute;
+  }
+ }catch(e){console.debug('FlightRoute lookup failed',e)}
+ return adsbRoute||normaliseRoute(null,cs,date);
 }
 async function resolveFlightRoute(flight,date){
  return lookupFlightRoute(flight,date);
