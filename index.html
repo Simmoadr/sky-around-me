@@ -384,15 +384,31 @@ function isCommercialAircraft(a){
 }
 
 async function fetchAircraft(){
-  // Commercial traffic only for now. ADSB.lol provides the live local feed;
-  // IntelSky is deliberately not queried until we decide to add non-commercial traffic.
+  // Commercial traffic only for now. Try ADSB.lol directly from the page first.
+  // If the browser blocks the cross-origin request (for example because of CORS),
+  // fall back to the Cloudflare Worker proxy.
   const radiusNm=Math.min(250,Math.max(1,S.rangeKm/1.852));
+  const directUrl=`https://api.adsb.lol/v2/lat/${encodeURIComponent(S.lat)}/lon/${encodeURIComponent(S.lon)}/dist/${radiusNm.toFixed(1)}`;
+  let directError=null;
+  try{
+    const j=await fetchJson(directUrl,'ADSB.lol direct');
+    if(j&&j.error)throw new Error(j.message||j.error);
+    return {...j,provider:'ADSB.LOL · DIRECT',feedSource:'ADSB.LOL'};
+  }catch(e){
+    directError=e;
+    console.warn('ADSB.lol direct request failed; trying Worker proxy',e);
+  }
   const adsbUrl=`${SKY_AROUND_ME_WORKER}?source=adsblol&lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${radiusNm.toFixed(1)}`;
-  const j=await fetchJson(adsbUrl,'ADSB.lol via Worker');
-  if(j&&j.error)throw new Error(j.message||j.error);
-  return {...j,provider:'ADSB.LOL · COMMERCIAL ONLY',feedSource:'ADSB.LOL'};
+  try{
+    const j=await fetchJson(adsbUrl,'ADSB.lol via Worker');
+    if(j&&j.error)throw new Error(j.message||j.error);
+    return {...j,provider:'ADSB.LOL · WORKER FALLBACK',feedSource:'ADSB.LOL',directError:directError?.message||'Direct request failed'};
+  }catch(proxyError){
+    proxyError.directError=directError?.message||'Direct request failed';
+    throw proxyError;
+  }
 }
-async function poll(){if(!document.getElementById('map'))return;$('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';try{const j=await fetchAircraft();const raw=(Array.isArray(j.ac)?j.ac:[]).filter(isCommercialAircraft);const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));const items=allItems.filter(x=>x.d<=S.rangeKm);S.lastAllItems=allItems;S.lastItems=items;renderHomeWatch(items);const f=choose(items);S.featured=f?.icao||null;render(items);if(f){renderLiveHome(f);$('status').textContent=j.provider==='IntelSky fallback'?'INTELSKY FALLBACK · ADSB.LOL FAILED':'LIVE · COMMERCIAL · ADSB.LOL';$('call').textContent=f.callsign||f.icao.toUpperCase();$('detail').textContent=(f.desc||f.type||'Airborne aircraft')+(f.registration?' · '+f.registration:'')+' · ICAO '+f.icao.toUpperCase();$('dist').textContent=f.d.toFixed(1)+' km';$('alt').textContent=f.alt==null?'—':Math.round(f.alt*3.28084).toLocaleString()+' ft';$('speed').textContent=f.speed==null?'—':Math.round(f.speed*1.94384)+' kt';$('heading').textContent=f.heading==null?'—':Math.round(f.heading)+'°';$('pathInfo').textContent=j.airplanesLive&&j.airplanesLive.ok===false?'ADSB.lol: '+(j.airplanesLive.status?('HTTP '+j.airplanesLive.status):'Network error')+' · '+(j.airplanesLive.error||'Primary feed failed')+' · Using IntelSky fallback.':'Live trail shows the recent track of each aircraft. Data source: ADSB.lol · commercial aircraft only.'}else{renderScheduledHome();$('status').textContent='NO AIRCRAFT NEARBY';$('call').textContent='—';$('detail').textContent='No matching aircraft within the selected airspace. Home screen has returned to your next scheduled flight.';$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';$('pathInfo').textContent='No matching local traffic right now. Your scheduled flight remains the fallback. Data source: ADSB.lol · commercial aircraft only.'}$('countPill').textContent=`${items.length} aircraft in range · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+async function poll(){if(!document.getElementById('map'))return;$('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';try{const j=await fetchAircraft();const raw=(Array.isArray(j.ac)?j.ac:[]).filter(isCommercialAircraft);const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));const items=allItems.filter(x=>x.d<=S.rangeKm);S.lastAllItems=allItems;S.lastItems=items;renderHomeWatch(items);const f=choose(items);S.featured=f?.icao||null;render(items);if(f){renderLiveHome(f);$('status').textContent=j.provider||'LIVE · COMMERCIAL · ADSB.LOL';$('call').textContent=f.callsign||f.icao.toUpperCase();$('detail').textContent=(f.desc||f.type||'Airborne aircraft')+(f.registration?' · '+f.registration:'')+' · ICAO '+f.icao.toUpperCase();$('dist').textContent=f.d.toFixed(1)+' km';$('alt').textContent=f.alt==null?'—':Math.round(f.alt*3.28084).toLocaleString()+' ft';$('speed').textContent=f.speed==null?'—':Math.round(f.speed*1.94384)+' kt';$('heading').textContent=f.heading==null?'—':Math.round(f.heading)+'°';$('pathInfo').textContent=j.provider==='ADSB.LOL · WORKER FALLBACK'?'Direct ADSB.lol request was unavailable ('+(j.directError||'browser/network error')+'). Using the Cloudflare Worker fallback. Commercial aircraft only.':'Live trail shows the recent track of each aircraft. Data source: ADSB.lol direct · commercial aircraft only.'}else{renderScheduledHome();$('status').textContent='NO AIRCRAFT NEARBY';$('call').textContent='—';$('detail').textContent='No matching aircraft within the selected airspace. Home screen has returned to your next scheduled flight.';$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';$('pathInfo').textContent='No matching local traffic right now. Your scheduled flight remains the fallback. Data source: ADSB.lol · commercial aircraft only.'}$('countPill').textContent=`${items.length} aircraft in range · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
 
 $('mapStatus').textContent='LIVE'}catch(e){$('mapStatus').textContent='DATA ERROR';$('status').textContent='LIVE DATA ERROR';$('detail').textContent=e.message;$('pathInfo').textContent='ADSB.lol commercial feed error: '+(e.message||'Unknown network error');console.error('Sky Around Me',e)}}
 function refreshHomeDisplay(){const f=choose(S.lastItems||[]);if(f)renderLiveHome(f);else renderScheduledHome();renderHomeWatch(S.lastItems||[])}
