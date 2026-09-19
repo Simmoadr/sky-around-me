@@ -584,7 +584,8 @@ function heroCurvedRoutePoints(a,p,b,count=120){
  const lat0=Number(p[0])*Math.PI/180;
  const kx=111.32*Math.cos(lat0), ky=111.32;
  const xy=v=>[Number(v[1])*kx,Number(v[0])*ky];
- const ll=v=>[v[1]/kx,v[0]/ky];
+ // xy is [east-west, north-south]; convert back to [lat, lon] in the same order.
+ const ll=v=>[v[1]/ky,v[0]/kx];
  const A=xy(a),P=xy(p),B=xy(b);
  const dist=(u,v)=>Math.hypot(v[0]-u[0],v[1]-u[1]);
  const ap=dist(A,P),pb=dist(P,B);
@@ -668,9 +669,9 @@ function renderHeroFlightMap(live,watch){
    const cut=Math.max(1,Math.min(pts.length-1,nearest));
    const completed=pts.slice(0,cut+1);
    const remaining=pts.slice(cut);
-   L.polyline(pts,{color:'#7d9298',weight:2,dashArray:'5 8',opacity:.62,interactive:false}).addTo(heroFlightLayer);
-   L.polyline(completed,{color:'#63e6be',weight:4,opacity:.94,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
-   if(remaining.length>1)L.polyline(remaining,{color:'#8bcfc1',weight:2,dashArray:'5 8',opacity:.68,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
+   L.polyline(pts,{color:'#176f8b',weight:2,dashArray:'5 8',opacity:.34,interactive:false}).addTo(heroFlightLayer);
+   L.polyline(completed,{color:'#176f8b',weight:4,opacity:.94,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
+   if(remaining.length>1)L.polyline(remaining,{color:'#6fa8b8',weight:2,dashArray:'5 8',opacity:.72,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
    L.circleMarker(a,{radius:6,color:'#176f8b',weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
    L.circleMarker(b,{radius:6,color:'#176f8b',weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
    L.marker(a,{icon:heroMapAirportIcon(watch.fromCode,watch.from,'from'),interactive:false}).addTo(heroFlightLayer);
@@ -844,7 +845,7 @@ async function fetchFreeFlightIdentity(callsign,registration){
   if(!fr&&!j?.flightNumber){skyDebug('WARN','No passenger flight number returned by backend');return null;}
   const airline=fr?.airline||{};
   const provider=String(j?._skyProvider||'').toUpperCase();
-  const trustedProvider=provider.includes('PLANEFINDER')||provider.includes('FLIGHTRADAR24');
+  const trustedProvider=provider.includes('PLANEFINDER')||provider.includes('FLIGHTRADAR24')||provider.includes('AIRNAV RADAR');
   const flightNumber=trustedProvider?normalFlightCode(j?.flightNumber||''):'';
   const airlineCode=normalFlightCode(airline.iata||'')||'';
   const airlineName=airline.name||'';
