@@ -1008,6 +1008,9 @@ function watchedLookupCallsigns(f){
  if(!target)return [];
  const out=[];
  const push=v=>{v=normalFlightCode(v);if(v&&!out.includes(v))out.push(v)};
+ // Verified live identity for TAP flight TP1323 on 19 Sep 2026.
+ // The live ADS-B feed broadcasts TAP23V, not the passenger flight number TP1323.
+ if(target==='TP1323')push('TAP23V');
  const ez=target.match(/^U2(\d+[A-Z]?)$/);
  if(ez)push('EZY'+ez[1]);
  const one=target.match(/^U(2\d+[A-Z]?)$/);
@@ -1306,6 +1309,18 @@ async function fetchAircraft(){
 
 async function searchGlobalWatchedFlight(f){
  if(!f)return null;
+ // First search the live ADS-B feed by verified/known callsign aliases.
+ // This is the critical bridge for flights such as TP1323 -> TAP23V.
+ try{
+  const direct=await fetchWatchedLive(f);
+  if(Array.isArray(direct)&&direct.length){
+   const live=direct[0];
+   live.watchRef=f;
+   live.watchGlobal=true;
+   return live;
+  }
+ }catch(e){}
+ // Keep the existing flight-number resolver as a fallback.
  try{
   const url=`${SKY_AROUND_ME_NETLIFY}?lookup=flight&flight=${encodeURIComponent(normalFlightCode(f.flightNumber||f.flight))}&date=${encodeURIComponent(f.date||'')}`;
   const j=await fetchJson(url,'Global watched flight lookup');
