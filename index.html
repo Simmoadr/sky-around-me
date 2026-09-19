@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Sky Around Me</title>
-<!-- Sky Around Me v46: AirLabs watched-flight resolver + ADSB.lol live verification; v45 nearest-aircraft identity retained
+<!-- Sky Around Me v52: destination route/progress restore + exact flight/date watched-route correction; v46 AirLabs resolver retained
 <!-- Sky Around Me v18: registration-aware flight identity + smooth route hero -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -26,7 +26,7 @@
 .aircraft-main .engine-small{fill:#69777a;stroke:#596669;stroke-width:2}
 .aircraft-shadow{transform:translateY(8px);opacity:.22;filter:blur(2px)}.aircraft-shadow .airframe,.aircraft-shadow .wing,.aircraft-shadow .tail,.aircraft-shadow .cockpit,.aircraft-shadow .window,.aircraft-shadow .engine,.aircraft-shadow .engine-small{fill:#aeb8b5!important;stroke:none!important}.aircraft-shadow .detail,.aircraft-shadow .door,.aircraft-shadow .landing,.aircraft-shadow .engine-line{stroke:none!important}
 .aircraft-illustration.is-light{transform:scale(.9)}.aircraft-illustration.is-helicopter{transform:scale(.9)}.aircraft-stage-art .airframe{fill:url(#bodyGrad);stroke:#aeb5b2;stroke-width:2}.aircraft-stage-art .wing{fill:#dfe4e1;stroke:#aeb5b2;stroke-width:2}.aircraft-stage-art .window{fill:url(#glassGrad)}.aircraft-stage-art .accent{stroke:var(--accent);stroke-width:9;stroke-linecap:round}.aircraft-stage-art .detail{stroke:#b7bfbc;stroke-width:2;fill:none}.aircraft-sketch{width:100%;height:245px;display:grid;place-items:center;opacity:.98}.aircraft-sketch svg{width:100%;height:100%;overflow:visible}.aircraft-sketch .sketch-shadow{fill:#d8dedb;stroke:none;opacity:.58;transform:translateY(8px)}.aircraft-sketch .sketch-lines{fill:var(--paper);stroke:#1a2021;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}.aircraft-sketch .sketch-lines path{vector-effect:non-scaling-stroke}.aircraft-sketch .sketch-lines ellipse{vector-effect:non-scaling-stroke}.aircraft-sketch .sketch-shadow path,.aircraft-sketch .sketch-shadow ellipse{fill:#d8dedb;stroke:none}.aircraft-sketch:after{content:'LIVE AIRCRAFT';position:absolute;left:50%;bottom:8px;transform:translateX(-50%);font-size:8px;letter-spacing:.18em;font-weight:900;color:#a0a6a4;opacity:.0;pointer-events:none}
-.hero-bottom{margin-top:auto;padding:26px 42px 34px;position:relative;z-index:2}.divider{height:1px;background:var(--line);margin-bottom:24px}.identity{display:flex;justify-content:space-between;gap:30px;align-items:flex-end}.operator{font-size:10px;color:var(--muted);font-weight:850;letter-spacing:.15em}.flight-name{font-size:31px;font-weight:900;letter-spacing:-.035em;margin-top:6px}.aircraft-type{font-size:11px;color:var(--muted);margin-top:5px}.telemetry{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:22px;min-width:520px}.metric label{display:block;font-size:8px;color:var(--muted);letter-spacing:.15em;font-weight:900}.metric b{display:block;font-size:19px;margin-top:5px;letter-spacing:-.02em}.metric small{display:block;font-size:9px;color:var(--muted);margin-top:2px}.progress{margin-top:22px;height:4px;background:#e3e5e1;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .6s ease}.journey-info{display:grid;grid-template-columns:minmax(90px,1fr) minmax(220px,2.4fr) minmax(90px,1fr);gap:18px;align-items:end;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}.journey-end span{display:block;font-size:7px;color:var(--muted);letter-spacing:.16em;font-weight:900}.journey-end b{display:block;font-size:16px;margin-top:4px;letter-spacing:.03em}.journey-end small{display:block;font-size:8px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.journey-end-right{text-align:right}.journey-center{min-width:0;width:100%;display:flex;flex-direction:column;align-items:stretch}.journey-percent{text-align:center;font-size:8px;letter-spacing:.15em;font-weight:900;color:var(--muted);margin-bottom:7px;white-space:nowrap}.journey-center .progress{margin-top:0;width:100%;min-width:0;display:block;flex:0 0 4px}.journey-progress{position:relative;overflow:visible!important;box-sizing:border-box}.world-hero-zoom{position:absolute;inset:0;transform-origin:center center;will-change:transform;transition:transform .55s ease}.world-hero-label{position:absolute;z-index:4;transform:translate(-50%,-50%);font-size:8px;letter-spacing:.12em;font-weight:900;color:#111;background:rgba(248,248,244,.88);padding:5px 7px;border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,.08);white-space:nowrap}.world-hero-label.from{margin-top:18px}.world-hero-label.to{margin-top:18px}.watch-bottom{margin-top:16px;padding:20px 24px;background:var(--paper);border:1px solid #e1e2de;border-radius:22px;box-shadow:0 12px 36px rgba(23,30,30,.07)}.watch-bottom-head{display:flex;justify-content:space-between;align-items:center;gap:18px}.watch-bottom-title{font-size:20px;font-weight:900;letter-spacing:-.025em;margin-top:5px}.watch-bottom-title-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.watch-bottom-name{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}.watch-bottom-body{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:24px;margin-top:14px}.watch-route{display:flex;align-items:center;gap:10px}.watch-code{font-size:20px;font-weight:900;letter-spacing:.04em}.watch-line{width:54px;height:2px;background:var(--watch-route-color,var(--accent));border-radius:99px;position:relative}.watch-code{color:var(--watch-route-color,var(--accent))}.watch-line:after{color:var(--watch-route-color,var(--accent))}.watch-line:after{content:'✈';position:absolute;left:50%;top:-8px;transform:translateX(-50%);font-size:12px;color:var(--muted);background:var(--paper);padding:0 5px}.watch-copy{min-width:0}.watch-copy div{font-size:11px;font-weight:750}.watch-copy small{display:block;color:var(--muted);font-size:9px;margin-top:4px}.watch-copy .departure-primary{display:block;color:#111;font-size:10px;font-weight:850;letter-spacing:.02em;margin-top:5px}.watch-copy .departure-secondary{display:block;color:var(--muted);font-size:8px;margin-top:2px}.watch-count{text-align:right;white-space:nowrap}.watch-count label,.watch-live-grid label{display:block;font-size:8px;color:var(--muted);letter-spacing:.15em;font-weight:900}.watch-count b{display:block;font-size:21px;margin-top:4px;letter-spacing:-.025em}.watch-live-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding-top:13px;border-top:1px solid var(--line)}.watch-live-grid b{display:block;font-size:14px;margin-top:4px}.watch-bottom .state{margin-top:0}.watch-bottom .state.live{background:#eef5f2;color:var(--live)}.watch-bottom .state.active{background:var(--accent2);color:#28515e}.watch-bottom .state.live{background:#eef5f2;color:var(--live)}@media(max-width:1050px){.watch-bottom-body{grid-template-columns:1fr 1fr}.watch-route{grid-column:1}.watch-copy{grid-column:2}.watch-count{grid-column:1/-1;text-align:left}.watch-live-grid{grid-column:1/-1}}@media(max-width:700px){.watch-bottom-body{grid-template-columns:1fr}.watch-route,.watch-copy,.watch-count,.watch-live-grid{grid-column:auto}.watch-count{text-align:left}.watch-live-grid{grid-template-columns:1fr 1fr}}
+.hero-bottom{margin-top:auto;padding:26px 42px 34px;position:relative;z-index:2}.divider{height:1px;background:var(--line);margin-bottom:24px}.identity{display:flex;justify-content:space-between;gap:30px;align-items:flex-end}.operator{font-size:10px;color:var(--muted);font-weight:850;letter-spacing:.15em}.flight-name{font-size:31px;font-weight:900;letter-spacing:-.035em;margin-top:6px}.aircraft-type{font-size:11px;color:var(--muted);margin-top:5px}.telemetry{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:22px;min-width:520px}.metric label{display:block;font-size:8px;color:var(--muted);letter-spacing:.15em;font-weight:900}.metric b{display:block;font-size:19px;margin-top:5px;letter-spacing:-.02em}.metric small{display:block;font-size:9px;color:var(--muted);margin-top:2px}.progress{margin-top:22px;height:4px;background:#e3e5e1;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .6s ease}.journey-info{display:grid;grid-template-columns:minmax(90px,1fr) minmax(220px,2.4fr) minmax(90px,1fr);gap:18px;align-items:end;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}.journey-end span{display:block;font-size:7px;color:var(--muted);letter-spacing:.16em;font-weight:900}.journey-end b{display:block;font-size:16px;margin-top:4px;letter-spacing:.03em}.journey-end small{display:block;font-size:8px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.journey-end-right{text-align:right}.journey-center{min-width:0;width:100%;display:flex;flex-direction:column;align-items:stretch}.journey-percent{text-align:center;font-size:8px;letter-spacing:.15em;font-weight:900;color:var(--muted);margin-bottom:7px;white-space:nowrap}.journey-center .progress{margin-top:0;width:100%;min-width:0;display:block;flex:0 0 4px}.journey-progress{position:relative;overflow:visible!important;box-sizing:border-box}.world-hero-zoom{position:absolute;inset:0;transform-origin:center center;will-change:transform;transition:transform .55s ease}.world-hero-label{position:absolute;z-index:4;transform:translate(-50%,-50%);font-size:8px;letter-spacing:.12em;font-weight:900;color:#111;background:rgba(248,248,244,.88);padding:5px 7px;border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,.08);white-space:nowrap}.world-hero-label.from{margin-top:18px}.world-hero-label.to{margin-top:18px}.watch-bottom{margin-top:16px;padding:20px 24px;background:var(--paper);border:1px solid #e1e2de;border-radius:22px;box-shadow:0 12px 36px rgba(23,30,30,.07)}.watch-bottom-head{display:flex;justify-content:space-between;align-items:center;gap:18px}.watch-bottom-title{font-size:20px;font-weight:900;letter-spacing:-.025em;margin-top:5px}.watch-bottom-title-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.watch-bottom-name{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}.watch-bottom-body{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:24px;margin-top:14px}.watch-route{display:flex;align-items:center;gap:10px}.watch-code{font-size:20px;font-weight:900;letter-spacing:.04em}.watch-line{width:54px;height:2px;background:var(--watch-route-color,var(--accent));border-radius:99px;position:relative}.watch-code{color:var(--watch-route-color,var(--accent))}.watch-line:after{color:var(--watch-route-color,var(--accent))}.watch-line:after{content:'✈';position:absolute;left:50%;top:-8px;transform:translateX(-50%);font-size:12px;color:var(--muted);background:var(--paper);padding:0 5px}.watch-copy{min-width:0}.watch-copy div{font-size:11px;font-weight:750}.watch-copy small{display:block;color:var(--muted);font-size:9px;margin-top:4px}.watch-copy .departure-primary{display:block;color:#111;font-size:10px;font-weight:850;letter-spacing:.02em;margin-top:5px}.watch-copy .departure-secondary{display:block;color:var(--muted);font-size:8px;margin-top:2px}.watch-count{text-align:right;white-space:nowrap}.watch-count label,.watch-live-grid label{display:block;font-size:8px;color:var(--muted);letter-spacing:.15em;font-weight:900}.watch-count b{display:block;font-size:21px;margin-top:4px;letter-spacing:-.025em}.watch-live-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding-top:13px;border-top:1px solid var(--line)}.watch-live-grid b{display:block;font-size:14px;margin-top:4px}.watch-progress-row{grid-column:1/-1;display:grid;grid-template-columns:64px minmax(180px,1fr) 64px;align-items:end;gap:14px;padding-top:12px;border-top:1px solid var(--line)}.watch-progress-end span{display:block;font-size:7px;color:var(--muted);letter-spacing:.16em;font-weight:900}.watch-progress-end b{display:block;font-size:14px;margin-top:3px;color:var(--watch-route-color,var(--accent));letter-spacing:.04em}.watch-progress-end-right{text-align:right}.watch-progress-center{min-width:0}.watch-progress-label{text-align:center;font-size:8px;color:var(--muted);letter-spacing:.13em;font-weight:900;margin-bottom:6px}.watch-progress-track{position:relative;height:4px;background:#e3e5e1;border-radius:99px}.watch-progress-track i{display:block;height:100%;width:0;background:var(--watch-route-color,var(--accent));border-radius:99px;transition:width .5s ease}.watch-progress-track span{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--paper);border:1px solid var(--watch-route-color,var(--accent));font-size:9px;color:var(--watch-route-color,var(--accent));line-height:1;transition:left .5s ease}.watch-bottom .state{margin-top:0}.watch-bottom .state.live{background:#eef5f2;color:var(--live)}.watch-bottom .state.active{background:var(--accent2);color:#28515e}.watch-bottom .state.live{background:#eef5f2;color:var(--live)}@media(max-width:1050px){.watch-bottom-body{grid-template-columns:1fr 1fr}.watch-route{grid-column:1}.watch-copy{grid-column:2}.watch-count{grid-column:1/-1;text-align:left}.watch-live-grid{grid-column:1/-1}}@media(max-width:700px){.watch-bottom-body{grid-template-columns:1fr}.watch-route,.watch-copy,.watch-count,.watch-live-grid,.watch-progress-row{grid-column:auto}.watch-count{text-align:left}.watch-live-grid{grid-template-columns:1fr 1fr}.watch-progress-row{grid-template-columns:48px minmax(120px,1fr) 48px;gap:8px}}
 
 /* SKY AROUND ME — LIVE FLIGHT SPOTLIGHT */
 .hero{min-height:600px;background:linear-gradient(145deg,#07151c 0%,#0b2028 52%,#061218 100%);border-color:rgba(255,255,255,.10);box-shadow:0 30px 90px rgba(0,10,16,.22);color:#f4fafb}
@@ -385,7 +385,12 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
    <div class="watch-copy"><div id="homeWatchNames">Add a flight in My Flights</div><small id="homeWatchDate">—</small></div>
    <div class="watch-count"><label id="homeWatchCountLabel">DEPARTS IN</label><b id="homeWatchCount">—</b></div>
    <div class="watch-live-grid" id="homeWatchLive" hidden>
-    <div><label>ALTITUDE</label><b id="homeWatchAlt">—</b></div><div><label>SPEED</label><b id="homeWatchSpeed">—</b></div><div><label>HEADING</label><b id="homeWatchHeading">—</b></div><div><label>DISTANCE</label><b id="homeWatchDistance">—</b></div>
+    <div><label>ALTITUDE</label><b id="homeWatchAlt">—</b></div><div><label>SPEED</label><b id="homeWatchSpeed">—</b></div><div><label>HEADING</label><b id="homeWatchHeading">—</b></div><div><label>DISTANCE TO DESTINATION</label><b id="homeWatchDistance">—</b></div>
+   </div>
+   <div class="watch-progress-row" id="homeWatchProgressRow">
+    <div class="watch-progress-end"><span>FROM</span><b id="homeWatchProgressFrom">—</b></div>
+    <div class="watch-progress-center"><div class="watch-progress-label" id="homeWatchProgressLabel">0% COMPLETE</div><div class="watch-progress-track"><i id="homeWatchProgressBar"></i><span id="homeWatchProgressPlane">✈</span></div></div>
+    <div class="watch-progress-end watch-progress-end-right"><span>TO</span><b id="homeWatchProgressTo">—</b></div>
    </div>
   </div>
  </section>
@@ -750,7 +755,7 @@ function recenterHeroMap(){
  setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),80);
 }
 const airportCoords={
- JFK:[40.6413,-73.7781],SIN:[1.3644,103.9915],LHR:[51.4700,-0.4543],LBA:[53.8659,-1.6600],LPA:[27.9319,-15.3867],BRS:[51.3827,-2.7191],BZR:[43.3235,3.3533],CDG:[49.0097,2.5479],AMS:[52.3105,4.7683],FRA:[50.0379,8.5622],MUC:[48.3538,11.7861],CLT:[35.2140,-80.9431],RDU:[35.8801,-78.7880],LGA:[40.7769,-73.8740],EWR:[40.6895,-74.1745],MEX:[19.4363,-99.0721],SAF:[1.3502,103.9944],SFO:[37.6213,-122.3790],LAX:[33.9416,-118.4085],ORD:[41.9742,-87.9073],DFW:[32.8998,-97.0403],DXB:[25.2532,55.3657],DOH:[25.2731,51.6081],HND:[35.5494,139.7798],NRT:[35.7720,140.3929],SYD:[-33.9399,151.1753]
+ JFK:[40.6413,-73.7781],SIN:[1.3644,103.9915],LHR:[51.4700,-0.4543],DUS:[51.2895,6.7668],HAJ:[52.4611,9.6851],LBA:[53.8659,-1.6600],LPA:[27.9319,-15.3867],BRS:[51.3827,-2.7191],BZR:[43.3235,3.3533],CDG:[49.0097,2.5479],AMS:[52.3105,4.7683],FRA:[50.0379,8.5622],MUC:[48.3538,11.7861],CLT:[35.2140,-80.9431],RDU:[35.8801,-78.7880],LGA:[40.7769,-73.8740],EWR:[40.6895,-74.1745],MEX:[19.4363,-99.0721],SAF:[1.3502,103.9944],SFO:[37.6213,-122.3790],LAX:[33.9416,-118.4085],ORD:[41.9742,-87.9073],DFW:[32.8998,-97.0403],DXB:[25.2532,55.3657],DOH:[25.2731,51.6081],HND:[35.5494,139.7798],NRT:[35.7720,140.3929],SYD:[-33.9399,151.1753]
 };
 function routePoint(code){const p=airportCoords[String(code||'').toUpperCase()];return p?[p[0],p[1]]:null}
 function greatCirclePoint(a,b,t){const r=Math.PI/180,A=[a[0]*r,a[1]*r],B=[b[0]*r,b[1]*r];const va=[Math.cos(A[0])*Math.cos(A[1]),Math.cos(A[0])*Math.sin(A[1]),Math.sin(A[0])],vb=[Math.cos(B[0])*Math.cos(B[1]),Math.cos(B[0])*Math.sin(B[1]),Math.sin(B[0])];const dot=Math.max(-1,Math.min(1,va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2])),d=Math.acos(dot);if(d<1e-8)return a.slice();const sd=Math.sin(d);const x=[(Math.sin((1-t)*d)/sd)*va[0]+(Math.sin(t*d)/sd)*vb[0],(Math.sin((1-t)*d)/sd)*va[1]+(Math.sin(t*d)/sd)*vb[1],(Math.sin((1-t)*d)/sd)*va[2]+(Math.sin(t*d)/sd)*vb[2]];return [Math.atan2(x[2],Math.hypot(x[0],x[1]))/r,Math.atan2(x[1],x[0])/r]}
@@ -806,7 +811,6 @@ function watchedFlightForLiveItem(x){
  const active=watchlist.filter(w=>flightState(w)!=='COMPLETED');
  return active.find(w=>watchedLiveMatch(w,[x]))||null;
 }
-function liveJourneyFor(x){ return x?.watchRef || x?.liveRoute || watchedFlightForLiveItem(x) || null; }
 function routeStatusLabel(route){
   if(!route) return 'ROUTE PENDING';
   if(route.status==='STALE') return 'ROUTE CACHED';
@@ -817,7 +821,7 @@ function routeStatusLabel(route){
 function routeAirport(code,name){
   const c=String(code||'').toUpperCase();
   const point=routePoint(c);
-  const known={LHR:'London Heathrow',JFK:'New York JFK',SIN:'Singapore Changi',BRS:'Bristol',BZR:'Béziers',CDG:'Paris Charles de Gaulle',AMS:'Amsterdam Schiphol',FRA:'Frankfurt',MUC:'Munich',CLT:'Charlotte',RDU:'Raleigh-Durham',LGA:'New York LaGuardia',EWR:'Newark',MEX:'Mexico City',SAF:'Santa Fe',SFO:'San Francisco',LAX:'Los Angeles',ORD:'Chicago O’Hare',DFW:'Dallas/Fort Worth',DXB:'Dubai',DOH:'Doha',HND:'Tokyo Haneda',NRT:'Tokyo Narita',SYD:'Sydney'};
+  const known={LHR:'London Heathrow',JFK:'New York JFK',SIN:'Singapore Changi',DUS:'Düsseldorf',HAJ:'Hannover',LBA:'Leeds Bradford',LPA:'Gran Canaria',BRS:'Bristol',BZR:'Béziers',CDG:'Paris Charles de Gaulle',AMS:'Amsterdam Schiphol',FRA:'Frankfurt',MUC:'Munich',CLT:'Charlotte',RDU:'Raleigh-Durham',LGA:'New York LaGuardia',EWR:'Newark',MEX:'Mexico City',SAF:'Santa Fe',SFO:'San Francisco',LAX:'Los Angeles',ORD:'Chicago O’Hare',DFW:'Dallas/Fort Worth',DXB:'Dubai',DOH:'Doha',HND:'Tokyo Haneda',NRT:'Tokyo Narita',SYD:'Sydney'};
   return {code:c,name:String(name||known[c]||c),lat:point?.[0]??null,lon:point?.[1]??null};
 }
 function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
@@ -830,7 +834,7 @@ function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
 function liveJourneyFor(x){
  const f=getNextWatchedFlight();
  if(f&&watchedLiveMatch(f,[x])) return f;
- return x?.liveRoute||null;
+ return x?.watchRef||x?.liveRoute||watchedFlightForLiveItem(x)||null;
 }
 function xRouteForIdentity(callsign,registration){ const x=S.lastAllItems?.find(a=>normalFlightCode(a?.callsign)===normalFlightCode(callsign)&&normalFlightCode(a?.registration||a?.r||'')===normalFlightCode(registration)); const r=x?.liveRoute; return r?.status==='FOUND'?r:null; }
 const SKY_DEBUG_ENABLED=new URLSearchParams(window.location.search).get('debug')==='1';
@@ -1140,10 +1144,18 @@ function renderHomeWatch(items){
  const today=scheduledTodayFlights();
  const next=today.find(f=>watchHasLive(f))||today.find(f=>flightState(f)==='TRACKING PENDING')||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
  const box=$('homeWatchLive');
+ const progressRow=$('homeWatchProgressRow');
+ const progressBar=$('homeWatchProgressBar');
+ const progressPlane=$('homeWatchProgressPlane');
+ const progressLabel=$('homeWatchProgressLabel');
+ const progressFrom=$('homeWatchProgressFrom');
+ const progressTo=$('homeWatchProgressTo');
  if(!next){
   $('homeWatchTitle').textContent='NO SAVED FLIGHT';$('homeWatchName').textContent='';$('homeWatchFrom').textContent='—';$('homeWatchTo').textContent='—';$('homeWatchNames').textContent='Add a flight in My Flights';$('homeWatchDate').textContent='Your saved flights will appear here.';
   const st=$('homeWatchState');st.className='state';st.textContent='NONE';$('homeWatchCountLabel').textContent='FLIGHT STATUS';$('homeWatchCount').textContent='—';box.hidden=true;
-  $('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';return;
+  $('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';
+  if(progressFrom)progressFrom.textContent='—';if(progressTo)progressTo.textContent='—';if(progressLabel)progressLabel.textContent='—% COMPLETE';if(progressBar)progressBar.style.width='0%';if(progressPlane)progressPlane.style.left='0%';if(progressRow)progressRow.hidden=true;
+  return;
  }
  const live=watchHasLive(next)?S.watchLive:null;
  const future=dateKeyFromValue(next.date)>todayKeyLocal();
@@ -1155,13 +1167,24 @@ function renderHomeWatch(items){
  const dep=formatDepartureDisplay(next);
  $('homeWatchDate').innerHTML=(next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}):'No date set')+`<br><span class="departure-primary">${escapeHtml(dep.primary)}</span><span class="departure-secondary">${escapeHtml(dep.secondary)}</span>`;
  const st=$('homeWatchState');
+ // The watched route/progress is always shown once we have a route. A scheduled
+ // or tracking-pending flight starts at 0%; a completed flight is 100%.
+ const routeReady=!!(next.fromCode&&next.toCode);
+ let pct=0;
+ if(live){const p=watchedCompletion(next,live);pct=p==null?0:p;}
+ else if(state==='COMPLETED')pct=100;
+ if(progressFrom)progressFrom.textContent=next.fromCode||'—';
+ if(progressTo)progressTo.textContent=next.toCode||'—';
+ if(progressLabel)progressLabel.textContent=routeReady?`${pct}% COMPLETE`:'—% COMPLETE';
+ if(progressBar)progressBar.style.width=routeReady?`${pct}%`:'0%';
+ if(progressPlane)progressPlane.style.left=routeReady?`${pct}%`:'0%';
+ if(progressRow)progressRow.hidden=!routeReady;
  if(live){
    const phase=watchedFlightPhase(next,live);
    st.className='state '+(phase==='LANDED'?'active':'live');
    st.textContent=phase;
    $('homeWatchCountLabel').textContent='COMPLETED';
-   const pct=watchedCompletion(next,live);
-   $('homeWatchCount').textContent=pct==null?'—':pct+'%';
+   $('homeWatchCount').textContent=pct+'%';
    $('homeWatchAlt').textContent=Number.isFinite(Number(live.alt))?Math.round(Number(live.alt)*3.28084).toLocaleString('en-GB')+' ft':'—';
    $('homeWatchSpeed').textContent=Number.isFinite(Number(live.speed))?Math.round(Number(live.speed)*1.94384)+' kt':'—';
    $('homeWatchHeading').textContent=Number.isFinite(Number(live.heading))?Math.round(Number(live.heading))+'°':'—';
@@ -1175,7 +1198,9 @@ function renderHomeWatch(items){
    $('homeWatchCountLabel').textContent=future?'DEPARTS IN':state==='TRACKING PENDING'?'LIVE TRACKING':'FLIGHT STATUS';
    $('homeWatchCount').textContent=future?countdownText(next):state==='TRACKING PENDING'?'WAITING…':state;
    $('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';
-   box.hidden=true;
+   // Keep the four telemetry cells visible for the pending/scheduled state too,
+   // so the card does not jump when live tracking begins.
+   box.hidden=false;
  }
 }
 function renderWatchlist(){const el=$('watchList');if(!watchlist.length){el.innerHTML='<div class="empty-list">No watched flights yet.</div>';return}
@@ -1208,19 +1233,23 @@ async function refreshMissingFlightData(){
     if(schedule.departureTime&&!f.departureTime)f.departureTime=schedule.departureTime;
     if(schedule.departureUtc&&!f.departureUtc)f.departureUtc=schedule.departureUtc;
     if(schedule.arrivalUtc&&!f.arrivalUtc)f.arrivalUtc=schedule.arrivalUtc;
-    if(schedule.fromCode&&!f.fromCode)f.fromCode=schedule.fromCode;
-    if(schedule.toCode&&!f.toCode)f.toCode=schedule.toCode;
-    if(schedule.fromLat!=null&&!f.fromLat)f.fromLat=Number(schedule.fromLat);
-    if(schedule.fromLon!=null&&!f.fromLon)f.fromLon=Number(schedule.fromLon);
-    if(schedule.toLat!=null&&!f.toLat)f.toLat=Number(schedule.toLat);
-    if(schedule.toLon!=null&&!f.toLon)f.toLon=Number(schedule.toLon);
-    if(schedule.from&&!f.from)f.from=schedule.from;
-    if(schedule.to&&!f.to)f.to=schedule.to;
-    if(schedule.airlineName&&!f.airlineName)f.airlineName=schedule.airlineName;
-    if(schedule.airlineCode&&!f.airlineCode)f.airlineCode=schedule.airlineCode;
-    if(schedule.aircraftDesc&&!f.aircraftDesc)f.aircraftDesc=schedule.aircraftDesc;
-    if(schedule.registration&&!f.registration)f.registration=schedule.registration;
-    if(schedule.hex&&!f.hex)f.hex=schedule.hex;
+    // The schedule lookup is keyed by exact flight number + date. Treat its
+    // route as authoritative and overwrite stale localStorage values. This is
+    // critical when an earlier lookup attached a different sector to the same
+    // flight record.
+    if(schedule.fromCode)f.fromCode=schedule.fromCode;
+    if(schedule.toCode)f.toCode=schedule.toCode;
+    if(schedule.fromLat!=null)f.fromLat=Number(schedule.fromLat);
+    if(schedule.fromLon!=null)f.fromLon=Number(schedule.fromLon);
+    if(schedule.toLat!=null)f.toLat=Number(schedule.toLat);
+    if(schedule.toLon!=null)f.toLon=Number(schedule.toLon);
+    if(schedule.from)f.from=schedule.from;
+    if(schedule.to)f.to=schedule.to;
+    if(schedule.airlineName)f.airlineName=schedule.airlineName;
+    if(schedule.airlineCode)f.airlineCode=schedule.airlineCode;
+    if(schedule.aircraftDesc)f.aircraftDesc=schedule.aircraftDesc;
+    if(schedule.registration)f.registration=schedule.registration;
+    if(schedule.hex)f.hex=schedule.hex;
     f.scheduleSource=schedule.source||'AirLabs';
     f.lookupStatus='ROUTE FOUND';
     changed=true;
@@ -1234,6 +1263,9 @@ async function lookupWatchedSchedule(flight,date){
  try{return await fetchJson(url,'AirLabs flight lookup')}catch(e){return null}
 }
 async function addWatchedFlight(flight,date,name){
+ // Replace the existing exact flight/date record completely. Do not carry a
+ // stale route from a previous resolver result into the new schedule lookup.
+ watchlist=watchlist.filter(x=>!(normalFlightCode(x.flight||x.flightNumber)===normalFlightCode(flight)&&String(x.date||'')===String(date)));
  const base={name,flight,date,flightNumber:normalFlightCode(flight),airlineName:airlineFromCallsign(flight)||'',from:'',to:'',fromCode:'',toCode:'',departureTime:'',departureUtc:'',arrivalUtc:'',aircraftDesc:'',registration:'',hex:'',lookupStatus:'LOOKING UP'};
  watch=base;watchlist=[base,...watchlist.filter(x=>!(x.flight===flight&&x.date===date))];S.watchTarget=null;S.watchLive=null;renderWatchlist();renderHomeWatch();renderScheduledHome();
  try{
