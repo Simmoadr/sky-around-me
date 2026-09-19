@@ -776,8 +776,8 @@ function renderScheduledHome(){
    $('airlineBadge').textContent=(next.airlineCode||((next.flight||'').match(/^[A-Z]{1,3}/)?.[0])||'WATCH').toUpperCase();
    $('operator').textContent=(next.airlineName||'WATCHED FLIGHT').toUpperCase();
    $('callsignNote').textContent='SAVED FLIGHT';
-   $('aircraftReg').textContent=next.registration||next.reg||'—';
-   $('aircraftRegNote').textContent='REGISTRATION';
+   $('aircraftCallsign').textContent=next.callsign||next.adsbCallsign||'—';
+   $('aircraftRegNote').textContent='REGISTRATION '+(next.registration||next.reg||'—');
    $('flightName').className='flight-name watched-flight-title';$('flightName').textContent=(next.fromCode&&next.toCode)?next.fromCode+' → '+next.toCode:(next.flightNumber||next.flight||'WATCHED FLIGHT');
    $('aircraftType').textContent=next.aircraftDesc||'Scheduled flight · live position will appear when airborne';
    $('route').textContent=(next.from||next.fromCode||'DEPARTURE')+'  →  '+(next.to||next.toCode||'ARRIVAL');
@@ -1331,7 +1331,9 @@ async function fetchAircraft(){
     lastSuccessfulFeed=j;
     return {...j,provider:j._skyProvider||'LIVE AIRSPACE',feedSource:j._skyProvider||'LIVE'};
   }catch(e){
-    // Expected transient upstream throttling; do not spam the browser console.
+    // Keep the dashboard alive during a transient proxy/upstream failure.
+    // The poll loop will retry; callers can continue using the last good data.
+    if(lastSuccessfulFeed && Array.isArray(lastSuccessfulFeed.ac)) return {...lastSuccessfulFeed,provider:lastSuccessfulFeed._skyProvider||'LAST GOOD FEED',feedSource:'LAST GOOD FEED'};
     throw e;
   }
 }
