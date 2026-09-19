@@ -311,9 +311,33 @@
   .journey-info{margin-top:9px;padding-top:9px}
 }
 
+
+/* DEBUG CONSOLE — enabled with ?debug=1 */
+#skyDebugPanel{display:none;position:fixed;z-index:99999;right:16px;bottom:16px;width:min(560px,calc(100vw - 32px));max-height:78vh;background:rgba(5,14,18,.97);color:#dffcf5;border:1px solid rgba(99,230,190,.35);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;overflow:hidden}
+#skyDebugPanel.is-visible{display:flex;flex-direction:column}
+#skyDebugHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.12);background:rgba(99,230,190,.08)}
+#skyDebugHead strong{font-size:10px;letter-spacing:.16em}
+#skyDebugActions{display:flex;gap:6px}
+.sky-debug-btn{border:1px solid rgba(99,230,190,.3);background:rgba(255,255,255,.06);color:#dffcf5;border-radius:7px;padding:6px 9px;font:700 8px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;cursor:pointer}
+#skyDebugSummary{padding:9px 12px;font-size:9px;line-height:1.5;border-bottom:1px solid rgba(255,255,255,.10);color:#9db6bc}
+#skyDebugLog{padding:10px 12px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:9px;line-height:1.55;max-height:60vh}
+.sky-debug-ok{color:#63e6be}.sky-debug-warn{color:#ffd166}.sky-debug-error{color:#ff8585}.sky-debug-key{color:#9ad9ff}.sky-debug-muted{color:#78929b}
+body.sky-debug-enabled #skyDebugPanel{display:flex}
+body.sky-debug-enabled .debug-only-label{display:inline-flex}
+.debug-only-label{display:none}
 </style>
 </head>
 <body>
+
+<div id="skyDebugPanel" aria-label="Sky Around Me debug console">
+ <div id="skyDebugHead">
+  <strong>SKY AROUND ME · IDENTITY DEBUG</strong>
+  <div id="skyDebugActions"><button class="sky-debug-btn" id="skyDebugRerun">RERUN IDENTITY</button><button class="sky-debug-btn" id="skyDebugCopy">COPY LOG</button><button class="sky-debug-btn" id="skyDebugClear">CLEAR</button><button class="sky-debug-btn" id="skyDebugClose">CLOSE</button></div>
+ </div>
+ <div id="skyDebugSummary">Waiting for the Featured aircraft identity resolver…</div>
+ <div id="skyDebugLog"></div>
+</div>
+
 <div class="app">
 <header class="topbar">
  <div class="brand"><div class="mark">✈</div><div><div class="brand-name">SKY AROUND ME</div><div class="brand-sub">PERSONAL FLIGHT WATCH</div></div></div>
@@ -770,22 +794,55 @@ function liveJourneyFor(x){
  return x?.liveRoute||null;
 }
 function xRouteForIdentity(callsign,registration){ const x=S.lastAllItems?.find(a=>normalFlightCode(a?.callsign)===normalFlightCode(callsign)&&normalFlightCode(a?.registration||a?.r||'')===normalFlightCode(registration)); const r=x?.liveRoute; return r?.status==='FOUND'?r:null; }
+const SKY_DEBUG_ENABLED=new URLSearchParams(window.location.search).get('debug')==='1';
+const SKY_DEBUG_LOG=[];
+function skyDebugClass(level){return level==='ERROR'?'sky-debug-error':level==='WARN'?'sky-debug-warn':level==='OK'?'sky-debug-ok':'sky-debug-muted'}
+function skyDebug(level,message,data){
+ if(!SKY_DEBUG_ENABLED)return;
+ const ts=new Date().toLocaleTimeString('en-GB',{hour12:false});
+ const line={ts,level,message,data:data??null};SKY_DEBUG_LOG.push(line);
+ if(SKY_DEBUG_LOG.length>300)SKY_DEBUG_LOG.shift();
+ const log=document.getElementById('skyDebugLog');
+ if(log){const row=document.createElement('div');row.className=skyDebugClass(level);row.textContent=`[${ts}] ${level} ${message}`+(data===undefined||data===null?'':'\n  '+JSON.stringify(data,null,2));log.appendChild(row);log.scrollTop=log.scrollHeight;}
+ const summary=document.getElementById('skyDebugSummary');
+ if(summary)summary.textContent=`${message}${data&&data.status?` · ${data.status}`:''}`;
+}
+function skyDebugReset(){SKY_DEBUG_LOG.length=0;const log=document.getElementById('skyDebugLog');if(log)log.innerHTML='';const summary=document.getElementById('skyDebugSummary');if(summary)summary.textContent='Debug log cleared.'}
+function skyDebugCopy(){const text=SKY_DEBUG_LOG.map(x=>`[${x.ts}] ${x.level} ${x.message}`+(x.data==null?'':'\n'+JSON.stringify(x.data,null,2))).join('\n\n');navigator.clipboard?.writeText(text).then(()=>skyDebug('OK','Debug log copied to clipboard')).catch(()=>skyDebug('WARN','Clipboard copy failed — select/copy the log manually'));}
+function skyDebugSelectedAircraft(){
+ const x=S.featured&&Array.isArray(S.lastAllItems)?S.lastAllItems.find(a=>a.icao===S.featured):null;
+ return x||null;
+}
+if(SKY_DEBUG_ENABLED){document.body.classList.add('sky-debug-enabled');window.addEventListener('DOMContentLoaded',()=>{
+ document.getElementById('skyDebugClear')?.addEventListener('click',skyDebugReset);
+ document.getElementById('skyDebugCopy')?.addEventListener('click',skyDebugCopy);
+ document.getElementById('skyDebugClose')?.addEventListener('click',()=>document.getElementById('skyDebugPanel')?.remove());
+ document.getElementById('skyDebugRerun')?.addEventListener('click',async()=>{
+  const x=skyDebugSelectedAircraft();if(!x){skyDebug('WARN','No Featured aircraft is currently selected');return;}
+  skyDebug('OK','Manual identity rerun requested',{callsign:x.callsign,registration:x.registration||x.r,route:x.liveRoute?.status==='FOUND'?`${x.liveRoute.fromCode}-${x.liveRoute.toCode}`:'NO ROUTE'});
+  const key=identityCacheKey(x);S.identityCache.delete(key);S.identityPending.delete(key);x.identityStatus='';
+  await lookupFlightIdentity(x);
+ });
+ skyDebug('OK','Debug mode enabled',{url:window.location.href});
+});}
+
 async function fetchFreeFlightIdentity(callsign,registration){
+ const started=performance.now();
  const cs=normalFlightCode(callsign);const reg=String(registration||'').trim().toUpperCase();if(!cs&&!reg)return null;
- const route=xRouteForIdentity(callsign,registration);const params=reg?`lookup=identity&callsign=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&from=${encodeURIComponent(route?.fromCode||'')}&to=${encodeURIComponent(route?.toCode||'')}&date=${encodeURIComponent(utcDateKey())}&now=${Date.now()}`:`lookup=callsign&value=${encodeURIComponent(cs)}`;
+ const route=xRouteForIdentity(callsign,registration);
+ const params=reg?`lookup=identity&callsign=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&from=${encodeURIComponent(route?.fromCode||'')}&to=${encodeURIComponent(route?.toCode||'')}&date=${encodeURIComponent(utcDateKey())}&now=${Date.now()}&debug=1`:`lookup=callsign&value=${encodeURIComponent(cs)}&debug=1`;
  const url=`${SKY_AROUND_ME_NETLIFY}?${params}`;
+ skyDebug('OK','IDENTITY REQUEST',{callsign:cs,registration:reg||'',from:route?.fromCode||'',to:route?.toCode||'',date:utcDateKey(),url});
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
  try{
   const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
+  skyDebug(r.ok?'OK':'ERROR','IDENTITY HTTP RESPONSE',{status:r.status,statusText:r.statusText,ms:Math.round(performance.now()-started)});
   if(!r.ok){const e=new Error('Free flight lookup HTTP '+r.status);e.status=r.status;throw e}
   const j=await r.json();
+  skyDebug(j?.flightNumber?'OK':'WARN','BACKEND IDENTITY RESULT',{status:j?.status||'',provider:j?._skyProvider||'',flightNumber:j?.flightNumber||'',lookup:j?._skyLookup||'',evidence:j?._skyEvidence||'',route:j?._skyRoute||'',upstreamStatus:j?._skyUpstreamStatus||'',lookupError:j?._skyLookupError||'',debug:j?._skyDebug||null});
   const fr=j?.flightroute||null;
-  if(!fr&&!j?.flightNumber)return null;
+  if(!fr&&!j?.flightNumber){skyDebug('WARN','No passenger flight number returned by backend');return null;}
   const airline=fr?.airline||{};
-  // IMPORTANT: only accept a passenger flight number when the backend
-  // resolved it from an explicit live-flight source such as Plane Finder.
-  // ADSBdb's callsign_iata can be derived from the radio callsign (for example
-  // RYR64UK -> FR64UK) and is NOT safe to display as a passenger flight number.
   const provider=String(j?._skyProvider||'').toUpperCase();
   const trustedProvider=provider.includes('PLANEFINDER')||provider.includes('FLIGHTRADAR24');
   const flightNumber=trustedProvider?normalFlightCode(j?.flightNumber||''):'';
@@ -794,15 +851,12 @@ async function fetchFreeFlightIdentity(callsign,registration){
   const origin=fr?.origin||{},destination=fr?.destination||{};
   const fromCode=String(origin.iata_code||'').toUpperCase();
   const toCode=String(destination.iata_code||'').toUpperCase();
-  const route=(fromCode&&toCode)?{
-   status:'FOUND',fromCode,toCode,
-   from:origin.name||origin.municipality||fromCode,
-   to:destination.name||destination.municipality||toCode,
-   fromLat:origin.latitude,fromLon:origin.longitude,
-   toLat:destination.latitude,toLon:destination.longitude,
-   flightNumber,airlineCode,airlineName,source:'ADSBdb'
-  }:null;
-  return {status:flightNumber?'FOUND':'UNVERIFIED',flightNumber,airlineCode,airlineName,route,source:j?._skyProvider||'ADSBdb'};
+  const routeOut=(fromCode&&toCode)?{status:'FOUND',fromCode,toCode,from:origin.name||origin.municipality||fromCode,to:destination.name||destination.municipality||toCode,fromLat:origin.latitude,fromLon:origin.longitude,toLat:destination.latitude,toLon:destination.longitude,flightNumber,airlineCode,airlineName,source:'IdentityLookup'}:null;
+  skyDebug(flightNumber?'OK':'WARN','FRONTEND TRUST DECISION',{provider,trustedProvider,acceptedFlightNumber:flightNumber||'',routeFrom:fromCode,routeTo:toCode});
+  return {status:flightNumber?'FOUND':'UNVERIFIED',flightNumber,airlineCode,airlineName,route:routeOut,source:j?._skyProvider||'ADSBdb'};
+ }catch(e){
+  skyDebug('ERROR','IDENTITY LOOKUP FAILED',{name:e?.name||'',message:e?.message||String(e),status:e?.status||'',ms:Math.round(performance.now()-started)});
+  throw e;
  }finally{clearTimeout(timer)}
 }
 const IDENTITY_CACHE_VERSION='identity-free-v6';
@@ -820,9 +874,11 @@ function applyIdentity(x,id){
 }
 async function lookupFlightIdentity(x){
  const cs=normalFlightCode(x?.callsign);if(!cs)return null;
+ skyDebug('OK','RESOLVER START',{callsign:cs,registration:x?.registration||x?.r||'',existingFlightNumber:x?.flightNumber||'',existingRoute:x?.liveRoute?.status==='FOUND'?`${x.liveRoute.fromCode}-${x.liveRoute.toCode}`:'NONE'});
  const key=identityCacheKey(x);
  if(S.identityCache.has(key)){
   const id=S.identityCache.get(key);
+  skyDebug('WARN','FRONTEND IDENTITY CACHE HIT',id);
   if(id?.resolvedAt&&(Date.now()-Date.parse(id.resolvedAt))<120000){applyIdentity(x,id);return id}
   S.identityCache.delete(key);
  }
@@ -830,15 +886,18 @@ async function lookupFlightIdentity(x){
  const task=(async()=>{
   try{
    if(!x.liveRoute||x.liveRoute.status!=='FOUND'){
+    skyDebug('WARN','NO LIVE ROUTE BEFORE IDENTITY — running route lookup');
     const route=await lookupFlightRoute(cs,utcDateKey(),x?.registration||x?.r||'');
-    if(route?.status==='FOUND') x.liveRoute=route;
+    if(route?.status==='FOUND'){ x.liveRoute=route; skyDebug('OK','ROUTE RESOLVED FOR IDENTITY',route); } else { skyDebug('WARN','ROUTE LOOKUP DID NOT RESOLVE',route); }
    }
    const id=await fetchFreeFlightIdentity(cs,x?.registration||x?.r||'')||{status:'UNVERIFIED',flightNumber:'',airlineCode:'',airlineName:x.operator||'Live aircraft',route:null};
    id.resolvedAt=new Date().toISOString();
+   skyDebug(id.flightNumber?'OK':'WARN','RESOLVER FINAL RESULT',id);
    S.identityCache.set(key,id);applyIdentity(x,id);
    if(S.featured===x.icao)renderLiveHome(x);
    return id;
   }catch(e){
+   skyDebug('ERROR','RESOLVER EXCEPTION',{message:e?.message||String(e),name:e?.name||'',status:e?.status||''});
    const id={status:'UNVERIFIED',flightNumber:'',airlineCode:'',airlineName:x.operator||'Live aircraft',route:null,resolvedAt:new Date().toISOString()};
    S.identityCache.set(key,id);applyIdentity(x,id);
    if(S.featured===x.icao)renderLiveHome(x);
