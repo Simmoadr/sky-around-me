@@ -385,7 +385,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
    <div class="watch-copy"><div id="homeWatchNames">Add a flight in My Flights</div><small id="homeWatchDate">—</small></div>
    <div class="watch-count"><label id="homeWatchCountLabel">DEPARTS IN</label><b id="homeWatchCount">—</b></div>
    <div class="watch-live-grid" id="homeWatchLive" hidden>
-    <div><label>ALTITUDE</label><b id="homeWatchAlt">—</b></div><div><label>SPEED</label><b id="homeWatchSpeed">—</b></div><div><label>HEADING</label><b id="homeWatchHeading">—</b></div><div><label>DISTANCE</label><b id="homeWatchDistance">—</b></div>
+    <div><label>ALTITUDE</label><b id="homeWatchAlt">—</b></div><div><label>SPEED</label><b id="homeWatchSpeed">—</b></div><div><label>HEADING</label><b id="homeWatchHeading">—</b></div><div><label>TO DESTINATION</label><b id="homeWatchDistance">—</b></div><div class="watch-progress-metric"><label>COMPLETED</label><b id="homeWatchProgressText">—</b><div class="watch-progress"><i id="homeWatchProgress"></i></div></div>
    </div>
   </div>
  </section>
@@ -772,7 +772,7 @@ function renderScheduledHome(){
    const future=dateKeyFromValue(next.date)>todayKeyLocal();
    setTextSafe('homeEyebrow',future?'NEXT WATCHED FLIGHT':'NEXT WATCHED FLIGHT');
    setTextSafe('homeTitle',(next.flightNumber||next.flight||'WATCHED FLIGHT').toUpperCase());
-   setTextSafe('homeStatus',future?'UPCOMING':state==='SCHEDULED'?'SCHEDULED':'COMPLETED');
+   setTextSafe('homeStatus',future?'UPCOMING':state==='SCHEDULED'?'SCHEDULED':state==='TRACKING PENDING'?'SEARCHING FOR AIRCRAFT':'COMPLETED');
    $('airlineBadge').textContent=(next.airlineCode||((next.flight||'').match(/^[A-Z]{1,3}/)?.[0])||'WATCH').toUpperCase();
    $('operator').textContent=(next.airlineName||'WATCHED FLIGHT').toUpperCase();
    $('callsignNote').textContent='SAVED FLIGHT';
@@ -782,7 +782,7 @@ function renderScheduledHome(){
    $('aircraftType').textContent=next.aircraftDesc||'Scheduled flight · live position will appear when airborne';
    $('route').textContent=(next.from||next.fromCode||'DEPARTURE')+'  →  '+(next.to||next.toCode||'ARRIVAL');
    $('schedule').textContent=next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}).toUpperCase()+(next.departureTime?' · DEP '+next.departureTime:''):'SCHEDULED';
-   $('mLabel1').textContent='STATUS';$('m1').textContent=future?'UPCOMING':state;$('m1s').textContent=future?countdownText(next):state==='SCHEDULED'?countdownText(next):'flight day complete';
+   $('mLabel1').textContent='STATUS';$('m1').textContent=future?'UPCOMING':state==='SCHEDULED'?'SCHEDULED':state==='TRACKING PENDING'?'SEARCHING':'COMPLETED';$('m1s').textContent=future?countdownText(next):state==='SCHEDULED'?countdownText(next):state==='TRACKING PENDING'?'waiting for live aircraft':'flight day complete';
    $('mLabel2').textContent='DEPARTURE';$('m2').textContent=next.fromCode||'—';$('m2s').textContent=next.from||'—';
    $('mLabel3').textContent='ARRIVAL';$('m3').textContent=next.toCode||'—';$('m3s').textContent=next.to||'—';
    $('mLabel4').textContent='FLIGHT';$('m4').textContent=(next.flightNumber||next.flight||'—').toUpperCase();$('m4s').textContent=next.airlineName||'WATCHED FLIGHT';
@@ -1120,10 +1120,12 @@ function renderHomeWatch(items){
   const wb=$('homeWatch');if(wb)wb.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
   const next=today.find(f=>watchHasLive(f))||today.find(f=>flightState(f)==='TRACKING PENDING')||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
   const box=$('homeWatchLive');
+  const progressTextEl=$('homeWatchProgressText');
+  const progressEl=$('homeWatchProgress');
   if(!next){
    $('homeWatchTitle').textContent='NO SAVED FLIGHT';$('homeWatchName').textContent='';$('homeWatchFrom').textContent='—';$('homeWatchTo').textContent='—';$('homeWatchNames').textContent='Add a flight in My Flights';$('homeWatchDate').textContent='Your saved flights will appear here.';
    const st=$('homeWatchState');st.className='state';st.textContent='NONE';$('homeWatchCountLabel').textContent='FLIGHT PHASE';$('homeWatchCount').textContent='—';
-   box.hidden=false;$('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';$('homeWatchProgressText').textContent='—';$('homeWatchProgress').style.width='0%';return;
+   if(box)box.hidden=false;$('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';if(progressTextEl)progressTextEl.textContent='—';if(progressEl)progressEl.style.width='0%';return;
   }
   const live=watchHasLive(next)?S.watchLive:null;
   const future=dateKeyFromValue(next.date)>todayKeyLocal();
@@ -1136,7 +1138,7 @@ function renderHomeWatch(items){
   $('homeWatchDate').innerHTML=(next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}):'No date set')+`<br><span class="departure-primary">${escapeHtml(dep.primary)}</span><span class="departure-secondary">${escapeHtml(dep.secondary)}</span>`;
   const pending=state==='TRACKING PENDING';
   const phase=live?watchedFlightPhase(next,live):null;
-  const phaseText=live?(phase||'IN FLIGHT'):future?'SCHEDULED':pending?'TRACKING PENDING':state;
+  const phaseText=live?(phase||'IN FLIGHT'):future?'SCHEDULED':pending?'SEARCHING FOR AIRCRAFT':state;
   const st=$('homeWatchState');st.className='state '+(live?'live':future||state==='SCHEDULED'||pending?'wait':'active');st.textContent=phaseText;
   $('homeWatchCountLabel').textContent='FLIGHT PHASE';$('homeWatchCount').textContent=phaseText;
   if(live){
@@ -1145,9 +1147,9 @@ function renderHomeWatch(items){
     $('homeWatchSpeed').textContent=live.speed==null?'—':Math.round(live.speed*1.94384)+' kt';
     $('homeWatchHeading').textContent=live.heading==null?'—':Math.round(live.heading)+'°';
     $('homeWatchDistance').textContent=remaining!=null?Math.round(remaining).toLocaleString('en-GB')+' km':'—';
-    $('homeWatchProgressText').textContent=pct!=null?Math.round(pct)+'%':'—';$('homeWatchProgress').style.width=(pct!=null?pct:0)+'%';
+    if(progressTextEl)progressTextEl.textContent=pct!=null?Math.round(pct)+'%':'—';if(progressEl)progressEl.style.width=(pct!=null?pct:0)+'%';
   }else{
-    $('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';$('homeWatchProgressText').textContent='—';$('homeWatchProgress').style.width='0%';
+    $('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';if(progressTextEl)progressTextEl.textContent='—';if(progressEl)progressEl.style.width='0%';
   }
   box.hidden=false;
 }
