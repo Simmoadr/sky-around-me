@@ -687,7 +687,9 @@ function addSkyBaseLayer(mapInstance){
  if(!opts)return false;
  try{
   if(mapInstance._skyBaseLayer)mapInstance.removeLayer(mapInstance._skyBaseLayer);
-  const layer=L.tileLayer(opts.url,{maxZoom:opts.maxZoom,subdomains:opts.subdomains,attribution:opts.attribution});
+  const layerOptions={maxZoom:opts.maxZoom,attribution:opts.attribution};
+  if(opts.subdomains)layerOptions.subdomains=opts.subdomains;
+  const layer=L.tileLayer(opts.url,layerOptions);
   layer.addTo(mapInstance);mapInstance._skyBaseLayer=layer;
   return true;
  }catch(e){console.warn('Map style layer failed',e);return false}
