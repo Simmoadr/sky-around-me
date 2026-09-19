@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Sky Around Me</title>
-<!-- Sky Around Me v35: nearest-aircraft passenger flight identity resolver + v33 schedule logic
+<!-- Sky Around Me v41: robust live commercial flight identity resolver + v33 schedule logic
 <!-- Sky Around Me v18: registration-aware flight identity + smooth route hero -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -334,7 +334,7 @@
   <div class="sky"><div class="aircraft-stage"><div id="heroAircraft" class="aircraft-stage-art" aria-label="Live flight map"></div></div></div>
   <div class="hero-bottom"><div class="divider"></div><div class="identity"><div class="identity-primary"><div class="airline-brand"><span class="airline-badge" id="airlineBadge">LIVE</span><div class="operator" id="operator">LIVE AIRSPACE</div><span class="callsign-note" id="callsignNote"></span></div><div class="flight-name" id="flightName">SEARCHING…</div><div class="aircraft-type" id="aircraftType">Looking for the nearest airborne aircraft around Lusk</div></div><div class="aircraft-registration"><span>REGISTRATION</span><b id="aircraftReg">—</b><small id="aircraftRegNote">AIRCRAFT REG</small></div>
    <div class="telemetry">
-    <div class="metric"><label id="mLabel1">DISTANCE</label><b id="m1">—</b><small id="m1s">from you</small></div>
+    <div class="metric"><label id="mLabel1">DISTANCE TO DESTINATION</label><b id="m1">—</b><small id="m1s">remaining</small></div>
     <div class="metric"><label id="mLabel2">ALTITUDE</label><b id="m2">—</b><small id="m2s">above ground</small></div>
     <div class="metric"><label id="mLabel3">SPEED</label><b id="m3">—</b><small id="m3s">ground speed</small></div>
     <div class="metric"><label id="mLabel4">HEADING</label><b id="m4">—</b><small id="m4s">track</small></div>
@@ -584,7 +584,8 @@ function renderHeroFlightMap(live,watch){
  const hasRoute=!!(a&&b&&a.every(Number.isFinite)&&b.every(Number.isFinite));
  if(status){
    const remaining=hasRoute&&pos?hav(pos[0],pos[1],b[0],b[1]):null;
-   status.innerHTML=`<div><span class="status-dot"></span><b>LIVE POSITION</b></div>${remaining!=null?`<div class="hero-status-detail"><span>DISTANCE TO DESTINATION</span><strong>${Math.round(remaining).toLocaleString('en-GB')} km</strong></div>`:''}`;
+   const fromDevice=pos?hav(S.lat,S.lon,pos[0],pos[1]):null;
+   status.innerHTML=`<div><span class="status-dot"></span><b>LIVE POSITION</b></div>${fromDevice!=null?`<div class="hero-status-detail"><span>DISTANCE FROM DEVICE</span><strong>${fromDevice.toFixed(1)} km</strong></div>`:''}`;
  }
  if(!pos){heroFlightMap.setView([S.lat,S.lon],6);setTimeout(()=>heroFlightMap.invalidateSize(),50);return;}
  if(hasRoute){
@@ -809,7 +810,8 @@ function renderLiveHome(x){
  $('callsignNote').innerHTML=csLabel+(csLabel?'<span class=\"identity-status-dot '+statusClass+'\" title=\"'+statusTitle+'\" aria-label=\"'+statusTitle+'\"></span>':'');
  $('flightName').textContent=flightNumber||'FLIGHT NUMBER UNVERIFIED';$('aircraftType').textContent=model;
  $('route').innerHTML=journey&&journey.fromCode&&journey.toCode?`<span class="route-live-code">${journey.fromCode} → ${journey.toCode}</span>`:'LIVE AIRCRAFT';$('schedule').textContent=journey&&journey.fromCode&&journey.toCode?airline.toUpperCase()+' · '+model.toUpperCase():S.locationName.toUpperCase()+' · '+x.d.toFixed(1)+' KM AWAY';
- $('mLabel1').textContent='DISTANCE';$('m1').textContent=x.d.toFixed(1)+' km';$('m1s').textContent='from '+S.locationName;$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
+ const journeyDistance=journey&&journey.toLat!=null&&journey.toLon!=null&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),Number(journey.toLat),Number(journey.toLon)):null;
+ $('mLabel1').textContent='DISTANCE TO DESTINATION';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent=journeyDistance!=null?'remaining':'destination unavailable';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
  const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=journey.from||journey.fromName||'—';$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=journey.to||journey.toName||'—';$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
  if(!journey&&x?.callsign) enrichLiveRoute(x);
  // Identity lookup is the authoritative flight-number resolver for the
