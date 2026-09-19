@@ -550,6 +550,49 @@ function heroAircraftIcon(angle){
  return L.divIcon({className:'hero-aircraft-icon',iconSize:[42,42],iconAnchor:[21,21],html:`<div class="hero-aircraft-marker" style="transform:rotate(${a}deg)"><div class="hero-aircraft-halo"></div><div class="hero-aircraft-shape">${miniAircraftSvg()}</div></div>`});
 }
 function heroRoutePoints(a,b,count=80){const pts=[];for(let i=0;i<=count;i++)pts.push(greatCirclePoint(a,b,i/count));return pts}
+function heroCurvedRoutePoints(a,p,b,count=120){
+ const valid=v=>Array.isArray(v)&&v.length===2&&v.every(Number.isFinite);
+ if(!valid(a)||!valid(p)||!valid(b))return heroRoutePoints(a,b,count);
+ // Build the curve in a local equirectangular plane so the live aircraft
+ // position is an exact point on the rendered route. This avoids the old
+ // visual problem where the route stayed on an ideal great-circle while the
+ // aircraft sat visibly off to one side.
+ const lat0=Number(p[0])*Math.PI/180;
+ const kx=111.32*Math.cos(lat0), ky=111.32;
+ const xy=v=>[Number(v[1])*kx,Number(v[0])*ky];
+ const ll=v=>[v[1]/kx,v[0]/ky];
+ const A=xy(a),P=xy(p),B=xy(b);
+ const dist=(u,v)=>Math.hypot(v[0]-u[0],v[1]-u[1]);
+ const ap=dist(A,P),pb=dist(P,B);
+ if(ap<0.2||pb<0.2)return [a,p,b];
+ // Use the direct A→B direction as the smooth tangent through the live
+ // aircraft. The actual ADS-B heading still controls aircraft orientation.
+ // Tangent length is deliberately modest so a 20–30 km cross-track error
+ // produces a visible but elegant bend rather than a huge bow.
+ let tx=B[0]-A[0],ty=B[1]-A[1],tl=Math.hypot(tx,ty);
+ if(tl<0.2){tx=1;ty=0;tl=1}
+ tx/=tl;ty/=tl;
+ const tangentLen=Math.max(4,Math.min(Math.min(ap,pb)*0.55,Math.max(8,tl*0.18)));
+ const C1=[P[0]-tx*tangentLen,P[1]-ty*tangentLen];
+ const C2=[P[0]+tx*tangentLen,P[1]+ty*tangentLen];
+ const out=[];
+ const n1=Math.max(12,Math.round(count*(ap/(ap+pb))));
+ const n2=Math.max(12,count-n1);
+ for(let i=0;i<=n1;i++){
+  const t=i/n1,mt=1-t;
+  const q=[mt*mt*A[0]+2*mt*t*C1[0]+t*t*P[0],mt*mt*A[1]+2*mt*t*C1[1]+t*t*P[1]];
+  out.push(ll(q));
+ }
+ for(let i=1;i<=n2;i++){
+  const t=i/n2,mt=1-t;
+  const q=[mt*mt*P[0]+2*mt*t*C2[0]+t*t*B[0],mt*mt*P[1]+2*mt*t*C2[1]+t*t*B[1]];
+  out.push(ll(q));
+ }
+ // Force the exact ADS-B point into the path at the join.
+ const join=Math.min(out.length-1,n1);
+ out[join]=[p[0],p[1]];
+ return out;
+}
 function heroBearing(a,b){const r=Math.PI/180;const y=Math.sin((b[1]-a[1])*r)*Math.cos(b[0]*r);const x=Math.cos(a[0]*r)*Math.sin(b[0]*r)-Math.sin(a[0]*r)*Math.cos(b[0]*r)*Math.cos((b[1]-a[1])*r);return (Math.atan2(y,x)/r+360)%360}
 // Featured uses the same interactive Leaflet map behaviour as Live Sky. Keep the user's zoom/pan between live polling refreshes.
 function renderHeroFlightMap(live,watch){
@@ -589,12 +632,21 @@ function renderHeroFlightMap(live,watch){
  }
  if(!pos){heroFlightMap.setView([S.lat,S.lon],6);setTimeout(()=>heroFlightMap.invalidateSize(),50);return;}
  if(hasRoute){
-   const pts=heroRoutePoints(a,b,96);
+   const pts=heroCurvedRoutePoints(a,pos,b,120);
+   // The live aircraft is the join point, so the visible route follows the
+   // aircraft's real position instead of making it look off-course.
    const progress=routeProgress(watch,live);
-   const cut=Math.max(1,Math.min(96,Math.round(progress*96)));
+   let nearest=0,best=Infinity;
+   for(let i=0;i<pts.length;i++){
+    const d=hav(pos[0],pos[1],pts[i][0],pts[i][1]);
+    if(d<best){best=d;nearest=i}
+   }
+   const cut=Math.max(1,Math.min(pts.length-1,nearest));
    const completed=pts.slice(0,cut+1);
-   L.polyline(pts,{color:'#a8b8bb',weight:2,dashArray:'4 7',opacity:.72,interactive:false}).addTo(heroFlightLayer);
-   L.polyline(completed,{color:'#176f8b',weight:4,opacity:.94,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
+   const remaining=pts.slice(cut);
+   L.polyline(pts,{color:'#7d9298',weight:2,dashArray:'5 8',opacity:.62,interactive:false}).addTo(heroFlightLayer);
+   L.polyline(completed,{color:'#63e6be',weight:4,opacity:.94,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
+   if(remaining.length>1)L.polyline(remaining,{color:'#8bcfc1',weight:2,dashArray:'5 8',opacity:.68,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
    L.circleMarker(a,{radius:6,color:'#176f8b',weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
    L.circleMarker(b,{radius:6,color:'#176f8b',weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
    L.marker(a,{icon:heroMapAirportIcon(watch.fromCode,watch.from,'from'),interactive:false}).addTo(heroFlightLayer);
@@ -627,7 +679,7 @@ function recenterHeroMap(){
  const pos=live?.lat!=null&&live?.lon!=null?[Number(live.lat),Number(live.lon)]:null;
  const valid=p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite);
  if(valid(a)&&valid(b)){
-  const pathPoint=valid(pos)?greatCirclePoint(a,b,routeProgress(journey,live)):null;
+  const pathPoint=valid(pos)?pos:null;
   const points=pathPoint?[a,b,pathPoint]:[a,b];
   heroFlightMap.fitBounds(L.latLngBounds(points),{paddingTopLeft:[90,55],paddingBottomRight:[90,55],maxZoom:6.2,animate:true});
  }else if(valid(pos)){
@@ -803,11 +855,9 @@ function renderLiveHome(x){
  if(x?.callsign&&!x?.identityStatus) lookupFlightIdentity(x);
  const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=x.flightNumber||'';
  setHeroAircraft(x,journey);
- setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',(flightNumber||'FLIGHT NUMBER UNVERIFIED').toUpperCase());setTextSafe('homeStatus','LIVE');
+ setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',(flightNumber||x.callsign||'LIVE AIRCRAFT').toUpperCase());setTextSafe('homeStatus','LIVE');
  $('airlineBadge').textContent=(x.airlineCode||flightNumber.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('aircraftReg').textContent=String(x.r||x.registration||'—').toUpperCase()||'—';$('aircraftRegNote').textContent=x.r?'AIRCRAFT REG':'REGISTRATION';
  const csLabel=x.callsign?('CALLSIGN '+x.callsign.toUpperCase()):'';
- const statusClass=x.identityStatus==='FOUND'?'verified':x.identityStatus==='UNVERIFIED'?'unverified':'checking';
- const statusTitle=x.identityStatus==='FOUND'?'FLIGHT NUMBER VERIFIED':x.identityStatus==='UNVERIFIED'?'FLIGHT NUMBER UNVERIFIED':'CHECKING FLIGHT NUMBER';
  const displayFlight=flightNumber||x.callsign||'LIVE AIRCRAFT';
  const verified=!!flightNumber;
  $('callsignNote').className='callsign-note flight-callsign-note';
@@ -1070,7 +1120,7 @@ function icon(x,featured){const tracked=!!featured;const heading=Number.isFinite
 function choose(items){if(!items.length)return null;const airborne=items.filter(x=>(x.alt!=null&&x.alt>140)||(x.speed!=null&&x.speed>80));return (airborne.length?airborne:items).slice().sort((a,b)=>a.d-b.d)[0]}
 const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);
 function render(items){const seen=new Set();items.forEach(x=>{seen.add(x.icao);const feat=x.icao===S.featured;let m=S.markers.get(x.icao);if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat)}).addTo(map);S.markers.set(x.icao,m)}else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat))}m.bindPopup(`<b>${x.flightNumber||x.callsign||x.icao.toUpperCase()}</b>${x.flightNumber&&x.callsign?`<br><span style="font-size:10px;color:#737878">CALLSIGN ${x.callsign}</span>`:''}<br>${x.d.toFixed(1)} km · ${x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft'} · ${x.speed==null?'—':Math.round(x.speed*1.94384)+' kt'}`);let pts=S.tracks.get(x.icao)||[];const last=pts[pts.length-1];if(!last||hav(last[0],last[1],x.lat,x.lon)>0.08){pts=[...pts,[x.lat,x.lon]].slice(-15);S.tracks.set(x.icao,pts)}let line=S.trails.get(x.icao);if(!line){line=L.polyline(pts,{weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'}).addTo(map);S.trails.set(x.icao,line)}else{line.setLatLngs(pts);line.setStyle({weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'})}});S.markers.forEach((m,id)=>{if(!seen.has(id)){map.removeLayer(m);S.markers.delete(id)}});S.trails.forEach((line,id)=>{if(!seen.has(id)){map.removeLayer(line);S.trails.delete(id)}})}
-const SKY_AROUND_ME_NETLIFY='https://magenta-syrniki-2f4749.netlify.app/.netlify/functions/adsb';
+const SKY_AROUND_ME_NETLIFY='/.netlify/functions/adsb';
 const AIRPLANES_LIVE_BASE='https://api.airplanes.live/v2/point';
 const INTELSKY_FALLBACK='https://sky-around-me-api.adrian-simmonds.workers.dev/?source=intelsky';
 let adsbPrimaryCooldownUntil=0;
