@@ -10,7 +10,7 @@
 <style>
 :root{--bg:#eeeee9;--paper:#f8f8f4;--ink:#111416;--muted:#737878;--line:#d9dbd6;--accent:#176f8b;--accent2:#dcecf0;--live:#197b55;--nav:#e3e5e0;--shadow:0 24px 70px rgba(23,30,30,.12)}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",sans-serif}button,input{font:inherit}button{cursor:pointer}
-.app{min-height:100vh;max-width:1500px;margin:auto;padding:22px 28px 26px}.topbar{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid var(--line);gap:20px}.brand{display:flex;align-items:center;gap:12px}.mark{width:34px;height:34px;border-radius:10px;background:#111;color:white;display:grid;place-items:center;font-size:17px}.brand-name{font-size:14px;font-weight:850;letter-spacing:.12em}.brand-sub{font-size:9px;color:var(--muted);letter-spacing:.18em;margin-top:3px}.nav{display:flex;gap:6px;background:var(--nav);padding:4px;border-radius:999px}.nav button{border:0;background:transparent;color:#686d6d;padding:9px 15px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.1em}.nav button.active{background:#fff;color:#111;box-shadow:0 2px 8px rgba(0,0,0,.06)}.clock{font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:800;white-space:nowrap}.page{display:none}.page.active{display:block}
+.app{min-height:100vh;max-width:1500px;margin:auto;padding:22px 28px 26px}.topbar{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid var(--line);gap:20px}.brand{display:flex;align-items:center;gap:12px}.mark{width:34px;height:34px;border-radius:10px;background:#111;color:white;display:grid;place-items:center;font-size:17px}.brand-name{font-size:14px;font-weight:850;letter-spacing:.12em}.brand-sub{font-size:9px;color:var(--muted);letter-spacing:.18em;margin-top:3px}.nav{display:flex;gap:6px;background:var(--nav);padding:4px;border-radius:999px}.nav button{border:0;background:transparent;color:#686d6d;padding:9px 15px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.1em}.nav button.active{background:#fff;color:#111;box-shadow:0 2px 8px rgba(0,0,0,.06)}.clock{font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:800;white-space:nowrap}.map-style-control{display:flex;align-items:center;gap:7px;white-space:nowrap}.map-style-control label{font-size:8px;letter-spacing:.14em;color:var(--muted);font-weight:900}.map-style-control select{appearance:none;border:1px solid #cfd2cd;background:#fff;color:#111;border-radius:999px;padding:8px 28px 8px 11px;font-size:9px;font-weight:900;letter-spacing:.08em;outline:none;box-shadow:0 2px 8px rgba(0,0,0,.04)}.map-style-control select:focus{border-color:#176f8b;box-shadow:0 0 0 3px rgba(23,111,139,.12)}.page{display:none}.page.active{display:block}
 /* PAGE 1 */
 .home{padding-top:28px}.home-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px}.eyebrow{font-size:10px;letter-spacing:.2em;font-weight:900;color:var(--muted)}h1{font-size:clamp(30px,4vw,54px);line-height:.95;letter-spacing:-.055em;margin:7px 0 0;font-weight:900}.live-badge{display:inline-flex;align-items:center;gap:7px;border:1px solid #cbd8d2;background:#f4faf7;color:var(--live);border-radius:999px;padding:8px 11px;font-size:9px;font-weight:900;letter-spacing:.12em}.dot{width:7px;height:7px;border-radius:50%;background:var(--live)}
 .hero{position:relative;min-height:590px;background:var(--paper);border:1px solid #e1e2de;border-radius:30px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}.hero-top{padding:34px 42px 0;position:relative;z-index:2}.hero-route{font-size:13px;font-weight:850;letter-spacing:.13em}.hero-city{font-size:10px;color:var(--muted);margin-top:7px;letter-spacing:.05em}.sky{position:absolute;left:0;right:0;top:100px;height:270px;overflow:hidden}.sun{position:absolute;right:11%;top:30px;width:112px;height:112px;border-radius:50%;background:#e8dfc5}.cloud{position:absolute;width:180px;height:58px;border-radius:80px;background:#e9ece8;opacity:.75}.cloud:before,.cloud:after{content:"";position:absolute;border-radius:50%;background:#e9ece8}.cloud:before{width:82px;height:82px;left:35px;bottom:8px}.cloud:after{width:62px;height:62px;left:91px;bottom:6px}.c1{left:9%;top:74px;transform:scale(.75)}.c2{right:16%;top:166px;transform:scale(.5)}
@@ -63,7 +63,7 @@
 /* edit overlay */
 .edit-panel{display:none;margin-top:12px;padding:18px;border:1px solid var(--line);background:#fff;border-radius:15px}.edit-panel.show{display:block}
 @media(max-width:1050px){.telemetry{min-width:0}.identity{align-items:flex-start;flex-direction:column}.flight-layout{grid-template-columns:1fr}.map-card{width:300px}}
-@media(max-width:700px){.app{padding:12px}.topbar{gap:10px}.brand-sub,.clock{display:none}.nav button{padding:8px 9px;font-size:8px}.home-head,.page-intro{align-items:flex-start;gap:15px}.home-head .live-badge{margin-top:4px}.hero-top,.hero-bottom{padding-left:22px;padding-right:22px}.hero-route{font-size:11px}.aircraft-stage{left:0;right:0;top:72px}.sky{top:90px}.telemetry{grid-template-columns:1fr 1fr;width:100%;gap:15px}.flight-name{font-size:25px}.map-wrap{height:calc(100vh - 120px);min-height:520px}.map-card{left:12px;right:12px;top:auto;bottom:12px;width:auto}.live-map-route{gap:10px}.form{grid-template-columns:1fr}.form .wide,.form .btn{grid-column:auto}.flight-row{grid-template-columns:1fr}.flight-main{align-items:flex-start}.page-intro{flex-direction:column}}
+@media(max-width:700px){.map-style-control label{display:none}.map-style-control select{font-size:8px;padding:7px 22px 7px 9px}.app{padding:12px}.topbar{gap:10px}.brand-sub,.clock{display:none}.nav button{padding:8px 9px;font-size:8px}.home-head,.page-intro{align-items:flex-start;gap:15px}.home-head .live-badge{margin-top:4px}.hero-top,.hero-bottom{padding-left:22px;padding-right:22px}.hero-route{font-size:11px}.aircraft-stage{left:0;right:0;top:72px}.sky{top:90px}.telemetry{grid-template-columns:1fr 1fr;width:100%;gap:15px}.flight-name{font-size:25px}.map-wrap{height:calc(100vh - 120px);min-height:520px}.map-card{left:12px;right:12px;top:auto;bottom:12px;width:auto}.live-map-route{gap:10px}.form{grid-template-columns:1fr}.form .wide,.form .btn{grid-column:auto}.flight-row{grid-template-columns:1fr}.flight-main{align-items:flex-start}.page-intro{flex-direction:column}}
 
 /* WALL-MOUNTED IPAD LANDSCAPE: Page 1 is a fixed, no-scroll dashboard. */
 @media (min-width:701px) and (orientation:landscape) {
@@ -354,6 +354,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 <header class="topbar">
  <div class="brand"><div class="mark">✈</div><div><div class="brand-name">SKY AROUND ME</div><div class="brand-sub">PERSONAL FLIGHT WATCH</div></div></div>
  <nav class="nav"><button class="active" data-page="home">FEATURED</button><button data-page="mapPage">LIVE SKY</button><button data-page="flights">MY FLIGHTS</button></nav>
+ <div class="map-style-control"><label for="mapStyleSelect">MAP STYLE</label><select id="mapStyleSelect" aria-label="Map style"><option value="original">ORIGINAL</option><option value="alidade">ALIDADE SMOOTH</option><option value="dark">ALIDADE DARK</option><option value="voyager">CARTO VOYAGER</option><option value="nolabels">NO LABELS</option></select></div>
  <div class="clock" id="clock">—</div>
 </header>
 <main>
@@ -653,6 +654,60 @@ function heroCurvedRoutePoints(a,p,b,count=160){
 function heroBearing(a,b){const r=Math.PI/180;const y=Math.sin((b[1]-a[1])*r)*Math.cos(b[0]*r);const x=Math.cos(a[0]*r)*Math.sin(b[0]*r)-Math.sin(a[0]*r)*Math.cos(b[0]*r)*Math.cos((b[1]-a[1])*r);return (Math.atan2(y,x)/r+360)%360}
 // Featured uses the same interactive Leaflet map behaviour as Live Sky. Keep the user's zoom/pan between live polling refreshes.
 const WATCH_ROUTE_COLOR='#176f8b';
+// TEMPORARY MAP STYLE COMPARISON — changes only the basemap, never flight logic.
+const SKY_MAP_STYLE_KEY='skyAroundMeMapStyle';
+const SKY_CARTO_KEY='skyAroundMeCartoKey';
+const SKY_MAP_STYLES={
+ original:{label:'ORIGINAL',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',maxZoom:18,attribution:'© OpenStreetMap contributors'},
+ alidade:{label:'ALIDADE SMOOTH',url:'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png',maxZoom:20,attribution:'© Stadia Maps © OpenMapTiles © OpenStreetMap'},
+ dark:{label:'ALIDADE DARK',url:'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',maxZoom:20,attribution:'© Stadia Maps © OpenMapTiles © OpenStreetMap'},
+ voyager:{label:'CARTO VOYAGER',url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key={key}',maxZoom:20,subdomains:'abcd',attribution:'© OpenStreetMap contributors © CARTO'},
+ nolabels:{label:'NO LABELS',url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png?key={key}',maxZoom:20,subdomains:'abcd',attribution:'© OpenStreetMap contributors © CARTO'}
+};
+let skyMapStyle=localStorage.getItem(SKY_MAP_STYLE_KEY)||'original';
+if(!SKY_MAP_STYLES[skyMapStyle])skyMapStyle='original';
+let skyCartoKey=localStorage.getItem(SKY_CARTO_KEY)||'';
+function getSkyCartoKey(){
+ if(skyCartoKey)return skyCartoKey;
+ const key=prompt('CARTO Voyager / No Labels needs a free CARTO Basemaps API key.\n\nPaste your CARTO key here, or press Cancel to stay on the current map.');
+ if(!key)return '';
+ skyCartoKey=key.trim();
+ if(skyCartoKey)localStorage.setItem(SKY_CARTO_KEY,skyCartoKey);
+ return skyCartoKey;
+}
+function skyMapLayerOptions(style){
+ const cfg=SKY_MAP_STYLES[style]||SKY_MAP_STYLES.original;
+ const key=(style==='voyager'||style==='nolabels')?getSkyCartoKey():'';
+ if((style==='voyager'||style==='nolabels')&&!key)return null;
+ return {url:key?cfg.url.replace('{key}',encodeURIComponent(key)):cfg.url,maxZoom:cfg.maxZoom,subdomains:cfg.subdomains,attribution:cfg.attribution};
+}
+function addSkyBaseLayer(mapInstance){
+ if(!mapInstance)return false;
+ const opts=skyMapLayerOptions(skyMapStyle);
+ if(!opts)return false;
+ try{
+  if(mapInstance._skyBaseLayer)mapInstance.removeLayer(mapInstance._skyBaseLayer);
+  const layer=L.tileLayer(opts.url,{maxZoom:opts.maxZoom,subdomains:opts.subdomains,attribution:opts.attribution});
+  layer.addTo(mapInstance);mapInstance._skyBaseLayer=layer;
+  return true;
+ }catch(e){console.warn('Map style layer failed',e);return false}
+}
+function syncSkyMapStyleControl(){const el=document.getElementById('mapStyleSelect');if(el)el.value=skyMapStyle;}
+function applySkyMapStyle(style){
+ if(!SKY_MAP_STYLES[style])return;
+ const previous=skyMapStyle;
+ skyMapStyle=style;
+ if((style==='voyager'||style==='nolabels')&&!getSkyCartoKey()){
+  skyMapStyle=previous;syncSkyMapStyleControl();return;
+ }
+ localStorage.setItem(SKY_MAP_STYLE_KEY,skyMapStyle);
+ if(map)addSkyBaseLayer(map);
+ if(heroFlightMap)addSkyBaseLayer(heroFlightMap);
+ syncSkyMapStyleControl();
+ try{if(map)map.invalidateSize({pan:false});}catch(e){}
+ try{if(heroFlightMap)heroFlightMap.invalidateSize({pan:false});}catch(e){}
+}
+
 function renderHeroFlightMap(live,watch){
  const host=$('heroAircraft');if(!host)return;
  const mapKey=[live?.icao||live?.hex||live?.registration||'',watch?.fromCode||'',watch?.toCode||''].join('|');
@@ -668,7 +723,7 @@ function renderHeroFlightMap(live,watch){
   heroFlightMap=L.map(mapEl,{zoomControl:false,attributionControl:true,scrollWheelZoom:true,doubleClickZoom:true,boxZoom:false,dragging:true,touchZoom:true,keyboard:true,minZoom:2,maxZoom:18,zoomDelta:1,zoomSnap:1});
   heroFlightMap._skyMapKey=mapKey;
   heroFlightLayer=L.layerGroup().addTo(heroFlightMap);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(heroFlightMap);
+  addSkyBaseLayer(heroFlightMap);
  }else{
   heroFlightLayer.clearLayers();
  }
@@ -1101,7 +1156,7 @@ function watchedLiveMatch(f,items){
 function renderHomeWatch(items){
  const today=scheduledTodayFlights();
  const wb=$('homeWatch');if(wb)wb.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
- const next=today.find(f=>watchHasLive(f))||today.find(f=>flightState(f)==='TRACKING PENDING')||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
+ const next=today.find(f=>watchHasLive(f))||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
  const box=$('homeWatchLive');
  if(!next){
   $('homeWatchTitle').textContent='NO SAVED FLIGHT';$('homeWatchName').textContent='';$('homeWatchFrom').textContent='—';$('homeWatchTo').textContent='—';$('homeWatchNames').textContent='Add a flight in My Flights';$('homeWatchDate').textContent='Your saved flights will appear here.';
@@ -1221,7 +1276,8 @@ $('listSave').onclick=async()=>{const f=$('listFlight').value.trim().toUpperCase
 function hav(a,b,c,d){const R=6371,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,q=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
 function icon(x,featured){const tracked=!!featured;const heading=Number.isFinite(x.heading)?x.heading:0;return L.divIcon({className:tracked?'featured-icon':'aircraft-icon',html:`<div class="live-aircraft-marker ${tracked?'tracked':''}" style="transform:rotate(${heading}deg)"><div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${miniAircraftSvg()}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})}
 function choose(items){if(!items.length)return null;const airborne=items.filter(x=>(x.alt!=null&&x.alt>140)||(x.speed!=null&&x.speed>80));return (airborne.length?airborne:items).slice().sort((a,b)=>a.d-b.d)[0]}
-const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);
+const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);addSkyBaseLayer(map);
+const mapStyleSelect=document.getElementById('mapStyleSelect');if(mapStyleSelect)mapStyleSelect.addEventListener('change',e=>applySkyMapStyle(e.target.value));syncSkyMapStyleControl();let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);
 function render(items){const seen=new Set();items.forEach(x=>{seen.add(x.icao);const feat=x.icao===S.featured;let m=S.markers.get(x.icao);if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat)}).addTo(map);S.markers.set(x.icao,m)}else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat))}m.bindPopup(`<b>${x.flightNumber||x.callsign||x.icao.toUpperCase()}</b>${x.flightNumber&&x.callsign?`<br><span style="font-size:10px;color:#737878">CALLSIGN ${x.callsign}</span>`:''}<br>${x.d.toFixed(1)} km · ${x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft'} · ${x.speed==null?'—':Math.round(x.speed*1.94384)+' kt'}`);let pts=S.tracks.get(x.icao)||[];const last=pts[pts.length-1];if(!last||hav(last[0],last[1],x.lat,x.lon)>0.08){pts=[...pts,[x.lat,x.lon]].slice(-15);S.tracks.set(x.icao,pts)}let line=S.trails.get(x.icao);if(!line){line=L.polyline(pts,{weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'}).addTo(map);S.trails.set(x.icao,line)}else{line.setLatLngs(pts);line.setStyle({weight:feat?3:1.5,opacity:feat?.8:.28,dashArray:feat?null:'4 6'})}});S.markers.forEach((m,id)=>{if(!seen.has(id)){map.removeLayer(m);S.markers.delete(id)}});S.trails.forEach((line,id)=>{if(!seen.has(id)){map.removeLayer(line);S.trails.delete(id)}})}
 const SKY_AROUND_ME_NETLIFY='https://magenta-syrniki-2f4749.netlify.app/.netlify/functions/adsb';
 const AIRPLANES_LIVE_BASE='https://api.airplanes.live/v2/point';
