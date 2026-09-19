@@ -750,7 +750,7 @@ function recenterHeroMap(){
  setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),80);
 }
 const airportCoords={
- JFK:[40.6413,-73.7781],SIN:[1.3644,103.9915],LHR:[51.4700,-0.4543],BRS:[51.3827,-2.7191],BZR:[43.3235,3.3533],CDG:[49.0097,2.5479],AMS:[52.3105,4.7683],FRA:[50.0379,8.5622],MUC:[48.3538,11.7861],CLT:[35.2140,-80.9431],RDU:[35.8801,-78.7880],LGA:[40.7769,-73.8740],EWR:[40.6895,-74.1745],MEX:[19.4363,-99.0721],SAF:[1.3502,103.9944],SFO:[37.6213,-122.3790],LAX:[33.9416,-118.4085],ORD:[41.9742,-87.9073],DFW:[32.8998,-97.0403],DXB:[25.2532,55.3657],DOH:[25.2731,51.6081],HND:[35.5494,139.7798],NRT:[35.7720,140.3929],SYD:[-33.9399,151.1753]
+ JFK:[40.6413,-73.7781],SIN:[1.3644,103.9915],LHR:[51.4700,-0.4543],LBA:[53.8659,-1.6600],LPA:[27.9319,-15.3867],BRS:[51.3827,-2.7191],BZR:[43.3235,3.3533],CDG:[49.0097,2.5479],AMS:[52.3105,4.7683],FRA:[50.0379,8.5622],MUC:[48.3538,11.7861],CLT:[35.2140,-80.9431],RDU:[35.8801,-78.7880],LGA:[40.7769,-73.8740],EWR:[40.6895,-74.1745],MEX:[19.4363,-99.0721],SAF:[1.3502,103.9944],SFO:[37.6213,-122.3790],LAX:[33.9416,-118.4085],ORD:[41.9742,-87.9073],DFW:[32.8998,-97.0403],DXB:[25.2532,55.3657],DOH:[25.2731,51.6081],HND:[35.5494,139.7798],NRT:[35.7720,140.3929],SYD:[-33.9399,151.1753]
 };
 function routePoint(code){const p=airportCoords[String(code||'').toUpperCase()];return p?[p[0],p[1]]:null}
 function greatCirclePoint(a,b,t){const r=Math.PI/180,A=[a[0]*r,a[1]*r],B=[b[0]*r,b[1]*r];const va=[Math.cos(A[0])*Math.cos(A[1]),Math.cos(A[0])*Math.sin(A[1]),Math.sin(A[0])],vb=[Math.cos(B[0])*Math.cos(B[1]),Math.cos(B[0])*Math.sin(B[1]),Math.sin(B[0])];const dot=Math.max(-1,Math.min(1,va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2])),d=Math.acos(dot);if(d<1e-8)return a.slice();const sd=Math.sin(d);const x=[(Math.sin((1-t)*d)/sd)*va[0]+(Math.sin(t*d)/sd)*vb[0],(Math.sin((1-t)*d)/sd)*va[1]+(Math.sin(t*d)/sd)*vb[1],(Math.sin((1-t)*d)/sd)*va[2]+(Math.sin(t*d)/sd)*vb[2]];return [Math.atan2(x[2],Math.hypot(x[0],x[1]))/r,Math.atan2(x[1],x[0])/r]}
@@ -883,7 +883,7 @@ async function fetchFreeFlightIdentity(callsign,registration){
   if(!fr&&!j?.flightNumber){skyDebug('WARN','No passenger flight number returned by backend');return null;}
   const airline=fr?.airline||{};
   const provider=String(j?._skyProvider||'').toUpperCase();
-  const trustedProvider=provider.includes('PLANEFINDER')||provider.includes('FLIGHTRADAR24')||provider.includes('AIRNAV RADAR')||provider.includes('ADSBDB EXACT-ROUTE FLIGHT NUMBER')||provider.includes('AIRLABS REGISTRATION→FLIGHT')||provider.includes('AIRLABS REGISTRATION->FLIGHT')||provider.includes('AIRLABS');
+  const trustedProvider=provider.includes('AIRLABS')||provider.includes('PLANEFINDER')||provider.includes('FLIGHTRADAR24')||provider.includes('AIRNAV RADAR')||provider.includes('ADSBDB EXACT-ROUTE FLIGHT NUMBER');
   const flightNumber=trustedProvider?normalFlightCode(j?.flightNumber||''):'';
   const airlineCode=normalFlightCode(airline.iata||'')||'';
   const airlineName=airline.name||'';
@@ -898,7 +898,7 @@ async function fetchFreeFlightIdentity(callsign,registration){
   throw e;
  }finally{clearTimeout(timer)}
 }
-const IDENTITY_CACHE_VERSION='identity-free-v7-airlabs-watch';
+const IDENTITY_CACHE_VERSION='identity-free-v8-airlabs-trusted';
 function identityCacheKey(x){return IDENTITY_CACHE_VERSION+'|'+normalFlightCode(x?.callsign)+'|'+normalFlightCode(x?.registration||x?.r||'')}
 function applyIdentity(x,id){
  if(!id)return;
@@ -909,7 +909,19 @@ function applyIdentity(x,id){
  if(id.airlineCode)x.airlineCode=id.airlineCode;
  if(id.airlineName)x.airlineName=id.airlineName;
  if(id.status)x.identityStatus=id.status;
- if(id.route)x.liveRoute=normaliseRoute({...id.route,flightNumber:id.flightNumber||x.flightNumber,airlineCode:id.airlineCode||x.airlineCode,airlineName:id.airlineName||x.airlineName},x.callsign,utcDateKey(),'IdentityLookup');
+ if(id.route){
+  const prior=x.liveRoute?.status==='FOUND'?x.liveRoute:null;
+  x.liveRoute=normaliseRoute({
+    ...id.route,
+    fromLat:id.route.fromLat??prior?.fromLat,
+    fromLon:id.route.fromLon??prior?.fromLon,
+    toLat:id.route.toLat??prior?.toLat,
+    toLon:id.route.toLon??prior?.toLon,
+    flightNumber:id.flightNumber||x.flightNumber,
+    airlineCode:id.airlineCode||x.airlineCode,
+    airlineName:id.airlineName||x.airlineName
+  },x.callsign,utcDateKey(),'IdentityLookup');
+ }
 }
 async function lookupFlightIdentity(x){
  const cs=normalFlightCode(x?.callsign);if(!cs)return null;
@@ -951,7 +963,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  // same thing as the passenger flight number, so identity lookup is deliberately
  // started for the nearest/Featured aircraft even when a raw callsign exists.
  if(x?.callsign&&!x?.identityStatus) lookupFlightIdentity(x);
- const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=x.flightNumber||'';
+ const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=normalFlightCode(x.flightNumber||'');
  setHeroAircraft(x,journey);
  setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',(flightNumber||x.callsign||'LIVE AIRCRAFT').toUpperCase());setTextSafe('homeStatus','LIVE');
  $('airlineBadge').textContent=(x.airlineCode||flightNumber.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('aircraftReg').textContent=String(x.r||x.registration||'—').toUpperCase()||'—';$('aircraftRegNote').textContent=x.r?'AIRCRAFT REG':'REGISTRATION';
