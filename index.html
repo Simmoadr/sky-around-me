@@ -467,6 +467,10 @@ function dateKeyFromValue(v){
  return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function watchHasLive(f){return !!(f&&S.watchLive&&S.watchTarget&&watchKey(f)===watchKey(S.watchTarget)&&S.watchLive.icao)}
+function parseArrival(f){
+ if(f?.arrivalUtc){const d=new Date(f.arrivalUtc);if(!Number.isNaN(d.getTime()))return d}
+ return null;
+}
 function flightState(f){
  const now=new Date();
  if(!f?.date)return 'SCHEDULED';
@@ -474,9 +478,11 @@ function flightState(f){
  const today=todayKeyLocal(),day=dateKeyFromValue(f.date);
  if(day>today)return 'SCHEDULED';
  if(day<today)return 'COMPLETED';
- const d=parseDeparture(f);
- if(d&&now>=d)return 'COMPLETED';
- return 'SCHEDULED';
+ const dep=parseDeparture(f);
+ if(!dep||now<dep)return 'SCHEDULED';
+ const arr=parseArrival(f);
+ if(arr&&now.getTime()>arr.getTime()+30*60*1000)return 'COMPLETED';
+ return 'TRACKING PENDING';
 }
 function scheduledTodayFlights(){
  const today=todayKeyLocal();
@@ -501,9 +507,9 @@ function getNextWatchedFlight(){
  const today=scheduledTodayFlights();
  const liveToday=today.find(f=>watchHasLive(f));
  if(liveToday)return liveToday;
- const upcomingToday=today.find(f=>{
-   const d=parseDeparture(f);return !d||d.getTime()>=Date.now();
- });
+ const pendingToday=today.find(f=>flightState(f)==='TRACKING PENDING');
+ if(pendingToday)return pendingToday;
+ const upcomingToday=today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now();});
  if(upcomingToday)return upcomingToday;
  return nextFutureWatchedFlight();
 }
@@ -1089,16 +1095,17 @@ function renderHomeWatch(items){
  $('homeWatchNames').textContent=((next.airlineName||'')+(next.airlineName?' · ':'')+((next.from&&next.to)?next.from+' → '+next.to:'Route lookup pending'));
  const dep=formatDepartureDisplay(next);
  $('homeWatchDate').innerHTML=(next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}):'No date set')+`<br><span class="departure-primary">${escapeHtml(dep.primary)}</span><span class="departure-secondary">${escapeHtml(dep.secondary)}</span>`;
- const st=$('homeWatchState');st.className='state '+(live?'live':future?'wait':state==='SCHEDULED'?'wait':'active');st.textContent=live?'LIVE':future?'SCHEDULED':(state==='SCHEDULED'?'SCHEDULED':state);
- $('homeWatchCountLabel').textContent=live?'FLIGHT STATUS':state==='SCHEDULED'?'DEPARTS IN':'FLIGHT STATUS';
- $('homeWatchCount').textContent=live?'IN FLIGHT':state==='SCHEDULED'?countdownText(next):state;
+ const pending=state==='TRACKING PENDING';
+ const st=$('homeWatchState');st.className='state '+(live?'live':future||state==='SCHEDULED'||pending?'wait':'active');st.textContent=live?'LIVE':future?'SCHEDULED':pending?'LIVE TRACKING PENDING':(state==='SCHEDULED'?'SCHEDULED':state);
+ $('homeWatchCountLabel').textContent=live?'FLIGHT STATUS':pending?'LIVE TRACKING':state==='SCHEDULED'?'DEPARTS IN':'FLIGHT STATUS';
+ $('homeWatchCount').textContent=live?'IN FLIGHT':pending?'WAITING…':state==='SCHEDULED'?countdownText(next):state;
  if(live){$('homeWatchAlt').textContent=live.alt==null?'—':Math.round(live.alt*3.28084).toLocaleString()+' ft';$('homeWatchSpeed').textContent=live.speed==null?'—':Math.round(live.speed*1.94384)+' kt';$('homeWatchHeading').textContent=live.heading==null?'—':Math.round(live.heading)+'°';$('homeWatchDistance').textContent=live.d.toFixed(1)+' km from '+S.locationName;}
  else{$('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';}
  box.hidden=false;
 }
 function renderWatchlist(){const el=$('watchList');if(!watchlist.length){el.innerHTML='<div class="empty-list">No watched flights yet.</div>';return}
  const rows=watchlist.map((f,i)=>({f,i,state:flightState(f)})).sort((a,b)=>{if(a.state==='COMPLETED'&&b.state!=='COMPLETED')return 1;if(a.state!=='COMPLETED'&&b.state==='COMPLETED')return -1;const da=parseDeparture(a.f),db=parseDeparture(b.f);return (da?da.getTime():Infinity)-(db?db.getTime():Infinity)});
- el.innerHTML=rows.map(({f,i,state})=>{const route=(f.fromCode&&f.toCode)?f.fromCode+' → '+f.toCode:'LOOKING UP ROUTE';const names=(f.from&&f.to)?f.from+' → '+f.to:'Route will be filled automatically';const dep=f.departureTime?` · <span class="flight-time">DEP ${f.departureTime}</span>`:'';const cd=state==='SCHEDULED'?`<div class="flight-countdown">${countdownText(f)}</div>`:'';const status=state==='COMPLETED'?'COMPLETED':(state==='SCHEDULED'?'SCHEDULED':(f.lookupStatus||state));const rowClass=state==='COMPLETED'?' completed':'';return '<div class="flight-row'+rowClass+'"><div class="flight-main"><div class="route-badge">✈</div><div><strong>'+((f.flightNumber||f.flight||'FLIGHT').toUpperCase())+'</strong><small>'+(f.name||'Watched flight')+' · '+route+' · '+(f.date||'No date')+dep+'<br>'+names+'</small>'+cd+'</div></div><div><span class="state '+(state==='SCHEDULED'?'wait ':'')+(state==='COMPLETED'?'completed ':'')+(f.lookupStatus==='LOOKING UP'?'lookup':'')+'">'+status+'</span><button class="remove" data-remove="'+i+'" title="Remove">REMOVE</button></div></div>'}).join('');el.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{watchlist.splice(Number(btn.dataset.remove),1);if(!watchlist.length)watch={};else if(watchlist[0])watch=watchlist[0];saveState()}))}
+ el.innerHTML=rows.map(({f,i,state})=>{const route=(f.fromCode&&f.toCode)?f.fromCode+' → '+f.toCode:'LOOKING UP ROUTE';const names=(f.from&&f.to)?f.from+' → '+f.to:'Route will be filled automatically';const dep=f.departureTime?` · <span class="flight-time">DEP ${f.departureTime}</span>`:'';const cd=(state==='SCHEDULED'||state==='TRACKING PENDING')?`<div class="flight-countdown">${state==='TRACKING PENDING'?'DEPARTED · SEARCHING FOR AIRCRAFT':countdownText(f)}</div>`:'';const status=state==='COMPLETED'?'COMPLETED':(state==='SCHEDULED'?'SCHEDULED':(state==='TRACKING PENDING'?'LIVE TRACKING PENDING':(f.lookupStatus||state)));const rowClass=state==='COMPLETED'?' completed':'';return '<div class="flight-row'+rowClass+'"><div class="flight-main"><div class="route-badge">✈</div><div><strong>'+((f.flightNumber||f.flight||'FLIGHT').toUpperCase())+'</strong><small>'+(f.name||'Watched flight')+' · '+route+' · '+(f.date||'No date')+dep+'<br>'+names+'</small>'+cd+'</div></div><div><span class="state '+(state==='SCHEDULED'||state==='TRACKING PENDING'?'wait ':'')+(state==='COMPLETED'?'completed ':'')+(f.lookupStatus==='LOOKING UP'?'lookup':'')+'">'+status+'</span><button class="remove" data-remove="'+i+'" title="Remove">REMOVE</button></div></div>'}).join('');el.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{watchlist.splice(Number(btn.dataset.remove),1);if(!watchlist.length)watch={};else if(watchlist[0])watch=watchlist[0];saveState()}))}
 function monthShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/^0/,'').replace(' Sept ',' Sep ')}
 async function fetchFreeFlightRoute(flight,date,registration){
  const cs=normalFlightCode(flight);if(!cs)return null;
@@ -1313,6 +1320,7 @@ async function refreshWatchStream(){
  if(S.watchSearchPending)return S.watchSearchPending;
  const today=scheduledTodayFlights();
  let target=today.find(f=>watchHasLive(f));
+ if(!target)target=today.find(f=>flightState(f)==='TRACKING PENDING');
  if(!target)target=today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
  S.watchTarget=target||null;
  if(!target){S.watchLive=null;renderHomeWatch();return null;}
