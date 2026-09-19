@@ -845,7 +845,7 @@ async function fetchFreeFlightIdentity(callsign,registration){
   if(!fr&&!j?.flightNumber){skyDebug('WARN','No passenger flight number returned by backend');return null;}
   const airline=fr?.airline||{};
   const provider=String(j?._skyProvider||'').toUpperCase();
-  const trustedProvider=provider.includes('PLANEFINDER')||provider.includes('FLIGHTRADAR24')||provider.includes('AIRNAV RADAR');
+  const trustedProvider=provider.includes('PLANEFINDER')||provider.includes('FLIGHTRADAR24')||provider.includes('AIRNAV RADAR')||provider.includes('ADSBDB EXACT-ROUTE FLIGHT NUMBER');
   const flightNumber=trustedProvider?normalFlightCode(j?.flightNumber||''):'';
   const airlineCode=normalFlightCode(airline.iata||'')||'';
   const airlineName=airline.name||'';
