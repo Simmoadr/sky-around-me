@@ -881,6 +881,10 @@ const IDENTITY_STORAGE_KEY='skyAroundMeIdentityCacheV3';
 const IDENTITY_CACHE_VERSION='identity-persistent-v3';
 const IDENTITY_SUCCESS_TTL=12*60*60*1000;
 const IDENTITY_FAILURE_TTL=5*60*1000;
+// Failed identity lookups are retained briefly to avoid hammering the resolver,
+// but they must be retried sooner than the display-cache expiry. This prevents
+// a temporary UNVERIFIED result from suppressing a later valid flight number.
+const IDENTITY_FAILURE_RETRY_TTL=60*1000;
 function identityAircraftKey(x){
  const icao=normalFlightCode(x?.icao||x?.hex||'');
  const reg=normalFlightCode(x?.registration||x?.r||'');
@@ -1097,10 +1101,21 @@ async function lookupFlightIdentity(x){
  const requestKey=aircraftKey+'|CALL|'+cs;
  skyDebug('OK','RESOLVER START',{callsign:cs,registration:x?.registration||x?.r||'',existingFlightNumber:x?.flightNumber||'',cacheKey:aircraftKey});
  const cached=getIdentityCacheValue(aircraftKey);
- if(cached&&identityCallsMatch(x,cached)){
-  skyDebug('OK','PERSISTENT IDENTITY CACHE HIT',cached);applyIdentity(x,cached);
+ const cachedRecord=S.identityCache.get(aircraftKey);
+ const cachedId=cachedRecord?.value||cached;
+ const cachedAge=Number(cachedRecord?.savedAt||0)?Date.now()-Number(cachedRecord.savedAt):Infinity;
+ const cachedFailure=cachedId?.status!=='FOUND'||!cachedId?.flightNumber;
+ // A successful identity is a genuine cache hit. An UNVERIFIED result is only
+ // a short-lived back-off: after 60s we are allowed to try again, while the
+ // 5-minute failure record still prevents repeated requests every 45 seconds.
+ if(cached&&identityCallsMatch(x,cached)&&(!cachedFailure||cachedAge<IDENTITY_FAILURE_RETRY_TTL)){
+  skyDebug('OK',cachedFailure?'PERSISTENT IDENTITY FAILURE CACHE HIT':'PERSISTENT IDENTITY CACHE HIT',cached);
+  applyIdentity(x,cached);
   if(S.featured===x.icao)renderLiveHome(x);
   return cached;
+ }
+ if(cached&&cachedFailure&&cachedAge>=IDENTITY_FAILURE_RETRY_TTL){
+  skyDebug('OK','RETRYING PREVIOUS UNVERIFIED IDENTITY',{ageMs:Math.round(cachedAge),retryTtlMs:IDENTITY_FAILURE_RETRY_TTL,callsign:cs});
  }
  if(cached&&!identityCallsMatch(x,cached)){
   skyDebug('OK','AIRCRAFT CACHE PRESENT — CALLSIGN CHANGED',{cachedCallsign:cached.callsign||'',cachedFlightNumber:cached.flightNumber||'',liveCallsign:cs});
@@ -1134,7 +1149,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  // live ADS-B identity. The ADS-B callsign (e.g. RYR20KX) is not always the
  // same thing as the passenger flight number, so identity lookup is deliberately
  // started for the nearest/Featured aircraft even when a raw callsign exists.
- if(x?.callsign&&!x?.identityStatus) lookupFlightIdentity(x);
+ if(x?.callsign&&(!x?.identityStatus||x?.identityStatus==='UNVERIFIED')) lookupFlightIdentity(x);
  const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=normalFlightCode(x.flightNumber||'');
  setHeroAircraft(x,journey);
  setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',(flightNumber||x.callsign||'LIVE AIRCRAFT').toUpperCase());setTextSafe('homeStatus','LIVE');
@@ -1153,7 +1168,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  // Identity lookup is the authoritative flight-number resolver for the
  // Featured/nearest aircraft. It runs even if another route lookup populated
  // a provisional callsign-derived number first.
- if(x?.callsign&&!x?.identityStatus) lookupFlightIdentity(x);
+ if(x?.callsign&&(!x?.identityStatus||x?.identityStatus==='UNVERIFIED')) lookupFlightIdentity(x);
 }
 const ROUTE_CACHE_TTL=30*60*1000;
 const ROUTE_FAILURE_TTL=5*60*1000;
