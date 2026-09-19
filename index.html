@@ -308,6 +308,13 @@
 @media(max-width:800px){.home{padding-top:8px}.hero{min-height:650px;height:auto}.sky{height:320px;min-height:320px}.hero-bottom{padding:16px 22px 20px}.identity{grid-template-columns:1fr;gap:12px}.aircraft-registration{padding-left:0;border-left:0;border-top:1px solid #dfe1dd;padding-top:10px}.telemetry{grid-template-columns:repeat(2,1fr);width:100%}.hero-map-brand{left:14px;top:14px}.hero-map-status{right:14px;top:14px;min-width:145px}.hero-map-caption{top:14px}.hero-map-recenter{right:14px;top:92px}.hero-airport-label span{font-size:10px}}
 
 
+/* V60.2 — iPad 8th Gen completion-section containment.
+   Explicitly honour the HTML hidden attribute on grid/flex sections so empty
+   completion/telemetry rows cannot consume space or get clipped at the bottom. */
+.journey-info[hidden],
+.watch-live-grid[hidden],
+.watch-progress-row[hidden]{display:none!important;}
+
 /* FLIGHT JOURNEY BAR — keep the route progress bar on one line */
 .journey-info{min-width:0;width:100%;}
 .journey-center{min-width:0;width:100%;}
