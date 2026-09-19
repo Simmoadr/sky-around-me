@@ -812,7 +812,22 @@ function renderHeroFlightMap(live,watch){
    const angle=Number.isFinite(live?.heading)?live.heading:heroBearing(pos,progress<.99?nextPoint:b);
    L.marker(pos,{icon:heroAircraftIcon(angle),interactive:false}).addTo(heroFlightLayer);
    if(!canReuse){
-    const bounds=L.latLngBounds([a,b,pos]);heroFlightMap.fitBounds(bounds,{paddingTopLeft:[55,40],paddingBottomRight:[55,40],maxZoom:18});
+    // Fit the complete rendered journey, not just the three anchor points.
+    // This matters on long-haul flights because the curved route can bow
+    // considerably north/south of the straight endpoint-to-endpoint line.
+    // The map should be as tight as possible while keeping the departure
+    // airport, live aircraft, destination airport AND the visible route arc
+    // comfortably inside the map.
+    const routeBounds=L.latLngBounds(pts);
+    const mapSize=heroFlightMap.getSize();
+    const edgeX=Math.max(70,Math.min(110,Math.round(mapSize.x*0.055)));
+    const edgeY=Math.max(55,Math.min(90,Math.round(mapSize.y*0.12)));
+    heroFlightMap.fitBounds(routeBounds,{
+      paddingTopLeft:[edgeX,edgeY],
+      paddingBottomRight:[edgeX,edgeY],
+      maxZoom:18,
+      animate:false
+    });
    }
  }else{
    L.circleMarker(pos,{radius:8,color:WATCH_ROUTE_COLOR,weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
@@ -846,10 +861,13 @@ function recenterHeroMap(){
  if(valid(a)&&valid(b)){
   // The route endpoints are the primary bounds. Include the live aircraft
   // so the current position is guaranteed to remain visible as well.
-  const points=valid(pos)?[a,b,pos]:[a,b];
-  heroFlightMap.fitBounds(L.latLngBounds(points),{
-   paddingTopLeft:[55,40],
-   paddingBottomRight:[55,40],
+  const routePts=heroCurvedRoutePoints(a,valid(pos)?pos:b,b,120);
+  const mapSize=heroFlightMap.getSize();
+  const edgeX=Math.max(70,Math.min(110,Math.round(mapSize.x*0.055)));
+  const edgeY=Math.max(55,Math.min(90,Math.round(mapSize.y*0.12)));
+  heroFlightMap.fitBounds(L.latLngBounds(routePts),{
+   paddingTopLeft:[edgeX,edgeY],
+   paddingBottomRight:[edgeX,edgeY],
    maxZoom:18,
    animate:true
   });
