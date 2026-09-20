@@ -302,12 +302,23 @@
 .hero-airport-icon{background:transparent!important;border:0!important}.hero-airport-dot{position:absolute;width:10px;height:10px;border-radius:50%;left:-5px;top:-5px;background:#fff;border:2px solid #176f8b;box-shadow:0 2px 7px rgba(23,111,139,.16)}
 .hero-airport-label{position:absolute;min-width:76px;pointer-events:none;transform:translate(-50%,-100%);text-align:center;white-space:nowrap}.hero-airport-label.to{transform:translate(-50%,8px)}.hero-airport-label span{display:inline-block;font-size:11px;font-weight:950;letter-spacing:.04em;color:#111416;background:rgba(248,248,244,.91);padding:3px 6px;border-radius:6px;border:1px solid rgba(215,222,219,.85);box-shadow:0 3px 9px rgba(23,30,30,.07)}.hero-airport-label small{display:block;margin-top:3px;font-size:7px;color:#697273;font-weight:700;letter-spacing:.02em}
 .hero-bottom{padding:17px 36px 20px;flex:0 0 auto;background:#f8f8f4}.hero-bottom .divider{margin-bottom:14px}.identity{grid-template-columns:minmax(260px,1.35fr) minmax(145px,.65fr) minmax(500px,2.6fr);gap:24px;align-items:center}.hero .airline-brand{gap:8px;align-items:center;min-height:24px}.hero .callsign-note{display:inline-flex;align-items:center;margin-left:7px;padding-left:10px;border-left:1px solid #d7ddda;white-space:nowrap}.hero .flight-name{margin-top:5px;font-size:32px}.hero .aircraft-type{margin-top:3px}.aircraft-registration{align-self:center;padding-left:24px}.aircraft-registration b{font-size:19px}.telemetry{gap:20px}.metric b{font-size:18px}.journey-info{margin-top:14px;padding-top:11px}.journey-end b{font-size:15px}.journey-percent{margin-bottom:6px}
-@media (min-width:701px) and (orientation:landscape) and (max-height:900px){.app{padding:8px 16px 10px}.topbar{padding-bottom:7px}.home{padding-top:6px;height:calc(100vh - 48px)}.hero{height:calc(100vh - 250px);min-height:480px;max-height:none}.sky{min-height:300px;height:auto}.hero-bottom{padding:14px 32px 16px}.hero .flight-name{font-size:29px}.journey-info{margin-top:10px}.watch-bottom{margin-top:8px;padding:12px 18px}.watch-bottom-title{font-size:16px}.watch-bottom-body{margin-top:8px}.watch-live-grid{padding-top:8px}}
+@media (min-width:701px) and (orientation:landscape) and (max-height:900px){.app{padding:8px 16px 10px}.topbar{padding-bottom:7px}.home{padding-top:6px;height:calc(100vh - 48px)}.hero{height:calc(100vh - 250px);min-height:480px;max-height:none}.sky{min-height:0;height:360px;flex:1 1 auto}.hero-bottom{padding:14px 32px 16px}.hero .flight-name{font-size:29px}.journey-info{margin-top:10px}.watch-bottom{margin-top:8px;padding:12px 18px}.watch-bottom-title{font-size:16px}.watch-bottom-body{margin-top:8px}.watch-live-grid{padding-top:8px}}
 @media (min-width:701px) and (orientation:landscape) and (max-height:760px){.hero{height:calc(100vh - 230px);min-height:455px}.hero-bottom{padding:11px 28px 12px}.hero .flight-name{font-size:27px}.identity{grid-template-columns:minmax(230px,1.25fr) minmax(125px,.55fr) minmax(430px,2.4fr);gap:18px}.metric b{font-size:16px}.journey-info{margin-top:8px;padding-top:8px}.watch-bottom{margin-top:6px;padding:9px 16px}.watch-bottom-body{margin-top:6px}.watch-live-grid{padding-top:6px}}
 @media(max-width:1100px) and (min-width:801px){.identity{grid-template-columns:minmax(220px,1fr) minmax(120px,.55fr) minmax(390px,1.8fr);gap:16px}.telemetry{gap:12px}.hero-map-brand{left:16px}.hero-map-status{right:16px}}
 @media(max-width:800px){.home{padding-top:8px}.hero{min-height:650px;height:auto}.sky{height:320px;min-height:320px}.hero-bottom{padding:16px 22px 20px}.identity{grid-template-columns:1fr;gap:12px}.aircraft-registration{padding-left:0;border-left:0;border-top:1px solid #dfe1dd;padding-top:10px}.telemetry{grid-template-columns:repeat(2,1fr);width:100%}.hero-map-brand{left:14px;top:14px}.hero-map-status{right:14px;top:14px;min-width:145px}.hero-map-caption{top:14px}.hero-map-recenter{right:14px;top:92px}.hero-airport-label span{font-size:10px}}
 
 
+/* V60.6 — Featured map cycle: fit LOCAL AIRSPACE to the selected radius
+   when the camera switches modes, and let the map occupy the full sky area. */
+@media (min-width:701px) and (orientation:landscape){
+  .sky{position:relative;top:auto;left:auto;right:auto;display:block;flex:1 1 auto;height:auto!important;min-height:0!important;padding:0!important;overflow:hidden;}
+  .aircraft-stage{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;left:0!important;right:0!important;top:0!important;}
+  #heroAircraft{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;display:block!important;}
+  .hero-flight-map{height:100%!important;}
+  .aircraft-stage-art{height:100%!important;width:100%!important;}
+}
+
+/* V60.7 — Leaflet/iPad airspace re-fit after layout settles. */
 /* V60.2 — iPad 8th Gen completion-section containment.
    Explicitly honour the HTML hidden attribute on grid/flex sections so empty
    completion/telemetry rows cannot consume space or get clipped at the bottom. */
@@ -780,6 +791,7 @@ function renderHeroFlightMap(live,watch){
  const host=$('heroAircraft');if(!host)return;
  const mapKey=[live?.icao||live?.hex||live?.registration||'',watch?.fromCode||'',watch?.toCode||''].join('|');
  const canReuse=!!(heroFlightMap&&heroFlightLayer&&document.getElementById('heroFlightMap')&&heroFlightMap._skyMapKey===mapKey);
+ const modeChanged=!!(heroFlightMap&&heroFlightMap._skyMapMode!==heroMapMode);
  if(!canReuse){
   host.innerHTML='<div id="heroFlightMap" class="hero-flight-map"></div><div class="hero-quiet-state is-hidden" id="heroQuietState"><div class="quiet-kicker">SKY AROUND ME</div><h2>Skies are quiet</h2><p>No aircraft nearby right now.</p><small>But the world is always moving.</small><div class="quiet-quote-wrap"><div class="quiet-rule"></div><div class="quiet-quote">“Same sky. Different stories.”</div></div></div><div class="hero-map-brand" id="heroMapBrand"></div><div class="hero-map-status" id="heroMapStatus"></div><div class="hero-map-caption" id="heroMapCaption">FULL JOURNEY</div><button type="button" class="hero-map-recenter" id="heroMapRecenter" title="Recenter featured map">RECENTER</button>';
   host.style.position='relative';host.style.width='100%';host.style.height='100%';
@@ -844,9 +856,9 @@ function renderHeroFlightMap(live,watch){
     const nextPoint=greatCirclePoint(a,b,Math.min(1,progress+.015));
     const angle=Number.isFinite(live?.heading)?live.heading:heroBearing(pos,progress<.99?nextPoint:b);
     L.marker(pos,{icon:heroAircraftIcon(angle),interactive:false}).addTo(heroFlightLayer);
-    if(!canReuse){
+    if(!canReuse || modeChanged){
      const fitPoints=pts.concat([pos]);
-     heroFlightMap.fitBounds(L.latLngBounds(fitPoints),{paddingTopLeft:[65,42],paddingBottomRight:[65,42],maxZoom:18});
+     heroFlightMap.fitBounds(L.latLngBounds(fitPoints),{paddingTopLeft:[65,42],paddingBottomRight:[65,42],maxZoom:18,animate:false});
     }
    }else{
     // Local airspace view: show every commercial aircraft currently inside the
@@ -863,9 +875,54 @@ function renderHeroFlightMap(live,watch){
     const nextPoint=greatCirclePoint(a,b,Math.min(1,progress+.015));
     const angle=Number.isFinite(live?.heading)?live.heading:heroBearing(pos,progress<.99?nextPoint:b);
     L.marker(pos,{icon:heroAircraftIcon(angle),interactive:false,zIndexOffset:500}).addTo(heroFlightLayer);
-    if(!canReuse){
-      const radiusCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,interactive:false});
-      heroFlightMap.fitBounds(radiusCircle.getBounds(),{padding:[35,35],maxZoom:14});
+    if(!canReuse || modeChanged){
+      const fitLocalAirspace=()=>{
+       if(!heroFlightMap||heroMapMode!=='airspace')return;
+
+       // V60.8 — LOCAL AIRSPACE is deliberately camera-centred on the
+       // user's location, with the selected radius occupying most of the
+       // available map height. This is more deterministic on iPad Safari
+       // than relying only on fitBounds during the 10s view transition.
+       const applyLocalCamera=()=>{
+        if(!heroFlightMap||heroMapMode!=='airspace')return;
+        heroFlightMap.invalidateSize(true);
+
+        const size=heroFlightMap.getSize();
+        const lat=Number(S.lat);
+        const radiusM=Math.max(1000,Number(S.rangeKm||100)*1000);
+        const heightPx=Math.max(220,Number(size?.y)||350);
+
+        // Aim for the radius circle to use about 78% of the map height.
+        // Web Mercator metres/pixel at the device latitude:
+        // 156543.03392 * cos(latitude) / 2^zoom.
+        const targetMPerPx=(radiusM*2)/(heightPx*0.78);
+        const mercatorMPerPx=156543.03392*Math.max(0.15,Math.cos(lat*Math.PI/180));
+        let zoom=Math.log2(mercatorMPerPx/targetMPerPx);
+        zoom=Math.max(2,Math.min(18,Math.round(zoom)));
+
+        heroFlightMap.setView([lat,Number(S.lon)],zoom,{animate:false});
+
+        // Keep the radius as the visual boundary; it is not used to decide
+        // the camera position.
+        L.circle([lat,Number(S.lon)],{
+         radius:radiusM,
+         color:WATCH_ROUTE_COLOR,
+         weight:1,
+         fillOpacity:.025,
+         dashArray:'5 8',
+         interactive:false
+        }).addTo(heroFlightLayer);
+       };
+
+       applyLocalCamera();
+
+       // Safari/iPad can settle the map container a frame or two after the
+       // mode changes. Re-apply the deterministic camera after layout settles.
+       setTimeout(applyLocalCamera,120);
+       setTimeout(applyLocalCamera,600);
+       setTimeout(applyLocalCamera,1200);
+      };
+      fitLocalAirspace();
     }
    }
  }else{
@@ -873,7 +930,8 @@ function renderHeroFlightMap(live,watch){
    L.marker(pos,{icon:heroAircraftIcon(live.heading),interactive:false}).addTo(heroFlightLayer);
    if(!canReuse)heroFlightMap.setView(pos,7);
  }
- setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),60);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),300);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),900);
+ heroFlightMap._skyMapMode=heroMapMode;
+ setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),60);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),300);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),900);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),1500);
 }
 function stopHeroMapCycle(){if(heroMapCycleTimer){clearInterval(heroMapCycleTimer);heroMapCycleTimer=null}heroMapCycleKey='';heroMapMode='journey'}
 function startHeroMapCycle(live,watch){
