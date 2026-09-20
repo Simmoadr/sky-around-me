@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Sky Around Me V60.20: local airport database added; V60.19 retained as baseline. -->
 <title>Sky Around Me</title>
 <!-- Sky Around Me v60.19: V60.18 regression fix — restore route enrichment, map cycle, and centered telemetry. V60.18 map/API logic otherwise retained.
 <!-- Sky Around Me v52: destination route/progress restore + exact flight/date watched-route correction; v46 AirLabs resolver retained
@@ -968,10 +969,52 @@ function recenterHeroMap(){
  }
  setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),80);
 }
-const airportCoords={
+let airportCoords={
  JFK:[40.6413,-73.7781],SIN:[1.3644,103.9915],LHR:[51.4700,-0.4543],BHX:[52.4539,-1.7480],FAO:[37.0144,-7.9659],DUS:[51.2895,6.7668],HAJ:[52.4611,9.6851],LBA:[53.8659,-1.6600],LPA:[27.9319,-15.3867],BRS:[51.3827,-2.7191],BZR:[43.3235,3.3533],CDG:[49.0097,2.5479],AMS:[52.3105,4.7683],FRA:[50.0379,8.5622],MUC:[48.3538,11.7861],CLT:[35.2140,-80.9431],RDU:[35.8801,-78.7880],LGA:[40.7769,-73.8740],EWR:[40.6895,-74.1745],MEX:[19.4363,-99.0721],SAF:[1.3502,103.9944],SFO:[37.6213,-122.3790],LAX:[33.9416,-118.4085],ORD:[41.9742,-87.9073],DFW:[32.8998,-97.0403],DXB:[25.2532,55.3657],DOH:[25.2731,51.6081],HND:[35.5494,139.7798],NRT:[35.7720,140.3929],SYD:[-33.9399,151.1753]
 };
 function routePoint(code){const p=airportCoords[String(code||'').toUpperCase()];return p?[p[0],p[1]]:null}
+
+let airportDatabaseLoaded=false;
+let airportDatabaseLoading=null;
+async function loadAirportDatabase(){
+ if(airportDatabaseLoaded)return true;
+ if(airportDatabaseLoading)return airportDatabaseLoading;
+ airportDatabaseLoading=(async()=>{
+  try{
+   const res=await fetch('./airports.json',{cache:'force-cache'});
+   if(!res.ok)throw new Error(`airports.json HTTP ${res.status}`);
+   const data=await res.json();
+   if(!data||typeof data!=='object')throw new Error('Invalid airports.json');
+   let count=0;
+   for(const rec of Object.values(data)){
+    if(!rec||typeof rec!=='object')continue;
+    const lat=Number(rec.lat),lon=Number(rec.lon);
+    if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;
+    const iata=String(rec.iata||'').trim().toUpperCase();
+    const icao=String(rec.icao||'').trim().toUpperCase();
+    if(iata)airportCoords[iata]=[lat,lon];
+    if(icao)airportCoords[icao]=[lat,lon];
+    if(iata||icao)count++;
+   }
+   airportDatabaseLoaded=true;
+   console.info(`Sky Around Me: airport database loaded (${count} airports with coordinates).`);
+   const live=choose(S.lastItems||[]);
+   if(live){
+    renderLiveHome(live);
+   }else{
+    renderScheduledHome();
+   }
+   renderHomeWatch(S.lastItems||[]);
+   return true;
+  }catch(e){
+   console.warn('Sky Around Me: local airport database unavailable; using built-in airport fallback.',e);
+   return false;
+  }finally{
+   airportDatabaseLoading=null;
+  }
+ })();
+ return airportDatabaseLoading;
+}
 function greatCirclePoint(a,b,t){const r=Math.PI/180,A=[a[0]*r,a[1]*r],B=[b[0]*r,b[1]*r];const va=[Math.cos(A[0])*Math.cos(A[1]),Math.cos(A[0])*Math.sin(A[1]),Math.sin(A[0])],vb=[Math.cos(B[0])*Math.cos(B[1]),Math.cos(B[0])*Math.sin(B[1]),Math.sin(B[0])];const dot=Math.max(-1,Math.min(1,va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2])),d=Math.acos(dot);if(d<1e-8)return a.slice();const sd=Math.sin(d);const x=[(Math.sin((1-t)*d)/sd)*va[0]+(Math.sin(t*d)/sd)*vb[0],(Math.sin((1-t)*d)/sd)*va[1]+(Math.sin(t*d)/sd)*vb[1],(Math.sin((1-t)*d)/sd)*va[2]+(Math.sin(t*d)/sd)*vb[2]];return [Math.atan2(x[2],Math.hypot(x[0],x[1]))/r,Math.atan2(x[1],x[0])/r]}
 function routeProgress(f,live){if(!f||!live||live.lat==null||live.lon==null)return 0;const a=f.fromLat!=null?[f.fromLat,f.fromLon]:routePoint(f.fromCode),b=f.toLat!=null?[f.toLat,f.toLon]:routePoint(f.toCode);if(!a||!b)return 0;const done=hav(a[0],a[1],live.lat,live.lon),remaining=hav(live.lat,live.lon,b[0],b[1]);const total=done+remaining;return total?Math.max(0,Math.min(1,done/total)):0}
 function planeSvg(){return '<div class="route-plane"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="#111" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></svg></div>'}
@@ -1908,6 +1951,6 @@ async function poll(){
  }
 }
 function refreshHomeDisplay(){const f=choose(S.lastItems||[]);if(f){S.featured=f.icao;renderLiveHome(f)}else{S.featured=null;renderScheduledHome()}renderHomeWatch(S.lastItems||[])}
-updateSkySettingsUI();loadRouteCache();loadIdentityCache();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();refreshWatchStream();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='LIVE'?'LIVE TRACKING':s.textContent==='LANDED'?'FLIGHT ENDED':'';}},1000);S.timer=setInterval(poll,45000);
+updateSkySettingsUI();loadRouteCache();loadIdentityCache();loadAirportDatabase();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();refreshWatchStream();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='LIVE'?'LIVE TRACKING':s.textContent==='LANDED'?'FLIGHT ENDED':'';}},1000);S.timer=setInterval(poll,45000);
 </script>
 </body></html>
