@@ -449,6 +449,91 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .telemetry{width:min(100%,960px);margin-left:auto;margin-right:auto;justify-self:center;align-items:center;}
 @media(max-width:1050px){.telemetry{width:100%;margin-left:0;margin-right:0;}}
 </style>
+
+<style>
+/* V60.23 — FEATURED HERO GLASS OVERLAY
+   Map-first presentation: the Featured map fills the hero and the live aircraft
+   information sits in a compact glass panel over the bottom of that map.
+   NEXT WATCHED FLIGHT remains outside the hero and is unchanged. */
+@media (min-width:701px) and (orientation:landscape){
+  .hero{position:relative;overflow:hidden;}
+  .hero .sky{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    min-height:0!important;
+    flex:none!important;
+    z-index:1!important;
+    background:#eaf0ee;
+  }
+  .hero .aircraft-stage,
+  .hero .aircraft-stage-art,
+  .hero #heroAircraft,
+  .hero .hero-flight-map{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    min-height:0!important;
+  }
+  .hero .hero-bottom{
+    position:absolute!important;
+    left:24px!important;
+    right:24px!important;
+    bottom:16px!important;
+    margin:0!important;
+    padding:14px 22px 15px!important;
+    z-index:20!important;
+    background:rgba(248,248,244,.72)!important;
+    border:1px solid rgba(255,255,255,.72)!important;
+    border-radius:20px!important;
+    box-shadow:0 14px 36px rgba(23,30,30,.16),inset 0 1px 0 rgba(255,255,255,.55)!important;
+    backdrop-filter:blur(18px) saturate(1.08)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
+  }
+  .hero .hero-bottom .divider{display:none!important}
+  .hero .identity{
+    grid-template-columns:minmax(245px,1.05fr) minmax(620px,2.95fr)!important;
+    gap:24px!important;
+    align-items:center!important;
+  }
+  .hero .identity-primary{min-width:0!important}
+  .hero .flight-name{font-size:29px!important;margin-top:3px!important}
+  .hero .aircraft-type{font-size:10px!important;margin-top:3px!important}
+  .hero .telemetry{
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:17px!important;
+    align-items:center!important;
+  }
+  .hero .telemetry .metric b{font-size:16px!important;margin-top:4px!important}
+  .hero .telemetry .metric label{font-size:7px!important}
+  .hero .telemetry .metric small{font-size:8px!important;margin-top:2px!important}
+  .hero .journey-info{
+    margin-top:9px!important;
+    padding-top:9px!important;
+    border-top:1px solid rgba(140,151,150,.25)!important;
+  }
+  .hero .journey-end b{font-size:14px!important}
+  .hero .journey-end small{font-size:8px!important}
+  .hero .journey-percent{font-size:7px!important}
+  .hero .progress{background:rgba(100,110,109,.18)!important}
+  .hero .edit-panel{margin-top:10px!important}
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .hero-bottom{left:18px!important;right:18px!important;bottom:10px!important;padding:10px 16px 11px!important;border-radius:17px!important}
+  .hero .identity{gap:16px!important}
+  .hero .telemetry{gap:11px!important}
+  .hero .flight-name{font-size:25px!important}
+  .hero .telemetry .metric b{font-size:14px!important}
+  .hero .journey-info{margin-top:6px!important;padding-top:6px!important}
+}
+
+@media (max-width:700px){
+  /* Keep the existing mobile layout untouched. */
+}
+</style>
 </head>
 <body>
 
@@ -1966,3 +2051,102 @@ function enforceFutureDateInputs(){const min=todayInputDate();['listDate','dateI
 updateSkySettingsUI();enforceFutureDateInputs();loadRouteCache();loadIdentityCache();loadAirportDatabase();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();refreshWatchStream();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='LIVE'?'LIVE TRACKING':s.textContent==='LANDED'?'FLIGHT ENDED':'';}},1000);S.timer=setInterval(poll,45000);
 </script>
 </body></html>
+
+
+<style>
+/* V60.23 — LIQUID GLASS FEATURED HERO
+   Presentation-only: keeps the existing map, flight data, cycling and watched-flight logic unchanged. */
+@media (min-width:701px) and (orientation:landscape){
+  /* Let the map own the entire hero while the flight information floats above it. */
+  .hero{position:relative;overflow:hidden;background:#eaf0ee;}
+  .sky{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;flex:none!important;z-index:1;}
+  .aircraft-stage{z-index:2!important;}
+  .hero-flight-map{z-index:1!important;}
+
+  /* Main aircraft information — translucent, blurred and floating over the map. */
+  .hero-bottom{
+    position:absolute!important;
+    left:24px!important;
+    right:24px!important;
+    bottom:16px!important;
+    width:auto!important;
+    margin:0!important;
+    padding:17px 22px 18px!important;
+    z-index:20!important;
+    flex:none!important;
+    border:1px solid rgba(255,255,255,.58)!important;
+    border-radius:24px!important;
+    background:linear-gradient(135deg,rgba(255,255,255,.34),rgba(232,247,247,.20) 48%,rgba(255,255,255,.27))!important;
+    -webkit-backdrop-filter:blur(24px) saturate(155%)!important;
+    backdrop-filter:blur(24px) saturate(155%)!important;
+    box-shadow:0 18px 48px rgba(23,40,44,.16),inset 0 1px 0 rgba(255,255,255,.78),inset 0 -1px 0 rgba(255,255,255,.18)!important;
+    overflow:hidden;
+  }
+  .hero-bottom:before{
+    content:'';
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    border-radius:inherit;
+    background:
+      radial-gradient(circle at 12% 0%,rgba(255,255,255,.38),transparent 30%),
+      linear-gradient(115deg,rgba(255,255,255,.14),transparent 38%,rgba(91,218,203,.08) 72%,rgba(255,255,255,.20));
+  }
+  .hero-bottom>*{position:relative;z-index:1;}
+  .hero-bottom .divider{display:none!important;}
+
+  .identity{gap:22px!important;align-items:center!important;}
+  .hero .airline-badge{box-shadow:0 4px 12px rgba(21,91,93,.10)!important;}
+  .hero .operator,.hero .aircraft-type,.hero .metric label,.hero .metric small,.hero .journey-percent,.hero .journey-end span,.hero .journey-end small{color:rgba(45,67,71,.72)!important;}
+  .hero .flight-name,.hero .metric b,.hero .journey-end b{color:#10272d!important;text-shadow:0 1px 1px rgba(255,255,255,.25);}
+  .aircraft-registration{border-left-color:rgba(255,255,255,.48)!important;}
+  .hero .journey-info{border-top-color:rgba(255,255,255,.42)!important;}
+  .hero .progress{background:rgba(255,255,255,.38)!important;box-shadow:inset 0 1px 2px rgba(20,50,54,.08);}
+  .progress-plane:before{background:rgba(255,255,255,.80)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+
+  /* Glass map widgets. */
+  .hero-map-status{
+    background:linear-gradient(135deg,rgba(255,255,255,.34),rgba(232,247,247,.18))!important;
+    border-color:rgba(255,255,255,.58)!important;
+    -webkit-backdrop-filter:blur(20px) saturate(150%)!important;
+    backdrop-filter:blur(20px) saturate(150%)!important;
+    box-shadow:0 12px 30px rgba(23,40,44,.13),inset 0 1px 0 rgba(255,255,255,.72)!important;
+  }
+  .hero-map-caption{
+    color:#29464d!important;
+    background:rgba(255,255,255,.25)!important;
+    border:1px solid rgba(255,255,255,.42)!important;
+    -webkit-backdrop-filter:blur(14px) saturate(140%)!important;
+    backdrop-filter:blur(14px) saturate(140%)!important;
+    box-shadow:0 7px 18px rgba(23,40,44,.08),inset 0 1px 0 rgba(255,255,255,.55)!important;
+  }
+  .hero-map-recenter{
+    background:rgba(255,255,255,.25)!important;
+    border-color:rgba(255,255,255,.50)!important;
+    -webkit-backdrop-filter:blur(14px) saturate(140%)!important;
+    backdrop-filter:blur(14px) saturate(140%)!important;
+    box-shadow:0 9px 22px rgba(23,40,44,.10),inset 0 1px 0 rgba(255,255,255,.62)!important;
+  }
+  .hero-flight-map .leaflet-control-zoom a{
+    background:rgba(255,255,255,.24)!important;
+    color:#16343b!important;
+    border-color:rgba(255,255,255,.30)!important;
+    -webkit-backdrop-filter:blur(14px) saturate(140%)!important;
+    backdrop-filter:blur(14px) saturate(140%)!important;
+  }
+  .hero-flight-map .leaflet-control-zoom a:last-child{border-top-color:rgba(255,255,255,.28)!important;}
+  .hero-flight-map .leaflet-control-attribution{background:rgba(255,255,255,.20)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+
+  .hero-airport-label span{
+    background:rgba(255,255,255,.28)!important;
+    border-color:rgba(255,255,255,.42)!important;
+    -webkit-backdrop-filter:blur(10px)!important;
+    backdrop-filter:blur(10px)!important;
+    box-shadow:0 6px 15px rgba(23,40,44,.08),inset 0 1px 0 rgba(255,255,255,.52)!important;
+  }
+}
+
+@media (max-width:700px){
+  /* Keep the existing mobile layout unchanged. */
+}
+</style>
