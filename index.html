@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Sky Around Me</title>
-<!-- Sky Around Me v60.18: V60.17/V60.10 map baseline retained; V60.12 route-aware passenger flight-number resolver merged.
+<!-- Sky Around Me v60.19: V60.18 regression fix — restore route enrichment, map cycle, and centered telemetry. V60.18 map/API logic otherwise retained.
 <!-- Sky Around Me v52: destination route/progress restore + exact flight/date watched-route correction; v46 AirLabs resolver retained
 <!-- Sky Around Me v18: registration-aware flight identity + smooth route hero -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -444,8 +444,8 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .hero-quiet-state .quiet-quote{color:#176d7b;text-shadow:0 1px 8px rgba(255,255,255,.65)}
 
 /* Centre the six aircraft-information metrics within their information area. */
-.identity{grid-template-columns:minmax(260px,1.05fr) minmax(0,2.95fr);}
-.telemetry{width:min(100%,960px);margin-left:auto;margin-right:auto;justify-self:center;}
+.identity{grid-template-columns:minmax(260px,1.05fr) minmax(0,2.95fr);align-items:center;}
+.telemetry{width:min(100%,960px);margin-left:auto;margin-right:auto;justify-self:center;align-items:center;}
 @media(max-width:1050px){.telemetry{width:100%;margin-left:0;margin-right:0;}}
 </style>
 </head>
@@ -1287,7 +1287,11 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=normalFlightCode(x.flightNumber||'');
  // Only start identity resolution with the current route when one is available.
  // This prevents the backend from being asked to guess a passenger flight from the ADS-B callsign alone.
- if(x?.callsign&&(!x?.identityStatus||x.identityStatus!=='FOUND'&&(journey?.fromCode&&journey?.toCode))) lookupFlightIdentity(x,journey?.fromCode&&journey?.toCode?journey:null);
+ // Route first, then passenger-flight identity. V55 identity resolution requires
+ // an exact origin/destination pair; do not spend a backend request on a
+ // callsign-only identity lookup before the route has been resolved.
+ if(x?.callsign&&(!journey?.fromCode||!journey?.toCode)&&!x?.liveRoute){ enrichLiveRoute(x); }
+ if(x?.callsign&&journey?.fromCode&&journey?.toCode&&(!x?.identityStatus||x.identityStatus!=='FOUND')) lookupFlightIdentity(x,journey);
  setHeroAircraft(x,journey);
  setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',(flightNumber||x.callsign||'LIVE AIRCRAFT').toUpperCase());setTextSafe('homeStatus','LIVE');
  $('airlineBadge').textContent=(x.airlineCode||flightNumber.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('aircraftReg').textContent=String(x.r||x.registration||'—').toUpperCase()||'—';$('aircraftRegNote').textContent=x.r?'AIRCRAFT REG':'REGISTRATION';$('aircraftCallsign').textContent=String(x.callsign||'—').toUpperCase()||'—';
