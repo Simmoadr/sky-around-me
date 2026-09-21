@@ -1146,87 +1146,6 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   }
 }
 </style>
-
-<style id="v6041-next-watch-same-style">
-/* V60.41 — NEXT WATCHED FLIGHT: MATCH FEATURED INFORMATION BAR
-   This intentionally uses the same horizontal composition as the Featured card:
-   identity on the left, telemetry on the right, route/progress underneath. */
-.watch-bottom-compact{
-  display:grid!important;
-  grid-template-columns:minmax(290px,1.18fr) minmax(0,2.55fr)!important;
-  grid-template-rows:52px 38px!important;
-  column-gap:28px!important;
-  row-gap:0!important;
-  align-items:stretch!important;
-  height:105px!important;
-  min-height:105px!important;
-  max-height:105px!important;
-  margin-top:10px!important;
-  padding:10px 26px 9px!important;
-  box-sizing:border-box!important;
-  background:#f8f8f4!important;
-  border:1px solid #e1e2de!important;
-  border-radius:16px!important;
-  box-shadow:0 12px 36px rgba(23,30,30,.07)!important;
-  overflow:hidden!important;
-}
-.watch-compact-main{
-  grid-column:1!important;grid-row:1 / 3!important;
-  min-width:0;display:flex;align-items:center;justify-content:flex-start;gap:12px;
-}
-.watch-compact-brand{min-width:0;display:flex;flex-direction:column;justify-content:center;}
-.watch-compact-brand .eyebrow{font-size:8px;line-height:1;letter-spacing:.18em;margin-bottom:6px;color:#687778;font-weight:900;}
-.watch-compact-airline{display:flex;align-items:center;gap:8px;min-width:0;color:#687778;font-size:8px;font-weight:900;letter-spacing:.14em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-airline-code{display:inline-grid;place-items:center;min-width:34px;height:24px;padding:0 8px;border-radius:7px;background:#63e6be;color:#071014;font-size:9px;font-weight:950;letter-spacing:.08em;box-shadow:0 0 12px rgba(99,230,190,.14);flex:0 0 auto;}
-.watch-bottom-compact .watch-bottom-title{font-size:27px!important;line-height:1!important;font-weight:900;letter-spacing:-.035em;margin:5px 0 0!important;color:#172124;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-sub{font-size:8px;color:#788585;line-height:1.1;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-state{display:none!important;}
-.watch-compact-metrics{
-  grid-column:2!important;grid-row:1!important;
-  display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr));gap:20px;
-  min-width:0;height:52px;align-items:start;padding:5px 8px 3px;
-  border:1px solid rgba(70,95,100,.20);border-radius:7px;background:rgba(255,255,255,.045);box-sizing:border-box;
-}
-.watch-compact-metric{min-width:0;overflow:hidden;}
-.watch-compact-metric label{display:block;font-size:7px;line-height:1;color:#778080;letter-spacing:.15em;font-weight:900;white-space:nowrap;}
-.watch-compact-metric b{display:block;font-size:16px;line-height:1.05;margin-top:5px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#172124;}
-.watch-compact-metric small{display:block;font-size:7px;line-height:1.05;color:#8a9494;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-route{
-  grid-column:2!important;grid-row:2!important;
-  display:grid!important;grid-template-columns:82px minmax(0,1fr) 82px;align-items:center;gap:0;
-  height:38px;min-width:0;padding:0 8px;
-  border:1px solid rgba(70,95,100,.20);border-radius:7px;background:rgba(255,255,255,.035);box-sizing:border-box;
-}
-.watch-compact-end{height:38px;min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
-.watch-compact-end span{font-size:6px;line-height:1;color:#778080;letter-spacing:.16em;font-weight:900;}
-.watch-compact-end b{font-size:15px;line-height:1;margin-top:3px;color:var(--watch-route-color,var(--accent));letter-spacing:.04em;}
-.watch-compact-end small{width:100%;font-size:6px;line-height:1;margin-top:3px;color:#8a9494;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-progress{min-width:0;height:38px;display:flex;flex-direction:column;justify-content:center;padding:0 9px;}
-.watch-compact-progress .watch-progress-label{font-size:6px;line-height:1;height:7px;margin:0 0 3px;text-align:center;letter-spacing:.15em;color:#778080;font-weight:900;white-space:nowrap;}
-.watch-compact-progress .watch-progress-track{height:4px;background:#e3e5e1;border-radius:99px;position:relative;}
-.watch-compact-progress .watch-progress-track i{display:block;height:100%;width:0;background:var(--watch-route-color,var(--accent));border-radius:99px;transition:width .5s ease;}
-.watch-compact-progress .watch-progress-track span{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:#f8f8f4;border:1px solid var(--watch-route-color,var(--accent));font-size:9px;color:var(--watch-route-color,var(--accent));line-height:1;transition:left .5s ease;}
-.watch-legacy-state{display:none!important;}
-@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
-  .watch-bottom-compact{height:95px!important;min-height:95px!important;max-height:95px!important;grid-template-columns:minmax(250px,1.12fr) minmax(0,2.55fr)!important;grid-template-rows:48px 34px!important;padding:7px 20px 7px!important;column-gap:20px!important;margin-top:7px!important;}
-  .watch-compact-airline{font-size:7px}.watch-compact-airline-code{min-width:31px;height:21px;font-size:8px}.watch-bottom-compact .watch-bottom-title{font-size:23px!important;margin-top:4px!important}.watch-compact-sub{font-size:7px}.watch-compact-metrics{height:48px;gap:12px;padding:4px 7px 3px}.watch-compact-metric label{font-size:6px}.watch-compact-metric b{font-size:14px;margin-top:4px}.watch-compact-metric small{font-size:6px;margin-top:2px}.watch-compact-route{height:34px;grid-template-columns:72px minmax(0,1fr) 72px;padding:0 5px}.watch-compact-end{height:34px}.watch-compact-end b{font-size:13px}.watch-compact-end small{font-size:5.5px}.watch-compact-progress{height:34px;padding:0 6px}.watch-compact-progress .watch-progress-track span{width:16px;height:16px;font-size:8px}
-}
-@media(max-width:700px){
-  .watch-bottom-compact{display:block!important;height:auto!important;min-height:0!important;max-height:none!important;padding:14px 16px!important;overflow:visible!important;}
-  .watch-compact-main{display:flex!important;min-height:55px!important;}
-  .watch-compact-metrics{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));height:auto;margin-top:10px;gap:10px;}
-  .watch-compact-route{display:grid!important;margin-top:8px;height:52px;grid-template-columns:58px minmax(0,1fr) 58px;}
-  .watch-compact-route .watch-compact-end,.watch-compact-progress{height:52px;}
-}
-
-/* V60.41 — RECOVERED FEATURED MAP SPACE */
-@media (min-width:701px) and (orientation:landscape) and (max-height:900px){
-  .hero{height:calc(100vh - 240px)!important;min-height:500px!important;max-height:680px!important;}
-}
-@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
-  .hero{height:calc(100vh - 215px)!important;min-height:500px!important;max-height:640px!important;}
-}
-</style>
 </head>
 <body>
 
@@ -1409,7 +1328,7 @@ function landedGraceExpired(f){
 function flightState(f){
  const now=new Date();
  if(!f?.date)return 'SCHEDULED';
- if(watchHasLive(f))return 'READY TO TRACK';
+ if(watchHasLive(f))return 'READY';
  if(landedGraceExpired(f))return 'COMPLETED';
  const today=todayKeyLocal(),day=dateKeyFromValue(f.date);
  if(day>today)return 'SCHEDULED';
@@ -1418,7 +1337,7 @@ function flightState(f){
  if(!dep||now<dep)return 'SCHEDULED';
  const arr=parseArrival(f);
  if(arr&&now.getTime()>arr.getTime()+60*60*1000)return 'COMPLETED';
- return 'TRACKING PENDING';
+ return 'PENDING';
 }
 function scheduledTodayFlights(){
  const today=todayKeyLocal();
@@ -1443,7 +1362,7 @@ function getNextWatchedFlight(){
  const today=scheduledTodayFlights();
  const liveToday=today.find(f=>watchHasLive(f));
  if(liveToday)return liveToday;
- const pendingToday=today.find(f=>flightState(f)==='TRACKING PENDING');
+ const pendingToday=today.find(f=>flightState(f)==='PENDING');
  if(pendingToday)return pendingToday;
  const upcomingToday=today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now();});
  if(upcomingToday)return upcomingToday;
@@ -1698,7 +1617,6 @@ function renderHeroFlightMap(live,watch){
       const fitLocalAirspace=()=>{
        if(!heroFlightMap||heroMapMode!=='airspace')return;
 
-       // V60.42 — Centre LOCAL AIRSPACE in the visible map area above flight info.
        // V60.8 — LOCAL AIRSPACE is deliberately camera-centred on the
        // user's location, with the selected radius occupying most of the
        // available map height. This is more deterministic on iPad Safari
@@ -1734,11 +1652,8 @@ function renderHeroFlightMap(live,watch){
         // map. Shift the map content upward so the device/radius is centred in
         // the visible portion rather than underneath the overlay.
         if(coveredHeight>0){
-         // Centre LOCAL AIRSPACE in the visible map area above the
-         // floating flight-information panel. Positive Y moves the
-         // geographic centre upward on screen in Leaflet.
-         const shiftY=Math.round(coveredHeight/2);
-         heroFlightMap.panBy([0,shiftY],{animate:false});
+         const shiftY=Math.round(coveredHeight/2+bottomMargin/2);
+         heroFlightMap.panBy([0,-shiftY],{animate:false});
         }
 
         // Keep the radius as the visual boundary; it is not used to decide
@@ -1871,7 +1786,7 @@ function renderScheduledHome(){
    const future=dateKeyFromValue(next.date)>todayKeyLocal();
    setTextSafe('homeEyebrow',future?'NEXT WATCHED FLIGHT':'NEXT WATCHED FLIGHT');
    setTextSafe('homeTitle',(next.flightNumber||next.flight||'WATCHED FLIGHT').toUpperCase());
-   setTextSafe('homeStatus',future?'UPCOMING':state==='SCHEDULED'?'SCHEDULED':'COMPLETED');
+   setTextSafe('homeStatus',future?'SCHEDULED':state==='SCHEDULED'?'SCHEDULED':'COMPLETED');
    $('airlineBadge').textContent=(next.airlineCode||((next.flight||'').match(/^[A-Z]{1,3}/)?.[0])||'WATCH').toUpperCase();
    $('operator').textContent=(next.airlineName||'WATCHED FLIGHT').toUpperCase();
    $('callsignNote').textContent='SAVED FLIGHT';
@@ -1881,7 +1796,7 @@ function renderScheduledHome(){
    $('aircraftType').textContent=next.aircraftDesc||'Scheduled flight · live position will appear when airborne';
    $('route').textContent=(next.from||next.fromCode||'DEPARTURE')+'  →  '+(next.to||next.toCode||'ARRIVAL');
    $('schedule').textContent=next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}).toUpperCase()+(next.departureTime?' · DEP '+next.departureTime:''):'SCHEDULED';
-   $('mLabel1').textContent='STATUS';$('m1').textContent=future?'UPCOMING':state;$('m1s').textContent=future?countdownText(next):state==='SCHEDULED'?countdownText(next):'flight day complete';
+   $('mLabel1').textContent='STATUS';$('m1').textContent=future?'SCHEDULED':state;$('m1s').textContent=future?countdownText(next):state==='SCHEDULED'?countdownText(next):'flight day complete';
    $('mLabel2').textContent='DEPARTURE';$('m2').textContent=next.fromCode||'—';$('m2s').textContent=next.from||'—';
    $('mLabel3').textContent='ARRIVAL';$('m3').textContent=next.toCode||'—';$('m3s').textContent=next.to||'—';
    $('mLabel4').textContent='FLIGHT';$('m4').textContent=(next.flightNumber||next.flight||'—').toUpperCase();$('m4s').textContent=next.airlineName||'WATCHED FLIGHT';
@@ -2398,7 +2313,7 @@ function formatWatchTimeZoneLabel(code){return code?`${String(code).toUpperCase(
 function renderHomeWatch(items){
  const wb=$('homeWatch');if(wb)wb.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
  const today=scheduledTodayFlights();
- const next=today.find(f=>watchHasLive(f))||today.find(f=>flightState(f)==='TRACKING PENDING')||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
+ const next=today.find(f=>watchHasLive(f))||today.find(f=>flightState(f)==='PENDING')||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
  const progressRow=$('homeWatchProgressRow');
  const progressBar=$('homeWatchProgressBar');
  const progressPlane=$('homeWatchProgressPlane');
@@ -2407,7 +2322,7 @@ function renderHomeWatch(items){
  const progressTo=$('homeWatchProgressTo');
  const box=$('homeWatchLive');
  if(!next){
-  setTextSafe('homeWatchTitle','NO SAVED FLIGHT');setTextSafe('homeWatchSub','Add a flight in My Flights');setTextSafe('homeWatchAirlineCode','—');setTextSafe('homeWatchAirlineName','');
+  setTextSafe('homeWatchTitle','NO FLIGHT');setTextSafe('homeWatchSub','Add a flight in My Flights');setTextSafe('homeWatchAirlineCode','—');setTextSafe('homeWatchAirlineName','');
   ['homeWatchReg','homeWatchCallsign','homeWatchStatus','homeWatchDeparture','homeWatchArrival','homeWatchFlight'].forEach(id=>setTextSafe(id,'—'));
   ['homeWatchStatusSub','homeWatchDepartureSub','homeWatchArrivalSub','homeWatchFlightSub','homeWatchFromName','homeWatchToName'].forEach(id=>setTextSafe(id,''));
   const st=$('homeWatchState');if(st){st.className='state';st.textContent='NONE';}
@@ -2424,7 +2339,7 @@ function renderHomeWatch(items){
      if(S.watchTarget&&watchKey(S.watchTarget)===watchKey(next)){S.watchTarget=null;S.watchLive=null;}
    }
  }
- const state=live?'LIVE':future?'SCHEDULED':flightState(next);
+ const state=live?'READY':future?'SCHEDULED':flightState(next);
  const phase=live?watchedFlightPhase(next,live):state;
  const routeReady=!!(next.fromCode&&next.toCode);
  let pct=0;if(live){const p=watchedCompletion(next,live);pct=p==null?0:p}else if(state==='COMPLETED')pct=100;
@@ -2437,8 +2352,8 @@ function renderHomeWatch(items){
 
  setTextSafe('homeWatchReg',next.registration||next.reg||'—');
  setTextSafe('homeWatchCallsign',next.callsign||'—');
- setTextSafe('homeWatchStatus',live?(phase==='LANDED'?'LANDED':'LIVE'):(future?'UPCOMING':state==='TRACKING PENDING'?'TRACKING PENDING':state));
- setTextSafe('homeWatchStatusSub',live?(pct+'% COMPLETE'):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING FOR LIVE POSITION':state==='SCHEDULED'?countdownText(next):'flight day complete'));
+ setTextSafe('homeWatchStatus',live?(phase==='LANDED'?'COMPLETED':'READY'):(future?'SCHEDULED':state));
+ setTextSafe('homeWatchStatusSub',live?(pct+'% COMPLETE'):(future?countdownText(next):state==='PENDING'?'WAITING FOR LIVE POSITION':state==='SCHEDULED'?countdownText(next):'flight day complete'));
  const dep=formatDepartureDisplay(next);
  setTextSafe('homeWatchDeparture',dep.primary?.split(' · ')[0]||next.departureTime||'—');
  setTextSafe('homeWatchDepartureSub',formatWatchTimeZoneLabel(next.fromCode)||dep.secondary||'DEPARTURE LOCAL');
@@ -2461,8 +2376,8 @@ function renderHomeWatch(items){
  if(progressBar)progressBar.style.width=routeReady?`${pct}%`:'0%';
  if(progressPlane)progressPlane.style.left=routeReady?`${pct}%`:'0%';
  if(progressRow)progressRow.hidden=!routeReady;
- const st=$('homeWatchState');if(st){st.className='state '+(live?'live':(future||state==='SCHEDULED'||state==='TRACKING PENDING'?'wait':'active'));st.textContent=live?(phase==='LANDED'?'LANDED':'LIVE'):(future?'UPCOMING':state==='TRACKING PENDING'?'LIVE TRACKING PENDING':state);}
- const stSub=$('homeWatchStateSub');if(stSub)stSub.textContent=live?`${pct}% COMPLETE`:(future?countdownText(next):state==='TRACKING PENDING'?'WAITING…':'');
+ const st=$('homeWatchState');if(st){st.className='state '+(live?'live':(future||state==='SCHEDULED'||state==='PENDING'?'wait':'active'));st.textContent=live?(phase==='LANDED'?'COMPLETED':'READY'):(future?'SCHEDULED':state);}
+ const stSub=$('homeWatchStateSub');if(stSub)stSub.textContent=live?`${pct}% COMPLETE`:(future?countdownText(next):state==='PENDING'?'WAITING…':'');
 
  // Existing live values remain available to the rest of the UI, even though the
  // compact card now presents identity/status in the six metric columns above.
@@ -2480,7 +2395,7 @@ function renderHomeWatch(items){
 }
 function renderWatchlist(){const el=$('watchList');if(!watchlist.length){el.innerHTML='<div class="empty-list">No watched flights yet.</div>';return}
  const rows=watchlist.map((f,i)=>({f,i,state:flightState(f)})).sort((a,b)=>{if(a.state==='COMPLETED'&&b.state!=='COMPLETED')return 1;if(a.state!=='COMPLETED'&&b.state==='COMPLETED')return -1;const da=parseDeparture(a.f),db=parseDeparture(b.f);return (da?da.getTime():Infinity)-(db?db.getTime():Infinity)});
- el.innerHTML=rows.map(({f,i,state})=>{const route=(f.fromCode&&f.toCode)?f.fromCode+' → '+f.toCode:'LOOKING UP ROUTE';const names=(f.from&&f.to)?f.from+' → '+f.to:'Route will be filled automatically';const dep=f.departureTime?` · <span class="flight-time">DEP ${f.departureTime}</span>`:'';const cd=(state==='SCHEDULED'||state==='TRACKING PENDING')?`<div class="flight-countdown">${state==='TRACKING PENDING'?'DEPARTED · SEARCHING FOR AIRCRAFT':countdownText(f)}</div>`:'';const status=state==='COMPLETED'?'COMPLETED':(state==='SCHEDULED'?'SCHEDULED':(state==='TRACKING PENDING'?'LIVE TRACKING PENDING':(f.lookupStatus||state)));const rowClass=state==='COMPLETED'?' completed':'';return '<div class="flight-row'+rowClass+'"><div class="flight-main"><div class="route-badge">✈</div><div><strong>'+((f.flightNumber||f.flight||'FLIGHT').toUpperCase())+'</strong><small>'+(f.name||'Watched flight')+' · '+route+' · '+(f.date||'No date')+dep+'<br>'+names+'</small>'+cd+'</div></div><div><span class="state '+(state==='SCHEDULED'||state==='TRACKING PENDING'?'wait ':'')+(state==='COMPLETED'?'completed ':'')+(f.lookupStatus==='LOOKING UP'?'lookup':'')+'">'+status+'</span><button class="remove" data-remove="'+i+'" title="Remove">REMOVE</button></div></div>'}).join('');el.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{watchlist.splice(Number(btn.dataset.remove),1);if(!watchlist.length)watch={};else if(watchlist[0])watch=watchlist[0];saveState()}))}
+ el.innerHTML=rows.map(({f,i,state})=>{const route=(f.fromCode&&f.toCode)?f.fromCode+' → '+f.toCode:'LOOKING UP ROUTE';const names=(f.from&&f.to)?f.from+' → '+f.to:'Route will be filled automatically';const dep=f.departureTime?` · <span class="flight-time">DEP ${f.departureTime}</span>`:'';const cd=(state==='SCHEDULED'||state==='PENDING')?`<div class="flight-countdown">${state==='PENDING'?'DEPARTED · WAITING FOR LIVE POSITION':countdownText(f)}</div>`:'';const status=state==='COMPLETED'?'COMPLETED':(state==='SCHEDULED'?'SCHEDULED':(state==='PENDING'?'PENDING':(f.lookupStatus||state)));const rowClass=state==='COMPLETED'?' completed':'';return '<div class="flight-row'+rowClass+'"><div class="flight-main"><div class="route-badge">✈</div><div><strong>'+((f.flightNumber||f.flight||'FLIGHT').toUpperCase())+'</strong><small>'+(f.name||'Watched flight')+' · '+route+' · '+(f.date||'No date')+dep+'<br>'+names+'</small>'+cd+'</div></div><div><span class="state '+(state==='SCHEDULED'||state==='PENDING'?'wait ':'')+(state==='COMPLETED'?'completed ':'')+(f.lookupStatus==='LOOKING UP'?'lookup':'')+'">'+status+'</span><button class="remove" data-remove="'+i+'" title="Remove">REMOVE</button></div></div>'}).join('');el.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{watchlist.splice(Number(btn.dataset.remove),1);if(!watchlist.length)watch={};else if(watchlist[0])watch=watchlist[0];saveState()}))}
 function monthShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/^0/,'').replace(' Sept ',' Sep ')}
 async function resolveFlightRoute(flight,date,registration){
  const cs=normalFlightCode(flight);if(!cs)return normaliseRoute(null,cs,date,'AirLabs');
@@ -2782,7 +2697,7 @@ async function refreshWatchStream(){
  if(S.watchSearchPending)return S.watchSearchPending;
  const today=scheduledTodayFlights();
  let target=today.find(f=>watchHasLive(f));
- if(!target)target=today.find(f=>flightState(f)==='TRACKING PENDING');
+ if(!target)target=today.find(f=>flightState(f)==='PENDING');
  if(!target)target=today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
  S.watchTarget=target||null;
  if(!target){S.watchLive=null;renderHomeWatch();return null;}
@@ -2824,12 +2739,100 @@ async function poll(){
 function refreshHomeDisplay(){const f=choose(S.lastItems||[]);if(f){S.featured=f.icao;renderLiveHome(f)}else{S.featured=null;renderScheduledHome()}renderHomeWatch(S.lastItems||[])}
 function todayInputDate(){const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
 function enforceFutureDateInputs(){const min=todayInputDate();['listDate','dateInput'].forEach(id=>{const el=$(id);if(el)el.min=min})}
-updateSkySettingsUI();enforceFutureDateInputs();loadRouteCache();loadIdentityCache();loadAirportDatabase();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();refreshWatchStream();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='LIVE'?'LIVE TRACKING':s.textContent==='LANDED'?'FLIGHT ENDED':'';}},1000);S.timer=setInterval(poll,45000);
+updateSkySettingsUI();enforceFutureDateInputs();loadRouteCache();loadIdentityCache();loadAirportDatabase();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();refreshWatchStream();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='READY'?'READY':s.textContent==='COMPLETED'?'COMPLETED':'';}},1000);S.timer=setInterval(poll,45000);
 </script>
 
 
+<style>
+/* V60.40 — NEXT WATCHED FLIGHT COMPACT CARD
+   Same compact visual language/height as the Featured information container.
+   The card retains the complete scheduled identity without repeating FROM/TO
+   in the top metrics. The route/progress remains in the lower strip. */
+.watch-bottom-compact{
+  display:grid!important;
+  grid-template-columns:240px minmax(0,1fr)!important;
+  grid-template-rows:54px 43px!important;
+  column-gap:24px!important;
+  row-gap:0!important;
+  height:105px!important;
+  min-height:105px!important;
+  max-height:105px!important;
+  padding:7px 26px 8px!important;
+  margin-top:8px!important;
+  border-radius:16px!important;
+  background:#f8f8f4!important;
+  border:1px solid #e1e2de!important;
+  box-shadow:0 12px 36px rgba(23,30,30,.07)!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+.watch-compact-main{grid-column:1;grid-row:1 / 3;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.watch-compact-brand{min-width:0;display:flex;flex-direction:column;justify-content:center;}
+.watch-compact-brand .eyebrow{font-size:7px;line-height:1;letter-spacing:.19em;margin-bottom:5px;}
+.watch-compact-airline{display:flex;align-items:center;gap:7px;min-width:0;color:#687778;font-size:7px;font-weight:900;letter-spacing:.16em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.watch-compact-airline-code{display:inline-grid;place-items:center;min-width:26px;height:19px;padding:0 6px;border-radius:6px;background:#63e6be;color:#071014;font-size:7px;font-weight:950;letter-spacing:.08em;box-shadow:0 0 12px rgba(99,230,190,.14);}
+.watch-bottom-compact .watch-bottom-title{font-size:24px!important;line-height:1!important;font-weight:900;letter-spacing:-.035em;margin:4px 0 0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.watch-compact-sub{font-size:7px;color:#788585;line-height:1.1;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.watch-compact-state{align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding-top:1px;white-space:nowrap;}
+.watch-compact-state .state{font-size:7px!important;padding:5px 7px!important;border-radius:999px!important;letter-spacing:.12em!important;}
+.watch-compact-state small{font-size:6px;color:#7a8585;letter-spacing:.09em;font-weight:800;}
+.watch-compact-metrics{grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;min-width:0;height:54px;align-items:start;padding:5px 9px 4px;border:1px solid rgba(70,95,100,.20);border-radius:7px;background:rgba(255,255,255,.045);box-sizing:border-box;}
+.watch-compact-metric{min-width:0;overflow:hidden;}
+.watch-compact-metric label{display:block;font-size:6px;line-height:1;color:#778080;letter-spacing:.15em;font-weight:900;white-space:nowrap;}
+.watch-compact-metric b{display:block;font-size:15px;line-height:1.05;margin-top:4px;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.watch-compact-metric small{display:block;font-size:6.5px;line-height:1.05;color:#8a9494;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.watch-compact-route{grid-column:2;grid-row:2;display:grid;grid-template-columns:82px minmax(0,1fr) 82px;align-items:center;gap:0;height:43px;min-width:0;padding:0 7px;border:1px solid rgba(70,95,100,.20);border-radius:7px;background:rgba(255,255,255,.035);box-sizing:border-box;}
+.watch-compact-end{height:43px;min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+.watch-compact-end span{font-size:6px;line-height:1;color:#778080;letter-spacing:.16em;font-weight:900;}
+.watch-compact-end b{font-size:14px;line-height:1;margin-top:3px;color:var(--watch-route-color,var(--accent));letter-spacing:.04em;}
+.watch-compact-end small{width:100%;font-size:6px;line-height:1;margin-top:3px;color:#8a9494;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.watch-compact-end-right{text-align:center;}
+.watch-compact-progress{min-width:0;height:43px;display:flex;flex-direction:column;justify-content:center;padding:0 8px;}
+.watch-compact-progress .watch-progress-label{font-size:6px;line-height:1;height:7px;margin:0 0 3px;text-align:center;letter-spacing:.15em;color:#778080;font-weight:900;white-space:nowrap;}
+.watch-compact-progress .watch-progress-track{height:3px;background:#e3e5e1;border-radius:99px;position:relative;}
+.watch-compact-progress .watch-progress-track i{display:block;height:100%;width:0;background:var(--watch-route-color,var(--accent));border-radius:99px;transition:width .5s ease;}
+.watch-compact-progress .watch-progress-track span{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:17px;height:17px;border-radius:50%;display:grid;place-items:center;background:#f8f8f4;border:1px solid var(--watch-route-color,var(--accent));font-size:8px;color:var(--watch-route-color,var(--accent));line-height:1;transition:left .5s ease;}
+.watch-legacy-state{display:none!important;}
+@media (min-width:701px) and (orientation:landscape){
+  .watch-bottom-compact{height:105px!important;min-height:105px!important;max-height:105px!important;}
+  .watch-bottom-compact .watch-bottom-title{font-size:25px!important;}
+}
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .watch-bottom-compact{height:95px!important;min-height:95px!important;max-height:95px!important;grid-template-columns:220px minmax(0,1fr)!important;grid-template-rows:49px 39px!important;padding:6px 20px 7px!important;column-gap:16px!important;margin-top:6px!important;}
+  .watch-compact-main{gap:8px;}
+  .watch-compact-airline{font-size:6.5px;}
+  .watch-bottom-compact .watch-bottom-title{font-size:21px!important;margin-top:3px!important;}
+  .watch-compact-sub{font-size:6px;}
+  .watch-compact-metrics{height:49px;gap:10px;padding:4px 7px 3px;}
+  .watch-compact-metric label{font-size:5.5px;}
+  .watch-compact-metric b{font-size:13px;margin-top:3px;}
+  .watch-compact-metric small{font-size:6px;margin-top:2px;}
+  .watch-compact-route,.watch-compact-progress,.watch-compact-end{height:39px;}
+  .watch-compact-route{grid-template-columns:74px minmax(0,1fr) 74px;padding:0 5px;}
+  .watch-compact-end b{font-size:13px;}.watch-compact-end small{font-size:5.5px;}.watch-compact-progress{padding:0 5px;}
+}
+@media(max-width:700px){
+  .watch-bottom-compact{display:block!important;height:auto!important;min-height:0!important;max-height:none!important;padding:14px 16px!important;}
+  .watch-compact-main{display:flex;min-height:55px;}
+  .watch-compact-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));height:auto;margin-top:10px;gap:10px;}
+  .watch-compact-route{display:grid;margin-top:8px;height:52px;grid-template-columns:58px minmax(0,1fr) 58px;}
+  .watch-compact-route .watch-compact-end{height:52px;}
+  .watch-compact-progress{height:52px;}
+}
+
+
+/* V60.40 — RECOVERED MAP SPACE
+   The Next Watch card is now compact, so give the Featured map back a little vertical room. */
+@media (min-width:701px) and (orientation:landscape) and (max-height:900px){
+  .hero{height:calc(100vh - 240px)!important;min-height:500px!important;max-height:680px!important;}
+}
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero{height:calc(100vh - 215px)!important;min-height:500px!important;max-height:640px!important;}
+}
 </body></html>
 
+
+</style>
 
 <style>
 /* V60.23 — LIQUID GLASS FEATURED HERO
