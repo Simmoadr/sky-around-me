@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- Sky Around Me V60.40: My Flights layout refinement — footer credits, two-column watchlist, and Maximum Distance directly under SKY SETTINGS. -->
+<!-- Sky Around Me V60.23: My Flights layout refinement — footer credits, two-column watchlist, and Maximum Distance directly under SKY SETTINGS. -->
 <title>Sky Around Me</title>
 <!-- Sky Around Me v60.19: V60.18 regression fix — restore route enrichment, map cycle, and centered telemetry. V60.18 map/API logic otherwise retained.
 <!-- Sky Around Me v52: destination route/progress restore + exact flight/date watched-route correction; v46 AirLabs resolver retained
@@ -1130,22 +1130,6 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   }
 }
 </style>
-
-<style>
-/* V60.36 — refined internal flight containers */
-@media (min-width:701px) and (orientation:landscape){
-  .hero .identity{
-    border:1px solid rgba(120,135,135,.24)!important;
-    background:rgba(255,255,255,.045)!important;
-    border-radius:9px!important;
-  }
-  .hero .journey-info{
-    border:1px solid rgba(120,135,135,.24)!important;
-    background:rgba(255,255,255,.03)!important;
-    border-radius:9px!important;
-  }
-}
-</style>
 </head>
 <body>
 
@@ -1188,32 +1172,20 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
    <div class="edit-panel" id="editPanel"><div class="form"><div><label>FLIGHT NUMBER</label><input id="flightInput" placeholder="e.g. SQ23"></div><div><label>DATE</label><input id="dateInput" type="date"></div><div class="wide"><label>NAME</label><input id="nameInput" placeholder="Flight Name"></div><button class="btn primary" id="saveFlight">SAVE WATCHED FLIGHT</button></div></div>
   </div>
  </div>
- <section class="watch-bottom watch-bottom-compact" id="homeWatch">
-  <div class="watch-compact-main">
-   <div class="watch-compact-brand">
-    <div class="eyebrow">NEXT WATCHED FLIGHT</div>
-    <div class="watch-compact-airline"><span class="watch-compact-airline-code" id="homeWatchAirlineCode">SQ</span><span id="homeWatchAirlineName">SINGAPORE AIRLINES</span></div>
-    <div class="watch-bottom-title" id="homeWatchTitle">NO WATCHED FLIGHT</div>
-    <div class="watch-compact-sub" id="homeWatchSub">Add a flight in My Flights</div>
+ <section class="watch-bottom" id="homeWatch">
+  <div class="watch-bottom-head"><div><div class="eyebrow">NEXT WATCHED FLIGHT</div><div class="watch-bottom-title-row"><div class="watch-bottom-title" id="homeWatchTitle">NO WATCHED FLIGHT</div><span class="watch-bottom-name" id="homeWatchName"></span></div></div><div class="watch-state-wrap"><span class="state wait" id="homeWatchState">—</span><small id="homeWatchStateSub">&nbsp;</small></div></div>
+  <div class="watch-bottom-body">
+   <div class="watch-route"><div class="watch-code" id="homeWatchFrom">—</div><div class="watch-line"></div><div class="watch-code" id="homeWatchTo">—</div></div>
+   <div class="watch-copy"><div id="homeWatchNames">Add a flight in My Flights</div><small id="homeWatchDate">—</small></div>
+   <div class="watch-count"><label id="homeWatchCountLabel">DEPARTS IN</label><b id="homeWatchCount">—</b></div>
+   <div class="watch-live-grid" id="homeWatchLive" hidden>
+    <div><label>ALTITUDE</label><b id="homeWatchAlt">—</b></div><div><label>SPEED</label><b id="homeWatchSpeed">—</b></div><div><label>HEADING</label><b id="homeWatchHeading">—</b></div><div><label>DISTANCE TO GO</label><b id="homeWatchDistance">—</b></div>
    </div>
-   <div class="watch-compact-state"><span class="state wait" id="homeWatchState">—</span><small id="homeWatchStateSub">&nbsp;</small></div>
-  </div>
-  <div class="watch-compact-metrics">
-   <div class="watch-compact-metric"><label>REGISTRATION</label><b id="homeWatchReg">—</b></div>
-   <div class="watch-compact-metric"><label>CALLSIGN</label><b id="homeWatchCallsign">—</b></div>
-   <div class="watch-compact-metric"><label>STATUS</label><b id="homeWatchStatus">—</b><small id="homeWatchStatusSub">&nbsp;</small></div>
-   <div class="watch-compact-metric"><label>DEPARTURE</label><b id="homeWatchDeparture">—</b><small id="homeWatchDepartureSub">&nbsp;</small></div>
-   <div class="watch-compact-metric"><label>ARRIVAL</label><b id="homeWatchArrival">—</b><small id="homeWatchArrivalSub">&nbsp;</small></div>
-   <div class="watch-compact-metric"><label>FLIGHT</label><b id="homeWatchFlight">—</b><small id="homeWatchFlightSub">&nbsp;</small></div>
-  </div>
-  <div class="watch-compact-route" id="homeWatchProgressRow">
-   <div class="watch-compact-end"><span>FROM</span><b id="homeWatchProgressFrom">—</b><small id="homeWatchFromName">—</small></div>
-   <div class="watch-compact-progress"><div class="watch-progress-label" id="homeWatchProgressLabel">0% COMPLETE</div><div class="watch-progress-track"><i id="homeWatchProgressBar"></i><span id="homeWatchProgressPlane">✈</span></div></div>
-   <div class="watch-compact-end watch-compact-end-right"><span>TO</span><b id="homeWatchProgressTo">—</b><small id="homeWatchToName">—</small></div>
-  </div>
-  <div class="watch-legacy-state" aria-hidden="true">
-   <span id="homeWatchName"></span><span id="homeWatchFrom">—</span><span id="homeWatchTo">—</span><span id="homeWatchNames"></span><span id="homeWatchDate"></span><span id="homeWatchCountLabel"></span><span id="homeWatchCount"></span>
-   <div id="homeWatchLive"><span id="homeWatchAlt">—</span><span id="homeWatchSpeed">—</span><span id="homeWatchHeading">—</span><span id="homeWatchDistance">—</span></div>
+   <div class="watch-progress-row" id="homeWatchProgressRow">
+    <div class="watch-progress-end"><span>FROM</span><b id="homeWatchProgressFrom">—</b></div>
+    <div class="watch-progress-center"><div class="watch-progress-label" id="homeWatchProgressLabel">0% COMPLETE</div><div class="watch-progress-track"><i id="homeWatchProgressBar"></i><span id="homeWatchProgressPlane">✈</span></div></div>
+    <div class="watch-progress-end watch-progress-end-right"><span>TO</span><b id="homeWatchProgressTo">—</b></div>
+   </div>
   </div>
  </section>
  <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn" id="editFlight">EDIT WATCHED FLIGHT</button></div>
@@ -1328,7 +1300,7 @@ function landedGraceExpired(f){
 function flightState(f){
  const now=new Date();
  if(!f?.date)return 'SCHEDULED';
- if(watchHasLive(f))return 'READY';
+ if(watchHasLive(f))return 'READY TO TRACK';
  if(landedGraceExpired(f))return 'COMPLETED';
  const today=todayKeyLocal(),day=dateKeyFromValue(f.date);
  if(day>today)return 'SCHEDULED';
@@ -1337,7 +1309,7 @@ function flightState(f){
  if(!dep||now<dep)return 'SCHEDULED';
  const arr=parseArrival(f);
  if(arr&&now.getTime()>arr.getTime()+60*60*1000)return 'COMPLETED';
- return 'PENDING';
+ return 'TRACKING PENDING';
 }
 function scheduledTodayFlights(){
  const today=todayKeyLocal();
@@ -1362,7 +1334,7 @@ function getNextWatchedFlight(){
  const today=scheduledTodayFlights();
  const liveToday=today.find(f=>watchHasLive(f));
  if(liveToday)return liveToday;
- const pendingToday=today.find(f=>flightState(f)==='PENDING');
+ const pendingToday=today.find(f=>flightState(f)==='TRACKING PENDING');
  if(pendingToday)return pendingToday;
  const upcomingToday=today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now();});
  if(upcomingToday)return upcomingToday;
@@ -1647,13 +1619,17 @@ function renderHeroFlightMap(live,watch){
         let zoom=Math.log2(mercatorMPerPx/targetMPerPx);
         zoom=Math.max(2,Math.min(18,Math.round(zoom)));
 
-        heroFlightMap.setView([lat,Number(S.lon)],zoom,{animate:false});
+        // The Featured aircraft is the subject of the Featured view, so the
+        // camera follows the aircraft rather than centring on the device.
+        // The airspace circle itself remains centred on the device.
+        const cameraLat=Number.isFinite(Number(pos?.[0]))?Number(pos[0]):lat;
+        const cameraLon=Number.isFinite(Number(pos?.[1]))?Number(pos[1]):Number(S.lon);
+        heroFlightMap.setView([cameraLat,cameraLon],zoom,{animate:false});
         // The glass flight-information panel occupies the lower part of the
-        // map. Shift the map content upward so the device/radius is centred in
-        // the visible portion rather than underneath the overlay.
+        // map. Keep the Featured aircraft in the visible portion above it.
         if(coveredHeight>0){
          const shiftY=Math.round(coveredHeight/2+bottomMargin/2);
-         heroFlightMap.panBy([0,-shiftY],{animate:false});
+         heroFlightMap.panBy([0,shiftY],{animate:false});
         }
 
         // Keep the radius as the visual boundary; it is not used to decide
@@ -1786,7 +1762,7 @@ function renderScheduledHome(){
    const future=dateKeyFromValue(next.date)>todayKeyLocal();
    setTextSafe('homeEyebrow',future?'NEXT WATCHED FLIGHT':'NEXT WATCHED FLIGHT');
    setTextSafe('homeTitle',(next.flightNumber||next.flight||'WATCHED FLIGHT').toUpperCase());
-   setTextSafe('homeStatus',future?'SCHEDULED':state==='SCHEDULED'?'SCHEDULED':'COMPLETED');
+   setTextSafe('homeStatus',future?'UPCOMING':state==='SCHEDULED'?'SCHEDULED':'COMPLETED');
    $('airlineBadge').textContent=(next.airlineCode||((next.flight||'').match(/^[A-Z]{1,3}/)?.[0])||'WATCH').toUpperCase();
    $('operator').textContent=(next.airlineName||'WATCHED FLIGHT').toUpperCase();
    $('callsignNote').textContent='SAVED FLIGHT';
@@ -1796,7 +1772,7 @@ function renderScheduledHome(){
    $('aircraftType').textContent=next.aircraftDesc||'Scheduled flight · live position will appear when airborne';
    $('route').textContent=(next.from||next.fromCode||'DEPARTURE')+'  →  '+(next.to||next.toCode||'ARRIVAL');
    $('schedule').textContent=next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}).toUpperCase()+(next.departureTime?' · DEP '+next.departureTime:''):'SCHEDULED';
-   $('mLabel1').textContent='STATUS';$('m1').textContent=future?'SCHEDULED':state;$('m1s').textContent=future?countdownText(next):state==='SCHEDULED'?countdownText(next):'flight day complete';
+   $('mLabel1').textContent='STATUS';$('m1').textContent=future?'UPCOMING':state;$('m1s').textContent=future?countdownText(next):state==='SCHEDULED'?countdownText(next):'flight day complete';
    $('mLabel2').textContent='DEPARTURE';$('m2').textContent=next.fromCode||'—';$('m2s').textContent=next.from||'—';
    $('mLabel3').textContent='ARRIVAL';$('m3').textContent=next.toCode||'—';$('m3s').textContent=next.to||'—';
    $('mLabel4').textContent='FLIGHT';$('m4').textContent=(next.flightNumber||next.flight||'—').toUpperCase();$('m4s').textContent=next.airlineName||'WATCHED FLIGHT';
@@ -2292,46 +2268,28 @@ function watchedCompletion(f,live){
  if(!a||!b||!a.every(Number.isFinite)||!b.every(Number.isFinite))return null;
  return Math.round(routeProgress(f,live)*100);
 }
-function formatWatchArrival(f){
- const raw=f?.arrivalTime||f?.arrTime||'';
- if(raw){
-  const m=String(raw).match(/(\d{1,2}:\d{2})/);
-  if(m)return m[1];
- }
- const utc=f?.arrivalUtc;
- if(!utc)return '—';
- const d=new Date(utc);
- if(Number.isNaN(d.getTime()))return '—';
- const tzByAirport={
-  JFK:'America/New_York',EWR:'America/New_York',LGA:'America/New_York',CLT:'America/New_York',RDU:'America/New_York',MIA:'America/New_York',BOS:'America/New_York',ATL:'America/New_York',ORD:'America/Chicago',DFW:'America/Chicago',IAH:'America/Chicago',DEN:'America/Denver',LAX:'America/Los_Angeles',SFO:'America/Los_Angeles',SEA:'America/Los_Angeles',LAS:'America/Los_Angeles',YYZ:'America/Toronto',YVR:'America/Vancouver',MEX:'America/Mexico_City',SIN:'Asia/Singapore',HKG:'Asia/Hong_Kong',NRT:'Asia/Tokyo',HND:'Asia/Tokyo',ICN:'Asia/Seoul',DXB:'Asia/Dubai',DOH:'Asia/Qatar',SYD:'Australia/Sydney',MEL:'Australia/Melbourne',BKK:'Asia/Bangkok',DEL:'Asia/Kolkata',BOM:'Asia/Kolkata',LHR:'Europe/London',LGW:'Europe/London',STN:'Europe/London',MAN:'Europe/London',BHX:'Europe/London',BRS:'Europe/London',DUB:'Europe/Dublin',CDG:'Europe/Paris',AMS:'Europe/Amsterdam',FRA:'Europe/Berlin',MUC:'Europe/Berlin',ZRH:'Europe/Zurich',MAD:'Europe/Madrid',BCN:'Europe/Madrid',LIS:'Europe/Lisbon',FCO:'Europe/Rome',VIE:'Europe/Vienna',CPH:'Europe/Copenhagen',OSL:'Europe/Oslo',ARN:'Europe/Stockholm',HEL:'Europe/Helsinki'
- };
- const tz=tzByAirport[String(f?.toCode||'').toUpperCase()];
- const opts={hour:'2-digit',minute:'2-digit',hour12:false};
- try{return tz?new Intl.DateTimeFormat('en-GB',{...opts,timeZone:tz}).format(d):new Intl.DateTimeFormat('en-GB',opts).format(d)}catch(e){return '—'}
-}
-function formatWatchTimeZoneLabel(code){return code?`${String(code).toUpperCase()} LOCAL`:''}
 function renderHomeWatch(items){
  const wb=$('homeWatch');if(wb)wb.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
  const today=scheduledTodayFlights();
- const next=today.find(f=>watchHasLive(f))||today.find(f=>flightState(f)==='PENDING')||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
+ const next=today.find(f=>watchHasLive(f))||today.find(f=>flightState(f)==='TRACKING PENDING')||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
+ const box=$('homeWatchLive');
  const progressRow=$('homeWatchProgressRow');
  const progressBar=$('homeWatchProgressBar');
  const progressPlane=$('homeWatchProgressPlane');
  const progressLabel=$('homeWatchProgressLabel');
  const progressFrom=$('homeWatchProgressFrom');
  const progressTo=$('homeWatchProgressTo');
- const box=$('homeWatchLive');
  if(!next){
-  setTextSafe('homeWatchTitle','NO FLIGHT');setTextSafe('homeWatchSub','Add a flight in My Flights');setTextSafe('homeWatchAirlineCode','—');setTextSafe('homeWatchAirlineName','');
-  ['homeWatchReg','homeWatchCallsign','homeWatchStatus','homeWatchDeparture','homeWatchArrival','homeWatchFlight'].forEach(id=>setTextSafe(id,'—'));
-  ['homeWatchStatusSub','homeWatchDepartureSub','homeWatchArrivalSub','homeWatchFlightSub','homeWatchFromName','homeWatchToName'].forEach(id=>setTextSafe(id,''));
-  const st=$('homeWatchState');if(st){st.className='state';st.textContent='NONE';}
+  $('homeWatchTitle').textContent='NO SAVED FLIGHT';$('homeWatchName').textContent='';$('homeWatchFrom').textContent='—';$('homeWatchTo').textContent='—';$('homeWatchNames').textContent='Add a flight in My Flights';$('homeWatchDate').textContent='Your saved flights will appear here.';
+  const st=$('homeWatchState');st.className='state';st.textContent='NONE';$('homeWatchCountLabel').textContent='FLIGHT STATUS';$('homeWatchCount').textContent='—';box.hidden=true;
+  $('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';
   if(progressFrom)progressFrom.textContent='—';if(progressTo)progressTo.textContent='—';if(progressLabel)progressLabel.textContent='—% COMPLETE';if(progressBar)progressBar.style.width='0%';if(progressPlane)progressPlane.style.left='0%';if(progressRow)progressRow.hidden=true;
-  if(box)box.hidden=true;
   return;
  }
  let live=watchHasLive(next)?S.watchLive:null;
  const future=dateKeyFromValue(next.date)>todayKeyLocal();
+ // Keep a landed flight visible for one hour, then release it from the active
+ // Featured watch stream while leaving the saved My Flight record intact.
  if(live&&watchedFlightPhase(next,live)==='LANDED'){
    if(!next.landedAt){next.landedAt=Date.now();localStorage.setItem('skyAroundMeWatch',JSON.stringify(watch));localStorage.setItem('skyAroundMeWatchlist',JSON.stringify(watchlist));}
    if(landedGraceExpired(next)){
@@ -2339,63 +2297,53 @@ function renderHomeWatch(items){
      if(S.watchTarget&&watchKey(S.watchTarget)===watchKey(next)){S.watchTarget=null;S.watchLive=null;}
    }
  }
- const state=live?'READY':future?'SCHEDULED':flightState(next);
- const phase=live?watchedFlightPhase(next,live):state;
- const routeReady=!!(next.fromCode&&next.toCode);
- let pct=0;if(live){const p=watchedCompletion(next,live);pct=p==null?0:p}else if(state==='COMPLETED')pct=100;
-
- const airlineCode=(next.airlineCode||((next.flight||next.flightNumber||'').match(/^[A-Z]{1,3}/)?.[0])||'WATCH').toUpperCase();
- setTextSafe('homeWatchAirlineCode',airlineCode);
- setTextSafe('homeWatchAirlineName',(next.airlineName||airlineNames[airlineCode]||'WATCHED FLIGHT').toUpperCase());
- setTextSafe('homeWatchTitle',next.name||next.flightNumber||next.flight||'WATCHED FLIGHT');
- setTextSafe('homeWatchSub',next.aircraftDesc||'Scheduled flight · live position will appear when airborne');
-
- setTextSafe('homeWatchReg',next.registration||next.reg||'—');
- setTextSafe('homeWatchCallsign',next.callsign||'—');
- setTextSafe('homeWatchStatus',live?(phase==='LANDED'?'COMPLETED':'READY'):(future?'SCHEDULED':state));
- setTextSafe('homeWatchStatusSub',live?(pct+'% COMPLETE'):(future?countdownText(next):state==='PENDING'?'WAITING FOR LIVE POSITION':state==='SCHEDULED'?countdownText(next):'flight day complete'));
+ const state=live?'LIVE':future?'SCHEDULED':flightState(next);
+ $('homeWatchTitle').textContent=(next.flightNumber||next.flight||'FLIGHT').toUpperCase();
+ $('homeWatchName').textContent=next.name||'';
+ $('homeWatchFrom').textContent=next.fromCode||'—';$('homeWatchTo').textContent=next.toCode||'—';
+ $('homeWatchNames').textContent=((next.airlineName||'')+(next.airlineName?' · ':'')+((next.from&&next.to)?next.from+' → '+next.to:'Route lookup pending'));
  const dep=formatDepartureDisplay(next);
- setTextSafe('homeWatchDeparture',dep.primary?.split(' · ')[0]||next.departureTime||'—');
- setTextSafe('homeWatchDepartureSub',formatWatchTimeZoneLabel(next.fromCode)||dep.secondary||'DEPARTURE LOCAL');
- const arr=formatWatchArrival(next);
- setTextSafe('homeWatchArrival',arr);
- setTextSafe('homeWatchArrivalSub',formatWatchTimeZoneLabel(next.toCode)||'ARRIVAL LOCAL');
- setTextSafe('homeWatchFlight',(next.flightNumber||next.flight||'—').toUpperCase());
- setTextSafe('homeWatchFlightSub',next.airlineName||'WATCHED FLIGHT');
-
- // Preserve the legacy data nodes for existing logic/debugging.
- setTextSafe('homeWatchName',next.name||'');setTextSafe('homeWatchFrom',next.fromCode||'—');setTextSafe('homeWatchTo',next.toCode||'—');
- setTextSafe('homeWatchNames',(next.airlineName||'')+(next.airlineName?' · ':'')+((next.from&&next.to)?next.from+' → '+next.to:'Route lookup pending'));
- const dateText=next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}):'No date set';
- const depText=formatDepartureDisplay(next);const dateNode=$('homeWatchDate');if(dateNode)dateNode.innerHTML=dateText+`<br><span class="departure-primary">${escapeHtml(depText.primary)}</span><span class="departure-secondary">${escapeHtml(depText.secondary)}</span>`;
-
+ $('homeWatchDate').innerHTML=(next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}):'No date set')+`<br><span class="departure-primary">${escapeHtml(dep.primary)}</span><span class="departure-secondary">${escapeHtml(dep.secondary)}</span>`;
+ const st=$('homeWatchState');
+ // The watched route/progress is always shown once we have a route. A scheduled
+ // or tracking-pending flight starts at 0%; a completed flight is 100%.
+ const routeReady=!!(next.fromCode&&next.toCode);
+ let pct=0;
+ if(live){const p=watchedCompletion(next,live);pct=p==null?0:p;}
+ else if(state==='COMPLETED')pct=100;
  if(progressFrom)progressFrom.textContent=next.fromCode||'—';
  if(progressTo)progressTo.textContent=next.toCode||'—';
- setTextSafe('homeWatchFromName',next.from||next.fromCode||'');setTextSafe('homeWatchToName',next.to||next.toCode||'');
  if(progressLabel)progressLabel.textContent=routeReady?`${pct}% COMPLETE`:'—% COMPLETE';
  if(progressBar)progressBar.style.width=routeReady?`${pct}%`:'0%';
  if(progressPlane)progressPlane.style.left=routeReady?`${pct}%`:'0%';
  if(progressRow)progressRow.hidden=!routeReady;
- const st=$('homeWatchState');if(st){st.className='state '+(live?'live':(future||state==='SCHEDULED'||state==='PENDING'?'wait':'active'));st.textContent=live?(phase==='LANDED'?'COMPLETED':'READY'):(future?'SCHEDULED':state);}
- const stSub=$('homeWatchStateSub');if(stSub)stSub.textContent=live?`${pct}% COMPLETE`:(future?countdownText(next):state==='PENDING'?'WAITING…':'');
-
- // Existing live values remain available to the rest of the UI, even though the
- // compact card now presents identity/status in the six metric columns above.
  if(live){
-  $('homeWatchAlt').textContent=Number.isFinite(Number(live.alt))?Math.round(Number(live.alt)*3.28084).toLocaleString('en-GB')+' ft':'—';
-  $('homeWatchSpeed').textContent=Number.isFinite(Number(live.speed))?Math.round(Number(live.speed)*1.94384)+' kt':'—';
-  $('homeWatchHeading').textContent=Number.isFinite(Number(live.heading))?Math.round(Number(live.heading))+'°':'—';
-  const destLat=next.toLat!=null?Number(next.toLat):routePoint(next.toCode)?.[0],destLon=next.toLon!=null?Number(next.toLon):routePoint(next.toCode)?.[1];
-  const dd=Number.isFinite(destLat)&&Number.isFinite(destLon)&&live.lat!=null&&live.lon!=null?hav(Number(live.lat),Number(live.lon),destLat,destLon):null;
-  $('homeWatchDistance').textContent=dd==null?'—':Math.round(dd).toLocaleString('en-GB')+' km';
+   const phase=watchedFlightPhase(next,live);
+   st.className='state '+(phase==='LANDED'?'active':'live');
+   st.textContent=phase==='LANDED'?'LANDED':'LIVE';
+   $('homeWatchCountLabel').textContent='COMPLETED';
+   $('homeWatchCount').textContent=pct+'%';
+   $('homeWatchAlt').textContent=Number.isFinite(Number(live.alt))?Math.round(Number(live.alt)*3.28084).toLocaleString('en-GB')+' ft':'—';
+   $('homeWatchSpeed').textContent=Number.isFinite(Number(live.speed))?Math.round(Number(live.speed)*1.94384)+' kt':'—';
+   $('homeWatchHeading').textContent=Number.isFinite(Number(live.heading))?Math.round(Number(live.heading))+'°':'—';
+   const destLat=next.toLat!=null?Number(next.toLat):routePoint(next.toCode)?.[0],destLon=next.toLon!=null?Number(next.toLon):routePoint(next.toCode)?.[1];
+   const dd=Number.isFinite(destLat)&&Number.isFinite(destLon)&&live.lat!=null&&live.lon!=null?hav(Number(live.lat),Number(live.lon),destLat,destLon):null;
+   $('homeWatchDistance').textContent=dd==null?'—':Math.round(dd).toLocaleString('en-GB')+' km';
+   box.hidden=false;
  }else{
-  $('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';
+   st.className='state '+(future||state==='SCHEDULED'||state==='TRACKING PENDING'?'wait':'active');
+   st.textContent=future?'SCHEDULED':state==='TRACKING PENDING'?'LIVE TRACKING PENDING':state;
+   $('homeWatchCountLabel').textContent=future?'DEPARTS IN':state==='TRACKING PENDING'?'LIVE TRACKING':'FLIGHT STATUS';
+   $('homeWatchCount').textContent=future?countdownText(next):state==='TRACKING PENDING'?'WAITING…':state;
+   $('homeWatchAlt').textContent='—';$('homeWatchSpeed').textContent='—';$('homeWatchHeading').textContent='—';$('homeWatchDistance').textContent='—';
+   // Keep the four telemetry cells visible for the pending/scheduled state too,
+   // so the card does not jump when live tracking begins.
+   box.hidden=false;
  }
- if(box)box.hidden=true;
 }
 function renderWatchlist(){const el=$('watchList');if(!watchlist.length){el.innerHTML='<div class="empty-list">No watched flights yet.</div>';return}
  const rows=watchlist.map((f,i)=>({f,i,state:flightState(f)})).sort((a,b)=>{if(a.state==='COMPLETED'&&b.state!=='COMPLETED')return 1;if(a.state!=='COMPLETED'&&b.state==='COMPLETED')return -1;const da=parseDeparture(a.f),db=parseDeparture(b.f);return (da?da.getTime():Infinity)-(db?db.getTime():Infinity)});
- el.innerHTML=rows.map(({f,i,state})=>{const route=(f.fromCode&&f.toCode)?f.fromCode+' → '+f.toCode:'LOOKING UP ROUTE';const names=(f.from&&f.to)?f.from+' → '+f.to:'Route will be filled automatically';const dep=f.departureTime?` · <span class="flight-time">DEP ${f.departureTime}</span>`:'';const cd=(state==='SCHEDULED'||state==='PENDING')?`<div class="flight-countdown">${state==='PENDING'?'DEPARTED · WAITING FOR LIVE POSITION':countdownText(f)}</div>`:'';const status=state==='COMPLETED'?'COMPLETED':(state==='SCHEDULED'?'SCHEDULED':(state==='PENDING'?'PENDING':(f.lookupStatus||state)));const rowClass=state==='COMPLETED'?' completed':'';return '<div class="flight-row'+rowClass+'"><div class="flight-main"><div class="route-badge">✈</div><div><strong>'+((f.flightNumber||f.flight||'FLIGHT').toUpperCase())+'</strong><small>'+(f.name||'Watched flight')+' · '+route+' · '+(f.date||'No date')+dep+'<br>'+names+'</small>'+cd+'</div></div><div><span class="state '+(state==='SCHEDULED'||state==='PENDING'?'wait ':'')+(state==='COMPLETED'?'completed ':'')+(f.lookupStatus==='LOOKING UP'?'lookup':'')+'">'+status+'</span><button class="remove" data-remove="'+i+'" title="Remove">REMOVE</button></div></div>'}).join('');el.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{watchlist.splice(Number(btn.dataset.remove),1);if(!watchlist.length)watch={};else if(watchlist[0])watch=watchlist[0];saveState()}))}
+ el.innerHTML=rows.map(({f,i,state})=>{const route=(f.fromCode&&f.toCode)?f.fromCode+' → '+f.toCode:'LOOKING UP ROUTE';const names=(f.from&&f.to)?f.from+' → '+f.to:'Route will be filled automatically';const dep=f.departureTime?` · <span class="flight-time">DEP ${f.departureTime}</span>`:'';const cd=(state==='SCHEDULED'||state==='TRACKING PENDING')?`<div class="flight-countdown">${state==='TRACKING PENDING'?'DEPARTED · SEARCHING FOR AIRCRAFT':countdownText(f)}</div>`:'';const status=state==='COMPLETED'?'COMPLETED':(state==='SCHEDULED'?'SCHEDULED':(state==='TRACKING PENDING'?'LIVE TRACKING PENDING':(f.lookupStatus||state)));const rowClass=state==='COMPLETED'?' completed':'';return '<div class="flight-row'+rowClass+'"><div class="flight-main"><div class="route-badge">✈</div><div><strong>'+((f.flightNumber||f.flight||'FLIGHT').toUpperCase())+'</strong><small>'+(f.name||'Watched flight')+' · '+route+' · '+(f.date||'No date')+dep+'<br>'+names+'</small>'+cd+'</div></div><div><span class="state '+(state==='SCHEDULED'||state==='TRACKING PENDING'?'wait ':'')+(state==='COMPLETED'?'completed ':'')+(f.lookupStatus==='LOOKING UP'?'lookup':'')+'">'+status+'</span><button class="remove" data-remove="'+i+'" title="Remove">REMOVE</button></div></div>'}).join('');el.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{watchlist.splice(Number(btn.dataset.remove),1);if(!watchlist.length)watch={};else if(watchlist[0])watch=watchlist[0];saveState()}))}
 function monthShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/^0/,'').replace(' Sept ',' Sep ')}
 async function resolveFlightRoute(flight,date,registration){
  const cs=normalFlightCode(flight);if(!cs)return normaliseRoute(null,cs,date,'AirLabs');
@@ -2697,7 +2645,7 @@ async function refreshWatchStream(){
  if(S.watchSearchPending)return S.watchSearchPending;
  const today=scheduledTodayFlights();
  let target=today.find(f=>watchHasLive(f));
- if(!target)target=today.find(f=>flightState(f)==='PENDING');
+ if(!target)target=today.find(f=>flightState(f)==='TRACKING PENDING');
  if(!target)target=today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
  S.watchTarget=target||null;
  if(!target){S.watchLive=null;renderHomeWatch();return null;}
@@ -2739,100 +2687,10 @@ async function poll(){
 function refreshHomeDisplay(){const f=choose(S.lastItems||[]);if(f){S.featured=f.icao;renderLiveHome(f)}else{S.featured=null;renderScheduledHome()}renderHomeWatch(S.lastItems||[])}
 function todayInputDate(){const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
 function enforceFutureDateInputs(){const min=todayInputDate();['listDate','dateInput'].forEach(id=>{const el=$(id);if(el)el.min=min})}
-updateSkySettingsUI();enforceFutureDateInputs();loadRouteCache();loadIdentityCache();loadAirportDatabase();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();refreshWatchStream();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='READY'?'READY':s.textContent==='COMPLETED'?'COMPLETED':'';}},1000);S.timer=setInterval(poll,45000);
+updateSkySettingsUI();enforceFutureDateInputs();loadRouteCache();loadIdentityCache();loadAirportDatabase();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();refreshWatchStream();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='LIVE'?'LIVE TRACKING':s.textContent==='LANDED'?'FLIGHT ENDED':'';}},1000);S.timer=setInterval(poll,45000);
 </script>
-
-
-<style>
-/* V60.40 — NEXT WATCHED FLIGHT COMPACT CARD
-   Same compact visual language/height as the Featured information container.
-   The card retains the complete scheduled identity without repeating FROM/TO
-   in the top metrics. The route/progress remains in the lower strip. */
-.watch-bottom-compact{
-  display:grid!important;
-  grid-template-columns:240px minmax(0,1fr)!important;
-  grid-template-rows:54px 43px!important;
-  column-gap:24px!important;
-  row-gap:0!important;
-  height:105px!important;
-  min-height:105px!important;
-  max-height:105px!important;
-  padding:7px 26px 8px!important;
-  margin-top:8px!important;
-  border-radius:16px!important;
-  background:#f8f8f4!important;
-  border:1px solid #e1e2de!important;
-  box-shadow:0 12px 36px rgba(23,30,30,.07)!important;
-  box-sizing:border-box!important;
-  overflow:visible!important;
-}
-.watch-compact-main{grid-column:1;grid-row:1 / 3;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.watch-compact-brand{min-width:0;display:flex;flex-direction:column;justify-content:center;}
-.watch-compact-brand .eyebrow{font-size:7px;line-height:1;letter-spacing:.19em;margin-bottom:5px;}
-.watch-compact-airline{display:flex;align-items:center;gap:7px;min-width:0;color:#687778;font-size:7px;font-weight:900;letter-spacing:.16em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-airline-code{display:inline-grid;place-items:center;min-width:26px;height:19px;padding:0 6px;border-radius:6px;background:#63e6be;color:#071014;font-size:7px;font-weight:950;letter-spacing:.08em;box-shadow:0 0 12px rgba(99,230,190,.14);}
-.watch-bottom-compact .watch-bottom-title{font-size:24px!important;line-height:1!important;font-weight:900;letter-spacing:-.035em;margin:4px 0 0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-sub{font-size:7px;color:#788585;line-height:1.1;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-state{align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding-top:1px;white-space:nowrap;}
-.watch-compact-state .state{font-size:7px!important;padding:5px 7px!important;border-radius:999px!important;letter-spacing:.12em!important;}
-.watch-compact-state small{font-size:6px;color:#7a8585;letter-spacing:.09em;font-weight:800;}
-.watch-compact-metrics{grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;min-width:0;height:54px;align-items:start;padding:5px 9px 4px;border:1px solid rgba(70,95,100,.20);border-radius:7px;background:rgba(255,255,255,.045);box-sizing:border-box;}
-.watch-compact-metric{min-width:0;overflow:hidden;}
-.watch-compact-metric label{display:block;font-size:6px;line-height:1;color:#778080;letter-spacing:.15em;font-weight:900;white-space:nowrap;}
-.watch-compact-metric b{display:block;font-size:15px;line-height:1.05;margin-top:4px;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-metric small{display:block;font-size:6.5px;line-height:1.05;color:#8a9494;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-route{grid-column:2;grid-row:2;display:grid;grid-template-columns:82px minmax(0,1fr) 82px;align-items:center;gap:0;height:43px;min-width:0;padding:0 7px;border:1px solid rgba(70,95,100,.20);border-radius:7px;background:rgba(255,255,255,.035);box-sizing:border-box;}
-.watch-compact-end{height:43px;min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
-.watch-compact-end span{font-size:6px;line-height:1;color:#778080;letter-spacing:.16em;font-weight:900;}
-.watch-compact-end b{font-size:14px;line-height:1;margin-top:3px;color:var(--watch-route-color,var(--accent));letter-spacing:.04em;}
-.watch-compact-end small{width:100%;font-size:6px;line-height:1;margin-top:3px;color:#8a9494;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.watch-compact-end-right{text-align:center;}
-.watch-compact-progress{min-width:0;height:43px;display:flex;flex-direction:column;justify-content:center;padding:0 8px;}
-.watch-compact-progress .watch-progress-label{font-size:6px;line-height:1;height:7px;margin:0 0 3px;text-align:center;letter-spacing:.15em;color:#778080;font-weight:900;white-space:nowrap;}
-.watch-compact-progress .watch-progress-track{height:3px;background:#e3e5e1;border-radius:99px;position:relative;}
-.watch-compact-progress .watch-progress-track i{display:block;height:100%;width:0;background:var(--watch-route-color,var(--accent));border-radius:99px;transition:width .5s ease;}
-.watch-compact-progress .watch-progress-track span{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:17px;height:17px;border-radius:50%;display:grid;place-items:center;background:#f8f8f4;border:1px solid var(--watch-route-color,var(--accent));font-size:8px;color:var(--watch-route-color,var(--accent));line-height:1;transition:left .5s ease;}
-.watch-legacy-state{display:none!important;}
-@media (min-width:701px) and (orientation:landscape){
-  .watch-bottom-compact{height:105px!important;min-height:105px!important;max-height:105px!important;}
-  .watch-bottom-compact .watch-bottom-title{font-size:25px!important;}
-}
-@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
-  .watch-bottom-compact{height:95px!important;min-height:95px!important;max-height:95px!important;grid-template-columns:220px minmax(0,1fr)!important;grid-template-rows:49px 39px!important;padding:6px 20px 7px!important;column-gap:16px!important;margin-top:6px!important;}
-  .watch-compact-main{gap:8px;}
-  .watch-compact-airline{font-size:6.5px;}
-  .watch-bottom-compact .watch-bottom-title{font-size:21px!important;margin-top:3px!important;}
-  .watch-compact-sub{font-size:6px;}
-  .watch-compact-metrics{height:49px;gap:10px;padding:4px 7px 3px;}
-  .watch-compact-metric label{font-size:5.5px;}
-  .watch-compact-metric b{font-size:13px;margin-top:3px;}
-  .watch-compact-metric small{font-size:6px;margin-top:2px;}
-  .watch-compact-route,.watch-compact-progress,.watch-compact-end{height:39px;}
-  .watch-compact-route{grid-template-columns:74px minmax(0,1fr) 74px;padding:0 5px;}
-  .watch-compact-end b{font-size:13px;}.watch-compact-end small{font-size:5.5px;}.watch-compact-progress{padding:0 5px;}
-}
-@media(max-width:700px){
-  .watch-bottom-compact{display:block!important;height:auto!important;min-height:0!important;max-height:none!important;padding:14px 16px!important;}
-  .watch-compact-main{display:flex;min-height:55px;}
-  .watch-compact-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));height:auto;margin-top:10px;gap:10px;}
-  .watch-compact-route{display:grid;margin-top:8px;height:52px;grid-template-columns:58px minmax(0,1fr) 58px;}
-  .watch-compact-route .watch-compact-end{height:52px;}
-  .watch-compact-progress{height:52px;}
-}
-
-
-/* V60.40 — RECOVERED MAP SPACE
-   The Next Watch card is now compact, so give the Featured map back a little vertical room. */
-@media (min-width:701px) and (orientation:landscape) and (max-height:900px){
-  .hero{height:calc(100vh - 240px)!important;min-height:500px!important;max-height:680px!important;}
-}
-@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
-  .hero{height:calc(100vh - 215px)!important;min-height:500px!important;max-height:640px!important;}
-}
 </body></html>
 
-
-</style>
 
 <style>
 /* V60.23 — LIQUID GLASS FEATURED HERO
