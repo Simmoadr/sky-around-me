@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- Sky Around Me V60.42: Featured camera centre + status wording — footer credits, two-column watchlist, and Maximum Distance directly under SKY SETTINGS. -->
+<!-- Sky Around Me V61.2: frontend colour restoration from V60.48; backend unchanged. -->
 <title>Sky Around Me</title>
 <!-- Sky Around Me v60.19: V60.18 regression fix — restore route enrichment, map cycle, and centered telemetry. V60.18 map/API logic otherwise retained.
 <!-- Sky Around Me v52: destination route/progress restore + exact flight/date watched-route correction; v46 AirLabs resolver retained
@@ -1219,6 +1220,36 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   .watch-compact-route .watch-compact-end,.watch-compact-progress{height:52px;}
 }
 </style>
+<style>
+/* V61.2 — V60.48 COLOUR AUTHORITY + LOCKED AIRCRAFT HIERARCHY
+   Colour source: Sky Around Me V60.48 Airport Codes Green.
+   Backend unchanged.
+*/
+
+/* Standard aircraft inside the selected radius: black circle + white aircraft. */
+.live-aircraft-marker .live-aircraft-ring{background:#111!important;border-color:#111!important;box-shadow:0 3px 10px rgba(23,30,30,.14)!important;}
+.live-aircraft-marker .live-aircraft-shape{color:#fff!important;}
+
+/* Nearest / Featured aircraft: white circle + the exact route-line colour. */
+.live-aircraft-marker.tracked .live-aircraft-ring{background:#fff!important;border-color:#d5ddda!important;box-shadow:0 4px 12px rgba(23,30,30,.13)!important;}
+.live-aircraft-marker.tracked .live-aircraft-shape{color:var(--accent,#176f8b)!important;}
+
+/* Aircraft outside the selected radius: black aircraft only, no circle. */
+.outer-aircraft-marker{width:30px!important;height:30px!important;opacity:1!important;filter:none!important;}
+.outer-aircraft-marker .live-aircraft-ring{display:none!important;}
+.outer-aircraft-marker .live-aircraft-shape{color:#111!important;width:22px!important;height:22px!important;}
+.outer-aircraft-marker .live-aircraft-shape svg{width:22px!important;height:22px!important;}
+
+/* Featured aircraft on the route map uses the same white + route-colour hierarchy. */
+.hero-aircraft-marker .hero-aircraft-halo{background:rgba(255,255,255,.92)!important;border-color:#d5ddda!important;}
+.hero-aircraft-marker .hero-aircraft-shape{color:var(--accent,#176f8b)!important;}
+
+/* V60.48 final text colour rules. Route colour remains #176f8b. */
+.hero .flight-name.flight-verified,.hero .flight-name.flight-callsign{color:var(--watch-route-color,#176f8b)!important;}
+.hero .flight-name.watched-flight-title{color:var(--watch-route-color,#176f8b)!important;}
+.hero .journey-end b,.hero .journey-end strong,.hero .journey-end .airport-code{color:var(--watch-route-color,#176f8b)!important;}
+.watch-bottom-compact .watch-bottom-title{color:var(--watch-route-color,#176f8b)!important;}
+</style>
 </head>
 <body>
 
@@ -1679,9 +1710,9 @@ function renderHeroFlightMap(live,watch){
     });
     localItems.forEach(item=>{
       if(!Number.isFinite(Number(item?.lat))||!Number.isFinite(Number(item?.lon)))return;
-      const tracked=item.icao===S.featured;
-      const angle=Number.isFinite(item?.heading)?item.heading:0;
-      L.marker([Number(item.lat),Number(item.lon)],{icon:icon(item,tracked),interactive:false,zIndexOffset:tracked?400:0}).addTo(heroFlightLayer);
+      // Featured aircraft is rendered once below with the locked white/green marker.
+      if(item.icao===S.featured)return;
+      L.marker([Number(item.lat),Number(item.lon)],{icon:icon(item,false),interactive:false,zIndexOffset:0}).addTo(heroFlightLayer);
     });
     const nextPoint=greatCirclePoint(a,b,Math.min(1,progress+.015));
     const angle=Number.isFinite(live?.heading)?live.heading:heroBearing(pos,progress<.99?nextPoint:b);
@@ -1887,8 +1918,8 @@ function normalFlightCode(v){return String(v||'').toUpperCase().replace(/[^A-Z0-
 // to the physical aircraft (ICAO/registration), not the live ADS-B callsign.
 // A callsign can temporarily differ from the passenger flight number, and can
 // also change when the same aircraft operates another sector.
-const IDENTITY_STORAGE_KEY='skyAroundMeIdentityCacheV6';
-const IDENTITY_CACHE_VERSION='identity-persistent-v6-disabled';
+const IDENTITY_STORAGE_KEY='skyAroundMeIdentityCacheV5';
+const IDENTITY_CACHE_VERSION='identity-persistent-v5';
 const IDENTITY_SUCCESS_TTL=12*60*60*1000;
 const IDENTITY_FAILURE_TTL=5*60*1000;
 function identityAircraftKey(x){
@@ -1992,6 +2023,33 @@ function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
  if(Number.isFinite(Number(raw.toLat)))to.lat=Number(raw.toLat);if(Number.isFinite(Number(raw.toLon)))to.lon=Number(raw.toLon);
  return {status:'FOUND',flight,date,flightNumber:normalFlightCode(raw.flightNumber||''),airlineCode:normalFlightCode(raw.airlineCode||''),airlineName:raw.airlineName||'',from:from.name,to:to.name,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:raw.departureUtc||'',arrivalUtc:raw.arrivalUtc||'',departureTime:raw.departureTime||'',source,resolvedAt:new Date().toISOString()};
 }
+function hydrateCachedLiveRoute(x,previousItems){
+ const cs=normalFlightCode(x?.callsign);if(!cs)return x;
+ const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),key=routeCacheKey(cs,date,reg);
+ // First retain the route from the previous live-feed object. The aircraft object
+ // is recreated on every poll, so without this the UI briefly has no route.
+ const previous=Array.isArray(previousItems)?previousItems.find(a=>
+   normalFlightCode(a?.callsign)===cs &&
+   normalFlightCode(a?.registration||a?.r||'')===reg
+ ):null;
+ if(previous?.liveRoute?.status==='FOUND'){
+  x.liveRoute=previous.liveRoute;
+  return x;
+ }
+ // Then restore the persistent in-memory/localStorage route cache synchronously
+ // before renderLiveHome() runs. A successful route must survive normal 45s polls.
+ if(liveRouteCache.has(key)){
+  const cached=liveRouteCache.get(key);
+  if(cached?.status==='FOUND'||cached?.status==='STALE')x.liveRoute=cached;
+  return x;
+ }
+ const stored=getCachedRoute(key);
+ if(stored!==undefined){
+  liveRouteCache.set(key,stored);
+  if(stored?.status==='FOUND'||stored?.status==='STALE')x.liveRoute=stored;
+ }
+ return x;
+}
 function liveJourneyFor(x){
  const f=getNextWatchedFlight();
  if(f&&watchedLiveMatch(f,[x])) return f;
@@ -2031,13 +2089,62 @@ if(SKY_DEBUG_ENABLED){document.body.classList.add('sky-debug-enabled');window.ad
 });}
 
 async function fetchFreeFlightIdentity(callsign,registration,liveRoute,date){
- // Nearby aircraft deliberately do not resolve a passenger flight number.
- // The ADS-B callsign is the displayed identifier. Kept as a no-op compatibility
- // function so older debug tooling cannot trigger paid lookups.
- return {status:'CALLSIGN_ONLY',flightNumber:'',callsign:normalFlightCode(callsign||''),airlineCode:'',airlineName:'',route:liveRoute||null,registration:registration||'',resolvedAt:new Date().toISOString()};
+ const started=performance.now();
+ const cs=normalFlightCode(callsign);const reg=String(registration||'').trim().toUpperCase();if(!cs&&!reg)return null;
+ const from=String(liveRoute?.fromCode||'').trim().toUpperCase();
+ const to=String(liveRoute?.toCode||'').trim().toUpperCase();
+ const rawDate=String(date||'');
+ const requestedDate=/^\d{4}-\d{2}-\d{2}$/.test(rawDate)?rawDate:utcDateKey();
+ // Resolve the passenger flight number from the aircraft + exact live route + date.
+ // The ADS-B callsign alone is not a reliable passenger flight number.
+ const params=`lookup=identity&callsign=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${encodeURIComponent(requestedDate)}&debug=1`;
+ const url=`${SKY_AROUND_ME_NETLIFY}?${params}`;
+ skyDebug('OK','IDENTITY REQUEST',{callsign:cs,registration:reg||'',from,to,date:requestedDate,url});
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
+ try{
+  const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
+  skyDebug(r.ok?'OK':'ERROR','IDENTITY HTTP RESPONSE',{status:r.status,statusText:r.statusText,ms:Math.round(performance.now()-started)});
+  if(!r.ok){const e=new Error('Flight identity lookup HTTP '+r.status);e.status=r.status;throw e}
+  const j=await r.json();
+  skyDebug(j?.flightNumber?'OK':'WARN','BACKEND IDENTITY RESULT',{status:j?.status||'',provider:j?._skyProvider||'',flightNumber:j?.flightNumber||'',lookup:j?._skyLookup||'',registration:j?.registration||'',route:j?.route||{},upstreamStatus:j?._skyUpstreamStatus||'',debug:j?._skyDebug||null});
+  const fr=j?.flightroute||null;
+  const airline=fr?.airline||{};
+  const provider=String(j?._skyProvider||'').toUpperCase();
+  const trustedProvider=provider.includes('AIRLABS')||provider.includes('PLANEFINDER')||provider.includes('FLIGHTRADAR24')||provider.includes('AIRNAV RADAR')||provider.includes('ADSBDB EXACT-ROUTE FLIGHT NUMBER');
+  const flightNumber=trustedProvider?normalFlightCode(j?.flightNumber||''):'';
+  const airlineCode=normalFlightCode(j?.airlineCode||airline.iata||'')||'';
+  const airlineName=j?.airlineName||airline.name||'';
+  const route=j?.route||null;
+  const origin=fr?.origin||{},destination=fr?.destination||{};
+  const fromCode=String(route?.fromCode||origin.iata_code||from||'').toUpperCase();
+  const toCode=String(route?.toCode||destination.iata_code||to||'').toUpperCase();
+  const routeOut=(fromCode&&toCode)?{
+   status:'FOUND',fromCode,toCode,
+   from:route?.from||origin.name||origin.municipality||liveRoute?.from||fromCode,
+   to:route?.to||destination.name||destination.municipality||liveRoute?.to||toCode,
+   fromLat:route?.fromLat??origin.latitude??origin.lat??liveRoute?.fromLat,
+   fromLon:route?.fromLon??origin.longitude??origin.lon??origin.lng??liveRoute?.fromLon,
+   toLat:route?.toLat??destination.latitude??destination.lat??liveRoute?.toLat,
+   toLon:route?.toLon??destination.longitude??destination.lon??destination.lng??liveRoute?.toLon,
+   flightNumber,airlineCode,airlineName,source:'IdentityLookup'
+  }:null;
+  skyDebug(flightNumber?'OK':'WARN','FRONTEND TRUST DECISION',{provider,trustedProvider,acceptedFlightNumber:flightNumber||'',routeFrom:fromCode,routeTo:toCode});
+  return {
+   status:flightNumber?'FOUND':(routeOut?'ROUTE_FOUND':'UNVERIFIED'),
+   flightNumber,airlineCode,airlineName,registration:j?.registration||reg,hex:j?.hex||'',
+   aircraftDesc:j?.aircraftDesc||'',callsign:j?.callsign||cs,route:routeOut,source:j?._skyProvider||'ADSBdb'
+  };
+ }catch(e){
+  skyDebug('ERROR','IDENTITY LOOKUP FAILED',{name:e?.name||'',message:e?.message||String(e),status:e?.status||'',ms:Math.round(performance.now()-started)});
+  throw e;
+ }finally{clearTimeout(timer)}
 }
 function applyIdentity(x,id){
- if(!id||!x)return;
+ if(!id)return;
+ // Only replace the displayed flight number when the resolver has actually
+ // found one. This prevents a failed identity lookup from wiping a useful
+ // callsign-derived fallback.
+ if(id.flightNumber)x.flightNumber=id.flightNumber;
  if(id.airlineCode)x.airlineCode=id.airlineCode;
  if(id.airlineName)x.airlineName=id.airlineName;
  if(id.registration)x.registration=id.registration;
@@ -2046,29 +2153,76 @@ function applyIdentity(x,id){
  if(id.callsign)x.callsign=normalFlightCode(id.callsign);
  if(id.status)x.identityStatus=id.status;
  if(id.route){
-  x.liveRoute=normaliseRoute({...id.route,flightNumber:'',airlineCode:id.airlineCode||x.airlineCode,airlineName:id.airlineName||x.airlineName},x.callsign,utcDateKey(),'RouteLookup');
+  const prior=x.liveRoute?.status==='FOUND'?x.liveRoute:null;
+  x.liveRoute=normaliseRoute({
+    ...id.route,
+    fromLat:id.route.fromLat??prior?.fromLat,
+    fromLon:id.route.fromLon??prior?.fromLon,
+    toLat:id.route.toLat??prior?.toLat,
+    toLon:id.route.toLon??prior?.toLon,
+    flightNumber:id.flightNumber||x.flightNumber,
+    airlineCode:id.airlineCode||x.airlineCode,
+    airlineName:id.airlineName||x.airlineName
+  },x.callsign,utcDateKey(),'IdentityLookup');
  }
 }
 async function lookupFlightIdentity(x,routeOverride=null){
- if(!x)return null;
- // Intentionally disabled: Sky Around Me now displays the live ADS-B callsign
- // for nearby aircraft and only resolves passenger flight numbers for Watched Flights.
- return {status:'CALLSIGN_ONLY',flightNumber:'',callsign:normalFlightCode(x.callsign||''),route:routeOverride||x.liveRoute||null};
+ const cs=normalFlightCode(x?.callsign);if(!cs)return null;
+ const liveRoute=(routeOverride?.fromCode&&routeOverride?.toCode?routeOverride:(x?.liveRoute?.fromCode&&x?.liveRoute?.toCode?x.liveRoute:(xRouteForIdentity(cs,x?.registration||x?.r)||null)));
+ const aircraftKey=identityAircraftKey(x);
+ const requestKey=aircraftKey+'|CALL|'+cs;
+ skyDebug('OK','RESOLVER START',{callsign:cs,registration:x?.registration||x?.r||'',existingFlightNumber:x?.flightNumber||'',route:liveRoute?`${liveRoute.fromCode}-${liveRoute.toCode}`:'NO ROUTE',cacheKey:aircraftKey});
+ let cached=getIdentityCacheValue(aircraftKey);
+ // If an earlier lookup was unverified because the route was not available,
+ // do not let that short-lived failure block the now route-aware lookup.
+ if(cached&&cached.status!=='FOUND'&&liveRoute?.status==='FOUND'){
+  skyDebug('OK','UNVERIFIED CACHE BYPASSED — ROUTE NOW AVAILABLE',{route:`${liveRoute.fromCode}-${liveRoute.toCode}`});
+  S.identityCache.delete(aircraftKey);cached=null;
+ }
+ if(cached&&identityCallsMatch(x,cached)){
+  skyDebug('OK','PERSISTENT IDENTITY CACHE HIT',cached);applyIdentity(x,cached);
+  if(S.featured===x.icao)renderLiveHome(x);
+  return cached;
+ }
+ if(cached&&!identityCallsMatch(x,cached)){
+  skyDebug('OK','AIRCRAFT CACHE PRESENT — CALLSIGN CHANGED',{cachedCallsign:cached.callsign||'',cachedFlightNumber:cached.flightNumber||'',liveCallsign:cs});
+ }
+ if(S.identityPending.has(requestKey))return S.identityPending.get(requestKey);
+ const task=(async()=>{
+  try{
+   const id=await fetchFreeFlightIdentity(cs,x?.registration||x?.r||'',liveRoute,utcDateKey())||{status:'UNVERIFIED',flightNumber:'',airlineCode:'',airlineName:x.operator||'Live aircraft',route:null,callsign:cs};
+   id.resolvedAt=new Date().toISOString();
+   if(!id.callsign)id.callsign=cs;
+   skyDebug(id.flightNumber?'OK':'WARN','RESOLVER FINAL RESULT',id);
+   identityCachePut(aircraftKey,id);applyIdentity(x,id);
+   if(S.featured===x.icao)renderLiveHome(x);
+   return id;
+  }catch(e){
+   skyDebug('ERROR','RESOLVER EXCEPTION',{message:e?.message||String(e),name:e?.name||'',status:e?.status||''});
+   const id={status:'UNVERIFIED',flightNumber:'',airlineCode:'',airlineName:x.operator||'Live aircraft',route:null,callsign:cs,resolvedAt:new Date().toISOString()};
+   identityCachePut(aircraftKey,id);applyIdentity(x,id);
+   if(S.featured===x.icao)renderLiveHome(x);
+   return id;
+  }finally{S.identityPending.delete(requestKey)}
+ })();
+ S.identityPending.set(requestKey,task);return task;
 }
 function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero)hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
  hydrateCachedIdentity(x);
- const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=normalFlightCode(x.watchRef?.flightNumber||'');
+ const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x);
  // Only start identity resolution with the current route when one is available.
  // This prevents the backend from being asked to guess a passenger flight from the ADS-B callsign alone.
  // Route first, then passenger-flight identity. V55 identity resolution requires
  // an exact origin/destination pair; do not spend a backend request on a
  // callsign-only identity lookup before the route has been resolved.
  if(x?.callsign&&(!journey?.fromCode||!journey?.toCode)&&!x?.liveRoute){ enrichLiveRoute(x); }
+ // FEATURED AIRCRAFT deliberately uses the live ADS-B callsign only.
+ // Passenger flight-number resolution is reserved for My Flights / watched flights.
  setHeroAircraft(x,journey);
- setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',(flightNumber||x.callsign||'LIVE AIRCRAFT').toUpperCase());setTextSafe('homeStatus','LIVE');
- $('airlineBadge').textContent=(x.airlineCode||flightNumber.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('aircraftReg').textContent=String(x.r||x.registration||'—').toUpperCase()||'—';$('aircraftRegNote').textContent=x.r?'AIRCRAFT REG':'REGISTRATION';$('aircraftCallsign').textContent=String(x.callsign||'—').toUpperCase()||'—';
+ const displayFlight=normalFlightCode(x?.callsign||'LIVE AIRCRAFT').toUpperCase();
+ setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',displayFlight);setTextSafe('homeStatus','LIVE');
+ $('airlineBadge').textContent=(x.airlineCode||displayFlight.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('aircraftReg').textContent=String(x.r||x.registration||'—').toUpperCase()||'—';$('aircraftRegNote').textContent=x.r?'AIRCRAFT REG':'REGISTRATION';$('aircraftCallsign').textContent=displayFlight||'—';
  const csLabel=x.callsign?('CALLSIGN '+x.callsign.toUpperCase()):'';
- const displayFlight=flightNumber||x.callsign||'LIVE AIRCRAFT';
  const verified=false;
  $('callsignNote').className='callsign-note flight-callsign-note';
  $('callsignNote').textContent=verified?('CALLSIGN '+x.callsign.toUpperCase()):'CALLSIGN';
@@ -2079,8 +2233,8 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
  const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=journey.from||journey.fromName||'—';$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=journey.to||journey.toName||'—';$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
 }
-const ROUTE_CACHE_TTL=6*60*60*1000;
-const ROUTE_FAILURE_TTL=15*60*1000;
+const ROUTE_CACHE_TTL=30*60*1000;
+const ROUTE_FAILURE_TTL=5*60*1000;
 const ROUTE_TIMEOUT=5000;
 const liveRouteCache=new Map();
 const liveRoutePending=new Map();
@@ -2090,7 +2244,7 @@ async function lookupFlightRoute(callsign,date,registration){
  const cs=normalFlightCode(callsign);
  const reg=String(registration||'').trim().toUpperCase();
  if(!cs&&!reg)return {status:'NOT_FOUND',flight:cs,date,source:'FlightRouteLookup'};
- const params=`lookup=callsign&value=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}`;
+ const params=`lookup=callsign&value=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&debug=1`;
  const controller=new AbortController();
  const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
  try{
@@ -2420,11 +2574,21 @@ async function refreshMissingFlightData(){
  }
 }
 async function lookupWatchedSchedule(flight,date){
- const clean=normalFlightCode(flight);if(!clean||!date)return null;
+ const clean=normalFlightCode(flight);
+ if(!clean||!date)return null;
  const url=`${SKY_AROUND_ME_NETLIFY}?lookup=schedule&flight=${encodeURIComponent(clean)}&date=${encodeURIComponent(date)}`;
  try{
-  const j=await fetchJson(url,'Watched flight schedule lookup');
+  const j=await fetchJson(url,'AirLabs flight lookup');
   if(j&&(j.status==='FOUND'||j.status==='ROUTE_FOUND'))return j;
+ }catch(e){}
+ // Fallback: the watched-flight resolver also returns its resolved schedule.
+ // This is especially useful when the exact schedule endpoint has no timestamp
+ // yet but the flight/route resolver can still identify the occurrence.
+ try{
+  const fallback=`${SKY_AROUND_ME_NETLIFY}?lookup=flight&flight=${encodeURIComponent(clean)}&date=${encodeURIComponent(date)}`;
+  const j=await fetchJson(fallback,'Watched flight fallback lookup');
+  if(j?.schedule&&(j.schedule.status==='FOUND'||j.schedule.status==='ROUTE_FOUND'))return j.schedule;
+  if(j&&(j.status==='FOUND'||j.status==='ROUTE_FOUND')&&(j.fromCode||j.toCode||j.departureTime)){return j;}
  }catch(e){}
  return null;
 }
@@ -2476,10 +2640,10 @@ function updateMapCard(x){
   return;
  }
  const flight=normalFlightCode(x.flightNumber||'');
- const title=flight||normalFlightCode(x.callsign||x.icao||'').toUpperCase()||'AIRCRAFT';
+ const title=normalFlightCode(x.callsign||x.icao||'').toUpperCase()||'AIRCRAFT';
  const airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'';
  const secondary=[airline,x.callsign&&normalFlightCode(x.callsign),x.registration||''].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(' · ');
- $('status').textContent=flight?'FLIGHT':'LIVE AIRCRAFT';
+ $('status').textContent='LIVE AIRCRAFT';
  $('call').textContent=title;
  $('detail').textContent=secondary||aircraftFullName(x);
  const route=x.liveRoute&&x.liveRoute.status==='FOUND'?x.liveRoute:null;
@@ -2499,15 +2663,11 @@ function updateMapCard(x){
 async function selectLiveAircraft(icao){
  const x=(S.lastItems||[]).find(a=>a.icao===icao);if(!x)return;
  S.mapSelected=icao;updateMapCard(x);
- if(x.callsign&&!x.identityStatus){
-   await lookupFlightIdentity(x);
-   const latest=(S.lastItems||[]).find(a=>a.icao===icao)||x;
-   if(S.mapSelected===icao)updateMapCard(latest);
- }
+ // Selection never changes the locked aircraft colour hierarchy and never starts a flight-number lookup.
  if(map){
    S.markers.forEach((marker,id)=>{
      const item=(S.lastItems||[]).find(a=>a.icao===id);
-     if(item)marker.setIcon(icon(item,id===S.featured||id===S.mapSelected));
+     if(item)marker.setIcon(icon(item,id===S.featured));
    });
  }
 }
@@ -2518,8 +2678,8 @@ function render(items){
    const feat=x.icao===S.featured;
    const selected=x.icao===S.mapSelected;
    let m=S.markers.get(x.icao);
-   if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat||selected)}).addTo(map);S.markers.set(x.icao,m)}
-   else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat||selected))}
+   if(!m){m=L.marker([x.lat,x.lon],{icon:icon(x,feat)}).addTo(map);S.markers.set(x.icao,m)}
+   else{m.setLatLng([x.lat,x.lon]);m.setIcon(icon(x,feat))}
    m.off('click').on('click',()=>selectLiveAircraft(x.icao));
    // Do not create or update historical trails on Live Sky. The map shows
    // current aircraft positions only; route/progress belongs in the detail card.
@@ -2633,38 +2793,26 @@ async function fetchAircraft(){
 }
 
 
-async function searchWatchedFlightLive(f){
+async function searchGlobalWatchedFlight(f){
  if(!f)return null;
- const hex=String(f.hex||'').trim().toLowerCase();
- const reg=String(f.registration||'').trim().toUpperCase();
- const callsigns=watchedLookupCallsigns(f);
- const local=(Array.isArray(S.lastAllItems)?S.lastAllItems:[]).find(a=>
-   (hex&&String(a.icao||'').toLowerCase()===hex) ||
-   (reg&&String(a.registration||'').trim().toUpperCase()===reg) ||
-   callsigns.includes(normalFlightCode(a.callsign))
- );
- if(local){
-   return {...local,watchRef:f,watchGlobal:true,flightNumber:f.flightNumber||f.flight||'',airlineCode:f.airlineCode||'',airlineName:f.airlineName||''};
- }
- // Watched flights are independent of the selected nearby-aircraft radius.
- // Once the scheduled HEX is known, poll that aircraft directly from the free
- // ADS-B backend. This never touches AirLabs.
- if(!hex)return null;
  try{
-   const url=`${SKY_AROUND_ME_NETLIFY}?lookup=hex&hex=${encodeURIComponent(hex)}`;
-   const j=await fetchJson(url,'Watched flight ADS-B');
-   const a=(Array.isArray(j?.ac)?j.ac:[]).find(x=>String(x?.hex||'').trim().toUpperCase()===hex)||j?.ac?.[0];
-   if(!a)return null;
-   const mapped={
-    icao:String(a.hex||'').toLowerCase(),callsign:String(a.flight||'').trim(),registration:String(a.r||'').trim(),
-    lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,
-    speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,
-    vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:j?._skyProvider||'ADS-B',category:a.category||'',
-    flightNumber:f.flightNumber||f.flight,airlineCode:f.airlineCode||normalFlightCode(f.flightNumber||f.flight).match(/^[A-Z]{1,3}/)?.[0]||'',airlineName:f.airlineName||'',
-    d:a.lat!=null&&a.lon!=null?hav(S.lat,S.lon,Number(a.lat),Number(a.lon)):null,watchRef:f,watchGlobal:true
-   };
-   return mapped;
- }catch(e){return null}
+  const url=`${SKY_AROUND_ME_NETLIFY}?lookup=flight&flight=${encodeURIComponent(normalFlightCode(f.flightNumber||f.flight))}&date=${encodeURIComponent(f.date||'')}`;
+  const j=await fetchJson(url,'AirLabs watched flight lookup');
+  if(j?.status==='FOUND'&&Array.isArray(j.ac)&&j.ac.length){
+   const mapped=j.ac.map(a=>({
+    icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),
+    lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:(typeof a.alt==='number'?a.alt:null),
+    speed:typeof a.gs==='number'?a.gs*.514444:(typeof a.speed==='number'?a.speed:null),
+    heading:typeof a.track==='number'?a.track:(typeof a.dir==='number'?a.dir:null),
+    vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,
+    type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.source||'AirLabs',category:a.category||'',
+    flightNumber:f.flightNumber||f.flight,airlineCode:f.airlineCode||normalFlightCode(f.flightNumber||f.flight).match(/^[A-Z]{1,3}/)?.[0]||'',
+    airlineName:f.airlineName||a.airlineName||''
+   })).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon),watchRef:f,watchGlobal:true}));
+   return mapped[0]||null;
+  }
+ }catch(e){}
+ return null;
 }
 async function refreshWatchStream(){
  if(S.watchSearchPending)return S.watchSearchPending;
@@ -2674,10 +2822,12 @@ async function refreshWatchStream(){
  if(!target)target=today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
  S.watchTarget=target||null;
  if(!target){S.watchLive=null;renderHomeWatch();return null;}
+ // Future flights are display-only. They must never enter the global live search.
  if(dateKeyFromValue(target.date)!==todayKeyLocal()){S.watchLive=null;renderHomeWatch();return null;}
- const key=watchKey(target);
+ const key=watchKey(target),now=Date.now();
+ if(S.watchLive&&S.watchLive.watchKey===key&&now-S.watchSearchAt<30000){renderHomeWatch();return S.watchLive;}
  S.watchSearchPending=(async()=>{
-  const live=await searchWatchedFlightLive(target);
+  const live=await searchGlobalWatchedFlight(target);
   if(live){live.watchKey=key;S.watchLive=live;S.watchSearchAt=Date.now();}
   else{S.watchLive=null;S.watchSearchAt=Date.now();}
   renderHomeWatch();
@@ -2692,8 +2842,17 @@ async function poll(){
   const j=await fetchAircraft();
   const raw=(Array.isArray(j.ac)?j.ac:[]).filter(isCommercialAircraft);
   const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));
+  const previousItems=Array.isArray(S.lastItems)?S.lastItems:[];
+  allItems.forEach(x=>hydrateCachedLiveRoute(x,previousItems));
   const activeRaw=allItems.filter(x=>x.d<=S.rangeKm);
-  const items=activeRaw.map(hydrateCachedIdentity);
+  // Preserve the last known route before replacing the live-feed objects.
+  // Each poll creates fresh aircraft objects, so route data must be rehydrated
+  // before Featured is rendered; otherwise the route disappears on the next refresh.
+  const items=activeRaw.map(x=>{
+    hydrateCachedIdentity(x);
+    hydrateCachedLiveRoute(x,previousItems);
+    return x;
+  });
   S.lastAllItems=allItems;S.lastItems=items;
   // STREAM A ONLY: local aircraft determine Featured and Live Sky.
   const f=choose(items);S.featured=f?.icao||null;render(items);
@@ -3185,3 +3344,4 @@ updateSkySettingsUI();enforceFutureDateInputs();loadRouteCache();loadIdentityCac
   .hero .journey-info{padding:0 5px!important;}
 }
 </style>
+\n\n
