@@ -1698,6 +1698,7 @@ function renderHeroFlightMap(live,watch){
       const fitLocalAirspace=()=>{
        if(!heroFlightMap||heroMapMode!=='airspace')return;
 
+       // V60.42 — Centre LOCAL AIRSPACE in the visible map area above flight info.
        // V60.8 — LOCAL AIRSPACE is deliberately camera-centred on the
        // user's location, with the selected radius occupying most of the
        // available map height. This is more deterministic on iPad Safari
@@ -1733,8 +1734,11 @@ function renderHeroFlightMap(live,watch){
         // map. Shift the map content upward so the device/radius is centred in
         // the visible portion rather than underneath the overlay.
         if(coveredHeight>0){
-         const shiftY=Math.round(coveredHeight/2+bottomMargin/2);
-         heroFlightMap.panBy([0,-shiftY],{animate:false});
+         // Centre LOCAL AIRSPACE in the visible map area above the
+         // floating flight-information panel. Positive Y moves the
+         // geographic centre upward on screen in Leaflet.
+         const shiftY=Math.round(coveredHeight/2);
+         heroFlightMap.panBy([0,shiftY],{animate:false});
         }
 
         // Keep the radius as the visual boundary; it is not used to decide
