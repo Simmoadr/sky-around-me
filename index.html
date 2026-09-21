@@ -3292,4 +3292,21 @@ updateSkySettingsUI();enforceFutureDateInputs();loadRouteCache();loadIdentityCac
   .hero .telemetry{padding:4px 7px 3px!important;}
   .hero .journey-info{padding:0 5px!important;}
 }
+
+/* V60.46: final override for the Featured/Nearest flight number.
+   Keep the callsign and other metrics unchanged. */
+.hero .flight-name.flight-verified,
+.hero .flight-name.flight-callsign{
+  color:var(--watch-route-color,#176f8b)!important;
+}
+.hero .flight-name.watched-flight-title{
+  color:var(--watch-route-color,#176f8b)!important;
+}
+
+/* V60.48: Featured/Nearest FROM and TO airport codes use route green. */
+.hero .journey-end b,
+.hero .journey-end strong,
+.hero .journey-end .airport-code{
+  color:var(--watch-route-color,#176f8b)!important;
+}
 </style>
