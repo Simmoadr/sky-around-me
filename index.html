@@ -32,7 +32,7 @@
 
 /* SKY AROUND ME — LIVE FLIGHT SPOTLIGHT */
 .hero{min-height:600px;background:linear-gradient(145deg,#07151c 0%,#0b2028 52%,#061218 100%);border-color:rgba(255,255,255,.10);box-shadow:0 30px 90px rgba(0,10,16,.22);color:#f4fafb}
-.hero:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 25%,rgba(73,198,190,.13),transparent 34%),linear-gradient(180deg,rgba(255,255,255,.02),transparent 65%,rgba(0,0,0,.20));pointer-events:none;z-index:0}
+.hero:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 25%,rgba(73,198,190,.13),transparent 34%),linear-gradient(180deg,rgba(255,255,255,.02),transparent 45%,rgba(0,0,0,.20));pointer-events:none;z-index:0}
 .hero-top{padding:30px 38px 0}.hero-route{font-size:12px;letter-spacing:.18em;color:#e9f5f6}.hero-city{color:#7e9aa3}.hero-bottom{padding:22px 38px 30px}.hero .divider{background:rgba(255,255,255,.12)}
 .hero .operator{color:#8faab1}.hero .flight-name{color:#fff}.hero .aircraft-type{color:#90a9b0}.hero .metric label,.hero .metric small{color:#78929b}.hero .metric b{color:#f7fbfb}.hero .progress{background:rgba(255,255,255,.11)}.hero .progress i{background:#63e6be;box-shadow:0 0 14px rgba(99,230,190,.38)}.airline-brand{display:flex;align-items:center;gap:9px}.airline-badge{display:inline-grid;place-items:center;min-width:34px;height:24px;padding:0 8px;border-radius:7px;background:#63e6be;color:#071014;font-size:9px;font-weight:950;letter-spacing:.08em;box-shadow:0 0 16px rgba(99,230,190,.18)}.callsign-note{font-size:9px;color:#78929b;margin-left:7px;letter-spacing:.06em}.identity-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:7px;vertical-align:middle;box-shadow:0 0 7px currentColor}.identity-status-dot.verified{color:#18a66f;background:#18a66f}.identity-status-dot.unverified{color:#d65b5b;background:#d65b5b}.identity-status-dot.checking{color:#9aa5a5;background:#9aa5a5;box-shadow:none}.hero .flight-name{font-size:38px}.world-hero-nearby{position:absolute;inset:0;pointer-events:none;z-index:3}.world-hero-nearby-dot{position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(99,230,190,.55);box-shadow:0 0 10px rgba(99,230,190,.28);transform:translate(-50%,-50%)}.world-hero-nearby-dot:after{content:"";position:absolute;inset:-5px;border:1px solid rgba(99,230,190,.16);border-radius:50%}.world-hero-nearby-dot.featured{width:8px;height:8px;background:#63e6be}.hero-route .route-live-code{color:#63e6be}.watch-airline{font-size:8px;color:var(--muted);letter-spacing:.12em;font-weight:850;margin-top:4px}
 .hero .journey-info{border-top-color:rgba(255,255,255,.10)}.hero .journey-end span,.hero .journey-percent{color:#78929b}.hero .journey-end b{color:#fff}.hero .journey-end small{color:#86a0a8}
@@ -532,6 +532,618 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 
 @media (max-width:700px){
   /* Keep the existing mobile layout untouched. */
+}
+</style>
+
+<style>
+/* V60.24 — COMPACT FEATURED FLIGHT INFORMATION BAR
+   Matches the latest mock-up:
+   - aircraft identity sits high and compact
+   - journey completion sits immediately underneath the identity/telemetry
+   - FROM / TO codes sit at the two ends of the completion track
+   - airport names are centred beneath their codes
+   - overall glass panel is shorter
+*/
+@media (min-width:701px) and (orientation:landscape){
+  .hero .hero-bottom{
+    left:24px!important;
+    right:24px!important;
+    bottom:14px!important;
+    padding:10px 26px 11px!important;
+    border-radius:16px!important;
+  }
+
+  .hero .identity{
+    grid-template-columns:minmax(250px,1.0fr) minmax(620px,3.0fr)!important;
+    gap:22px!important;
+    align-items:start!important;
+  }
+
+  .hero .identity-primary{
+    align-self:start!important;
+    padding-top:0!important;
+  }
+
+  .hero .airline-brand{
+    min-height:20px!important;
+  }
+
+  .hero .flight-name{
+    font-size:28px!important;
+    line-height:1!important;
+    margin-top:2px!important;
+  }
+
+  .hero .aircraft-type{
+    font-size:9px!important;
+    line-height:1.15!important;
+    margin-top:3px!important;
+  }
+
+  .hero .telemetry{
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:18px!important;
+    align-items:start!important;
+    width:100%!important;
+    padding-top:0!important;
+  }
+
+  .hero .telemetry .metric{
+    min-width:0!important;
+  }
+
+  .hero .telemetry .metric label{
+    font-size:6.5px!important;
+    line-height:1!important;
+  }
+
+  .hero .telemetry .metric b{
+    font-size:17px!important;
+    line-height:1.05!important;
+    margin-top:3px!important;
+  }
+
+  .hero .telemetry .metric small{
+    font-size:7px!important;
+    line-height:1!important;
+    margin-top:2px!important;
+  }
+
+  /* The journey row is now a compact strip directly below the aircraft data. */
+  .hero .journey-info{
+    grid-column:1/-1!important;
+    display:grid!important;
+    grid-template-columns:82px minmax(0,1fr) 82px!important;
+    gap:0!important;
+    align-items:end!important;
+    width:100%!important;
+    margin-top:7px!important;
+    padding-top:0!important;
+    border-top:0!important;
+  }
+
+  .hero .journey-end{
+    min-width:0!important;
+    padding:0!important;
+    text-align:left!important;
+    align-self:end!important;
+  }
+
+  .hero .journey-end-right{
+    text-align:right!important;
+  }
+
+  .hero .journey-end span{
+    font-size:6.5px!important;
+    line-height:1!important;
+    letter-spacing:.16em!important;
+  }
+
+  .hero .journey-end b{
+    font-size:15px!important;
+    line-height:1!important;
+    margin-top:2px!important;
+    letter-spacing:.04em!important;
+  }
+
+  .hero .journey-end small{
+    display:block!important;
+    width:100%!important;
+    font-size:7px!important;
+    line-height:1.1!important;
+    margin-top:3px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .hero .journey-center{
+    min-width:0!important;
+    width:100%!important;
+    align-self:end!important;
+    padding:0 12px!important;
+  }
+
+  .hero .journey-percent{
+    font-size:6.5px!important;
+    line-height:1!important;
+    margin-bottom:4px!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-center .progress{
+    height:3px!important;
+    margin:0!important;
+  }
+
+  .hero .progress-plane:before{
+    width:17px!important;
+    height:17px!important;
+  }
+
+  /* Remove the extra editor spacing from the compact desktop bar. */
+  .hero .edit-panel{
+    margin-top:6px!important;
+  }
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .hero-bottom{
+    left:18px!important;
+    right:18px!important;
+    bottom:9px!important;
+    padding:8px 18px 9px!important;
+    border-radius:14px!important;
+  }
+
+  .hero .identity{gap:16px!important;}
+  .hero .flight-name{font-size:25px!important;}
+  .hero .telemetry{gap:12px!important;}
+  .hero .telemetry .metric b{font-size:14px!important;}
+  .hero .journey-info{grid-template-columns:74px minmax(0,1fr) 74px!important;margin-top:5px!important;}
+  .hero .journey-center{padding:0 9px!important;}
+}
+</style>
+
+
+<style>
+/* V60.25 — TELEMETRY / COMPLETION ALIGNMENT
+   - Completion sits immediately under Aircraft Telemetry
+   - FROM aligns under Registration (left telemetry column)
+   - TO aligns under Heading (right telemetry column)
+   - Completion track stretches between FROM and TO
+   - Removes the excess vertical space in the compact bar
+*/
+@media (min-width:701px) and (orientation:landscape){
+  .hero .identity{
+    align-items:start!important;
+  }
+
+  .hero .journey-info{
+    grid-column:2!important;
+    grid-row:auto!important;
+    display:grid!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:0!important;
+    align-items:end!important;
+    width:100%!important;
+    margin-top:3px!important;
+    padding-top:0!important;
+    border-top:0!important;
+  }
+
+  .hero .journey-end{
+    grid-column:1!important;
+    min-width:0!important;
+    padding:0!important;
+    text-align:left!important;
+    align-self:end!important;
+  }
+
+  .hero .journey-end-right{
+    grid-column:6!important;
+    text-align:left!important;
+  }
+
+  .hero .journey-center{
+    grid-column:2 / 6!important;
+    min-width:0!important;
+    width:100%!important;
+    padding:0 7px!important;
+    align-self:end!important;
+  }
+
+  .hero .journey-percent{
+    font-size:6.5px!important;
+    line-height:1!important;
+    margin-bottom:3px!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-center .progress{
+    height:3px!important;
+    margin:0!important;
+    width:100%!important;
+  }
+
+  .hero .journey-end span{
+    font-size:6.5px!important;
+    line-height:1!important;
+    letter-spacing:.16em!important;
+  }
+
+  .hero .journey-end b{
+    font-size:15px!important;
+    line-height:1!important;
+    margin-top:2px!important;
+  }
+
+  .hero .journey-end small{
+    font-size:7px!important;
+    line-height:1.1!important;
+    margin-top:3px!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .hero .journey-end{
+    text-align:center!important;
+  }
+
+  .hero .journey-end-right{
+    text-align:center!important;
+  }
+
+  /* Keep the compact bar tight: telemetry -> completion with no wasted row gap. */
+  .hero .telemetry{
+    row-gap:0!important;
+  }
+
+  .hero .edit-panel{
+    margin-top:5px!important;
+  }
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .journey-info{
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    margin-top:2px!important;
+  }
+
+  .hero .journey-center{
+    grid-column:2 / 6!important;
+    padding:0 5px!important;
+  }
+
+  .hero .journey-end b{font-size:14px!important;}
+  .hero .journey-end small{font-size:6.5px!important;}
+}
+</style>
+
+
+<style>
+/* V60.28 — TRUE TELEMETRY-ALIGNED ROUTE ROW
+   - The completion row now occupies the SAME horizontal column as Aircraft Telemetry.
+   - FROM is centred under Registration / telemetry column 1.
+   - TO is centred under Heading / telemetry column 6.
+   - Airport names are centred directly beneath their codes.
+   - Completion is pulled immediately beneath telemetry.
+*/
+@media (min-width:701px) and (orientation:landscape){
+  .hero .hero-bottom{
+    display:grid!important;
+    grid-template-columns:minmax(260px,1.35fr) minmax(145px,.65fr) minmax(500px,2.6fr)!important;
+    grid-auto-rows:auto!important;
+    align-content:start!important;
+    padding-top:10px!important;
+    padding-bottom:10px!important;
+  }
+
+  .hero .hero-bottom > .divider{
+    grid-column:1 / -1!important;
+    grid-row:auto!important;
+  }
+
+  .hero .identity{
+    grid-column:1 / -1!important;
+    grid-row:auto!important;
+    width:100%!important;
+    align-self:start!important;
+  }
+
+  .hero .journey-info{
+    grid-column:3!important;
+    grid-row:auto!important;
+    display:grid!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:0!important;
+    width:100%!important;
+    margin-top:2px!important;
+    padding-top:0!important;
+    border-top:0!important;
+    align-items:start!important;
+    align-self:start!important;
+  }
+
+  .hero .journey-end,
+  .hero .journey-end-right{
+    min-width:0!important;
+    width:100%!important;
+    padding:0!important;
+    text-align:center!important;
+    align-self:start!important;
+  }
+
+  .hero .journey-end{
+    grid-column:1!important;
+  }
+
+  .hero .journey-end-right{
+    grid-column:6!important;
+  }
+
+  .hero .journey-center{
+    grid-column:2 / 6!important;
+    min-width:0!important;
+    width:100%!important;
+    padding:0 7px!important;
+    align-self:start!important;
+  }
+
+  .hero .journey-info .journey-end span,
+  .hero .journey-info .journey-end b,
+  .hero .journey-info .journey-end small{
+    display:block!important;
+    width:100%!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-end span{
+    font-size:6.5px!important;
+    line-height:1!important;
+    letter-spacing:.16em!important;
+  }
+
+  .hero .journey-end b{
+    font-size:15px!important;
+    line-height:1!important;
+    margin-top:2px!important;
+  }
+
+  .hero .journey-end small{
+    font-size:7px!important;
+    line-height:1.1!important;
+    margin:3px auto 0!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .hero .journey-percent{
+    margin-bottom:2px!important;
+    text-align:center!important;
+    font-size:6.5px!important;
+    line-height:1!important;
+  }
+
+  .hero .journey-center .progress{
+    margin-top:0!important;
+    width:100%!important;
+    height:3px!important;
+  }
+
+  .hero .edit-panel{
+    grid-column:1 / -1!important;
+    grid-row:auto!important;
+    margin-top:5px!important;
+  }
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .hero-bottom{
+    padding-top:7px!important;
+    padding-bottom:8px!important;
+  }
+  .hero .journey-info{margin-top:0!important;}
+  .hero .journey-end b{font-size:14px!important;}
+  .hero .journey-end small{font-size:6.5px!important;}
+}
+</style>
+
+<style>
+/* V60.29 — FLIGHT BAR DEBUG / ALIGNMENT PASS
+   Temporary diagnostic borders are intentionally visible so the layout boxes
+   can be inspected before we remove them.
+*/
+@media (min-width:701px) and (orientation:landscape){
+  /* === DEBUG BOXES === */
+  .hero .hero-bottom{
+    outline:1px solid rgba(255,0,0,.75)!important;
+    outline-offset:-1px!important;
+  }
+  .hero .identity-primary{
+    outline:1px dashed rgba(0,102,255,.75)!important;
+    outline-offset:-1px!important;
+  }
+  .hero .telemetry{
+    outline:1px dashed rgba(0,150,80,.8)!important;
+    outline-offset:-1px!important;
+  }
+  .hero .journey-info{
+    outline:1px dashed rgba(255,120,0,.9)!important;
+    outline-offset:-1px!important;
+  }
+  .hero .journey-end{
+    outline:1px dotted rgba(150,0,255,.85)!important;
+    outline-offset:-1px!important;
+  }
+  .hero .journey-center{
+    outline:1px dotted rgba(0,170,190,.9)!important;
+    outline-offset:-1px!important;
+  }
+  .hero .journey-info .journey-end-right{
+    outline:1px dotted rgba(150,0,255,.85)!important;
+    outline-offset:-1px!important;
+  }
+
+  /* === ACTUAL ALIGNMENT === */
+  /* Keep the completion row in the same six-column coordinate system as the
+     telemetry row above it. */
+  .hero .journey-info{
+    grid-column:2!important;
+    grid-row:2!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    column-gap:0!important;
+    row-gap:0!important;
+    margin-top:-7px!important;
+    padding:0!important;
+    min-height:28px!important;
+    align-items:center!important;
+  }
+
+  /* FROM and TO occupy the same vertical centre as the progress track. */
+  .hero .journey-info .journey-end,
+  .hero .journey-info .journey-end-right{
+    align-self:center!important;
+    text-align:center!important;
+    height:28px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+  }
+
+  .hero .journey-end span{
+    margin:0!important;
+  }
+  .hero .journey-end b{
+    margin:2px 0 0!important;
+  }
+  .hero .journey-end small{
+    margin:2px 0 0!important;
+    text-align:center!important;
+  }
+
+  /* The completion strip is centred vertically with the airport code, not
+     sitting as a separate lower row. */
+  .hero .journey-center{
+    align-self:center!important;
+    height:28px!important;
+    padding:0 6px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+  }
+  .hero .journey-percent{
+    margin:0 0 3px!important;
+    line-height:1!important;
+  }
+  .hero .journey-center .progress{
+    margin:0!important;
+    height:3px!important;
+  }
+
+  /* Pull the whole route block directly against telemetry. */
+  .hero .telemetry{
+    margin-bottom:0!important;
+  }
+
+  /* Keep the two rows using exactly the same right-hand width. */
+  .hero .telemetry,
+  .hero .journey-info{
+    width:100%!important;
+    box-sizing:border-box!important;
+  }
+}
+</style>
+
+
+<style>
+/* V60.30 — TIGHTEN TELEMETRY → COMPLETION GAP */
+@media (min-width:701px) and (orientation:landscape){
+  /* Bring the completion container directly up beneath the telemetry row.
+     Keep the debug outlines visible so the physical boxes can still be compared. */
+  .hero .journey-info{
+    margin-top:-18px!important;
+    transform:translateY(0)!important;
+  }
+}
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .journey-info{margin-top:-18px!important;}
+}
+</style>
+
+<style>
+/* V60.32 — CLEAN COMPACT FLIGHT BAR
+   Remove temporary debug outlines and give the information panel a lighter,
+   more transparent glass treatment while preserving the V60.31 geometry.
+*/
+@media (min-width:701px) and (orientation:landscape){
+  .hero .hero-bottom{
+    outline:none!important;
+    border:1px solid rgba(255,255,255,.38)!important;
+    background:rgba(248,248,244,.72)!important;
+    -webkit-backdrop-filter:blur(10px)!important;
+    backdrop-filter:blur(10px)!important;
+    box-shadow:0 12px 34px rgba(23,30,30,.10)!important;
+  }
+  .hero .identity-primary,
+  .hero .telemetry,
+  .hero .journey-info,
+  .hero .journey-info .journey-end,
+  .hero .journey-info .journey-end-right,
+  .hero .journey-center{
+    outline:none!important;
+  }
+}
+</style>
+
+<style>
+/* V60.33 — REFINED GLASS FLIGHT BAR
+   Final visual treatment only. V60.31 geometry is preserved.
+*/
+@media (min-width:701px) and (orientation:landscape){
+  .hero .hero-bottom{
+    background:rgba(238,241,238,.70)!important;
+    border:1px solid rgba(255,255,255,.62)!important;
+    -webkit-backdrop-filter:blur(14px) saturate(125%)!important;
+    backdrop-filter:blur(14px) saturate(125%)!important;
+    box-shadow:
+      0 14px 34px rgba(23,30,30,.16),
+      inset 0 1px 0 rgba(255,255,255,.58),
+      inset 0 -1px 0 rgba(80,90,88,.08)!important;
+  }
+
+  .hero .hero-bottom:before{
+    background:
+      linear-gradient(115deg,rgba(255,255,255,.10),transparent 38%,rgba(91,218,203,.035) 72%,rgba(255,255,255,.08))!important;
+  }
+
+  .hero .watch-bottom{
+    background:rgba(238,241,238,.64)!important;
+    border:1px solid rgba(255,255,255,.58)!important;
+    -webkit-backdrop-filter:blur(12px) saturate(120%)!important;
+    backdrop-filter:blur(12px) saturate(120%)!important;
+    box-shadow:0 10px 28px rgba(23,30,30,.11),inset 0 1px 0 rgba(255,255,255,.52)!important;
+  }
+}
+</style>
+
+<style>
+/* V60.36 — refined internal flight containers */
+@media (min-width:701px) and (orientation:landscape){
+  .hero .identity{
+    border:1px solid rgba(120,135,135,.24)!important;
+    background:rgba(255,255,255,.045)!important;
+    border-radius:9px!important;
+  }
+  .hero .journey-info{
+    border:1px solid rgba(120,135,135,.24)!important;
+    background:rgba(255,255,255,.03)!important;
+    border-radius:9px!important;
+  }
 }
 </style>
 </head>
@@ -1286,8 +1898,10 @@ function routeStatusLabel(route){
 function routeAirport(code,name){
   const c=String(code||'').toUpperCase();
   const point=routePoint(c);
-  const known={LHR:'London Heathrow',JFK:'New York JFK',SIN:'Singapore Changi',BHX:'Birmingham',FAO:'Faro',DUS:'Düsseldorf',HAJ:'Hannover',LBA:'Leeds Bradford',LPA:'Gran Canaria',BRS:'Bristol',BZR:'Béziers',CDG:'Paris Charles de Gaulle',AMS:'Amsterdam Schiphol',FRA:'Frankfurt',MUC:'Munich',CLT:'Charlotte',RDU:'Raleigh-Durham',LGA:'New York LaGuardia',EWR:'Newark',MEX:'Mexico City',SAF:'Santa Fe',SFO:'San Francisco',LAX:'Los Angeles',ORD:'Chicago O’Hare',DFW:'Dallas/Fort Worth',DXB:'Dubai',DOH:'Doha',HND:'Tokyo Haneda',NRT:'Tokyo Narita',SYD:'Sydney'};
-  return {code:c,name:String(name||known[c]||c),lat:point?.[0]??null,lon:point?.[1]??null};
+  const known={LHR:'London Heathrow',JFK:'New York JFK',SIN:'Singapore Changi',BHX:'Birmingham',FAO:'Faro',DUS:'Düsseldorf',HAJ:'Hannover',LBA:'Leeds Bradford',LPA:'Gran Canaria Airport',BFS:'Belfast International Airport',BVA:'Paris Beauvais–Tillé Airport',BRS:'Bristol',BZR:'Béziers',CDG:'Paris Charles de Gaulle',AMS:'Amsterdam Schiphol',FRA:'Frankfurt',MUC:'Munich',CLT:'Charlotte',RDU:'Raleigh-Durham',LGA:'New York LaGuardia',EWR:'Newark',MEX:'Mexico City',SAF:'Santa Fe',SFO:'San Francisco',LAX:'Los Angeles',ORD:'Chicago O’Hare',DFW:'Dallas/Fort Worth',DXB:'Dubai',DOH:'Doha',HND:'Tokyo Haneda',NRT:'Tokyo Narita',SYD:'Sydney'};
+  const supplied=String(name||'').trim();
+  const safeName=(supplied && supplied.toUpperCase()!==c)?supplied:(known[c]||c);
+  return {code:c,name:safeName,lat:point?.[0]??null,lon:point?.[1]??null};
 }
 function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
  if(!raw||!raw.fromCode||!raw.toCode)return {status:'NOT_FOUND',flight,date,source,resolvedAt:new Date().toISOString()};
@@ -2185,5 +2799,376 @@ updateSkySettingsUI();enforceFutureDateInputs();loadRouteCache();loadIdentityCac
 
 @media (max-width:700px){
   /* Keep the existing mobile layout unchanged. */
+}
+</style>
+
+<style>
+/* V60.26 — TRUE TWO-COLUMN FLIGHT BAR
+   The previous V60.25 styling attempted to align the journey using
+   grid-template-columns on .identity, but .identity is a flex container.
+   This version makes the actual hero-bottom a two-column grid:
+     LEFT  = Flight Details
+     RIGHT = Aircraft Telemetry + Completion
+   FROM aligns with Registration and TO aligns with Heading.
+*/
+@media (min-width:701px) and (orientation:landscape){
+  .hero .hero-bottom{
+    display:grid!important;
+    grid-template-columns:minmax(270px,1fr) minmax(650px,3.25fr)!important;
+    column-gap:22px!important;
+    row-gap:0!important;
+    align-items:start!important;
+  }
+
+  /* Make the identity wrapper transparent to the grid so its three
+     meaningful children become direct grid items of the flight bar. */
+  .hero .identity{
+    display:contents!important;
+  }
+
+  .hero .identity-primary{
+    grid-column:1!important;
+    grid-row:1!important;
+    align-self:start!important;
+    min-width:0!important;
+    padding:0!important;
+  }
+
+  .hero .telemetry{
+    grid-column:2!important;
+    grid-row:1!important;
+    display:grid!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:18px!important;
+    width:100%!important;
+    min-width:0!important;
+    align-items:start!important;
+    padding:0!important;
+  }
+
+  /* Completion now sits directly below Aircraft Telemetry. */
+  .hero .journey-info{
+    grid-column:2!important;
+    grid-row:2!important;
+    display:grid!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:0!important;
+    width:100%!important;
+    min-width:0!important;
+    margin-top:5px!important;
+    padding:0!important;
+    border:0!important;
+    align-items:end!important;
+  }
+
+  /* FROM is directly beneath REGISTRATION (column 1). */
+  .hero .journey-info .journey-end{
+    grid-column:1!important;
+    grid-row:1!important;
+    min-width:0!important;
+    width:100%!important;
+    padding:0!important;
+    margin:0!important;
+    text-align:left!important;
+    align-self:end!important;
+  }
+
+  /* TO is directly beneath HEADING (column 6), left aligned exactly as
+     requested rather than pushed to the far edge. */
+  .hero .journey-info .journey-end-right{
+    grid-column:6!important;
+    grid-row:1!important;
+    min-width:0!important;
+    width:100%!important;
+    padding:0!important;
+    margin:0!important;
+    text-align:left!important;
+    align-self:end!important;
+  }
+
+  /* Completion stretches between FROM and TO. */
+  .hero .journey-center{
+    grid-column:2 / 6!important;
+    grid-row:1!important;
+    min-width:0!important;
+    width:100%!important;
+    padding:0 7px!important;
+    margin:0!important;
+    align-self:end!important;
+  }
+
+  .hero .journey-percent{
+    font-size:6.5px!important;
+    line-height:1!important;
+    margin:0 0 3px!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-center .progress{
+    width:100%!important;
+    height:3px!important;
+    margin:0!important;
+  }
+
+  .hero .journey-end span{
+    font-size:6.5px!important;
+    line-height:1!important;
+    letter-spacing:.16em!important;
+    display:block!important;
+  }
+
+  .hero .journey-end b{
+    font-size:15px!important;
+    line-height:1!important;
+    margin-top:2px!important;
+    display:block!important;
+  }
+
+  .hero .journey-end small{
+    display:block!important;
+    width:100%!important;
+    font-size:7px!important;
+    line-height:1.1!important;
+    margin-top:3px!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* Don't allow the edit controls to introduce another large row. */
+  .hero .edit-panel{
+    grid-column:1 / -1!important;
+    grid-row:3!important;
+    margin-top:6px!important;
+  }
+
+  /* The divider is no longer part of the compact bar. */
+  .hero .hero-bottom .divider{display:none!important;}
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .hero-bottom{
+    grid-template-columns:minmax(230px,1fr) minmax(620px,3.35fr)!important;
+    column-gap:16px!important;
+    padding:8px 18px 9px!important;
+  }
+  .hero .telemetry{gap:12px!important;}
+  .hero .telemetry .metric b{font-size:14px!important;}
+  .hero .journey-info{margin-top:3px!important;}
+  .hero .journey-center{padding:0 5px!important;}
+  .hero .journey-end b{font-size:14px!important;}
+  .hero .journey-end small{font-size:6.5px!important;}
+}
+</style>
+
+<style>
+/* V60.31 — REBUILT COMPACT FLIGHT BAR
+   Replaces the layered/floating journey layout with one deterministic grid.
+   Desktop landscape only; mobile behaviour remains unchanged.
+*/
+@media (min-width:701px) and (orientation:landscape){
+  .hero .hero-bottom{
+    display:grid!important;
+    grid-template-columns:minmax(250px,1.02fr) minmax(650px,3fr)!important;
+    grid-template-rows:42px 43px!important;
+    column-gap:24px!important;
+    row-gap:2px!important;
+    align-items:center!important;
+    height:105px!important;
+    min-height:105px!important;
+    max-height:105px!important;
+    padding:7px 26px 8px!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+  }
+
+  .hero .hero-bottom .divider{display:none!important;}
+
+  .hero .identity{display:contents!important;}
+
+  /* Left-hand flight identity spans both compact rows. */
+  .hero .identity-primary{
+    grid-column:1!important;
+    grid-row:1 / 3!important;
+    align-self:center!important;
+    min-width:0!important;
+    padding:0!important;
+    margin:0!important;
+  }
+
+  .hero .airline-brand{min-height:20px!important;gap:8px!important;}
+  .hero .flight-name{font-size:29px!important;line-height:.98!important;margin:3px 0 0!important;}
+  .hero .aircraft-type{font-size:9px!important;line-height:1.1!important;margin:3px 0 0!important;}
+
+  /* Telemetry is a single clean row. */
+  .hero .telemetry{
+    grid-column:2!important;
+    grid-row:1!important;
+    display:grid!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:16px!important;
+    width:100%!important;
+    min-width:0!important;
+    height:42px!important;
+    align-items:start!important;
+    padding:0!important;
+    margin:0!important;
+  }
+  .hero .telemetry .metric{min-width:0!important;margin:0!important;padding:0!important;}
+  .hero .telemetry .metric label{font-size:6.5px!important;line-height:1!important;}
+  .hero .telemetry .metric b{font-size:16px!important;line-height:1!important;margin:3px 0 0!important;}
+  .hero .telemetry .metric small{font-size:6.5px!important;line-height:1!important;margin:2px 0 0!important;}
+
+  /* Route is one compact row immediately below telemetry. */
+  .hero .journey-info{
+    grid-column:2!important;
+    grid-row:2!important;
+    display:grid!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    grid-template-rows:43px!important;
+    gap:0!important;
+    width:100%!important;
+    height:43px!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    align-items:center!important;
+  }
+
+  /* FROM and TO are centred in their telemetry-aligned columns. */
+  .hero .journey-info .journey-end,
+  .hero .journey-info .journey-end-right{
+    grid-row:1!important;
+    width:100%!important;
+    min-width:0!important;
+    height:43px!important;
+    margin:0!important;
+    padding:0!important;
+    align-self:center!important;
+    text-align:center!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+  }
+  .hero .journey-info .journey-end{grid-column:1!important;}
+  .hero .journey-info .journey-end-right{grid-column:6!important;}
+
+  .hero .journey-end span{
+    display:block!important;
+    font-size:6px!important;
+    line-height:1!important;
+    letter-spacing:.16em!important;
+    margin:0 0 2px!important;
+  }
+  .hero .journey-end b{
+    display:block!important;
+    font-size:15px!important;
+    line-height:1!important;
+    letter-spacing:.04em!important;
+    margin:0!important;
+  }
+  .hero .journey-end small{
+    display:block!important;
+    width:100%!important;
+    font-size:6.5px!important;
+    line-height:1!important;
+    margin:3px 0 0!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* Completion occupies the middle four columns and is vertically centred
+     on the same row as the airport codes. */
+  .hero .journey-center{
+    grid-column:2 / 6!important;
+    grid-row:1!important;
+    width:100%!important;
+    min-width:0!important;
+    height:43px!important;
+    margin:0!important;
+    padding:0 8px!important;
+    align-self:center!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:stretch!important;
+  }
+  .hero .journey-percent{
+    font-size:6px!important;
+    line-height:1!important;
+    height:7px!important;
+    margin:0 0 3px!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+  }
+  .hero .journey-center .progress{
+    width:100%!important;
+    height:3px!important;
+    min-height:3px!important;
+    margin:0!important;
+    flex:0 0 3px!important;
+  }
+
+  /* The aircraft marker remains centred on the progress line. */
+  .hero .journey-progress .progress-plane{
+    width:18px!important;
+    height:18px!important;
+    margin-top:0!important;
+  }
+
+  .hero .edit-panel{grid-column:1 / -1!important;grid-row:3!important;margin-top:4px!important;}
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .hero-bottom{
+    grid-template-columns:minmax(220px,1fr) minmax(620px,3.2fr)!important;
+    grid-template-rows:39px 40px!important;
+    height:95px!important;
+    min-height:95px!important;
+    max-height:95px!important;
+    padding:6px 20px 7px!important;
+    column-gap:16px!important;
+  }
+  .hero .telemetry{height:39px!important;gap:11px!important;}
+  .hero .telemetry .metric b{font-size:14px!important;}
+  .hero .journey-info{height:40px!important;grid-template-rows:40px!important;}
+  .hero .journey-info .journey-end,.hero .journey-center{height:40px!important;}
+  .hero .journey-end b{font-size:14px!important;}
+  .hero .journey-end small{font-size:6px!important;}
+}
+</style>
+
+<style>
+/* V60.35 — SUBTLE INTERNAL CONTAINER GUIDES
+   Keep the outer flight card clean. Add a very light border around the
+   two real content rows so their alignment is visible without looking like debug boxes.
+*/
+@media (min-width:701px) and (orientation:landscape){
+  .hero .telemetry{
+    border:1px solid rgba(70,95,100,.20)!important;
+    border-radius:7px!important;
+    padding:5px 9px 4px!important;
+    box-sizing:border-box!important;
+    background:rgba(255,255,255,.045)!important;
+  }
+
+  .hero .journey-info{
+    border:1px solid rgba(70,95,100,.20)!important;
+    border-radius:7px!important;
+    padding:0 7px!important;
+    box-sizing:border-box!important;
+    background:rgba(255,255,255,.035)!important;
+  }
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .telemetry{padding:4px 7px 3px!important;}
+  .hero .journey-info{padding:0 5px!important;}
 }
 </style>
