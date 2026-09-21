@@ -1806,7 +1806,7 @@ function normalFlightCode(v){return String(v||'').toUpperCase().replace(/[^A-Z0-
 // A callsign can temporarily differ from the passenger flight number, and can
 // also change when the same aircraft operates another sector.
 const IDENTITY_STORAGE_KEY='skyAroundMeIdentityCacheV5';
-const IDENTITY_CACHE_VERSION='identity-persistent-v5';
+const IDENTITY_CACHE_VERSION='identity-persistent-v6';
 const IDENTITY_SUCCESS_TTL=12*60*60*1000;
 const IDENTITY_FAILURE_TTL=5*60*1000;
 function identityAircraftKey(x){
@@ -1955,11 +1955,14 @@ async function fetchFreeFlightIdentity(callsign,registration,liveRoute,date){
  const to=String(liveRoute?.toCode||'').trim().toUpperCase();
  const rawDate=String(date||'');
  const requestedDate=/^\d{4}-\d{2}-\d{2}$/.test(rawDate)?rawDate:utcDateKey();
- // Resolve the passenger flight number from the aircraft + exact live route + date.
- // The ADS-B callsign alone is not a reliable passenger flight number.
- const params=`lookup=identity&callsign=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${encodeURIComponent(requestedDate)}&debug=1`;
+ // Resolve the passenger flight number from the physical aircraft + date.
+ // IMPORTANT: do NOT send the live ADS-B route here. It may be stale/wrong, and
+ // doing so would make the bad route the validation constraint. The backend now
+ // resolves the commercial flight from callsign + registration and returns the
+ // exact-date schedule route as authoritative.
+ const params=`lookup=identity&callsign=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&date=${encodeURIComponent(requestedDate)}&debug=1`;
  const url=`${SKY_AROUND_ME_NETLIFY}?${params}`;
- skyDebug('OK','IDENTITY REQUEST',{callsign:cs,registration:reg||'',from,to,date:requestedDate,url});
+ skyDebug('OK','IDENTITY REQUEST — ROUTE INDEPENDENT',{callsign:cs,registration:reg||'',provisionalRoute:(from&&to)?`${from}-${to}`:'NONE',date:requestedDate,url});
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
  try{
   const r=await fetch(url,{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
@@ -1976,16 +1979,18 @@ async function fetchFreeFlightIdentity(callsign,registration,liveRoute,date){
   const airlineName=j?.airlineName||airline.name||'';
   const route=j?.route||null;
   const origin=fr?.origin||{},destination=fr?.destination||{};
-  const fromCode=String(route?.fromCode||origin.iata_code||from||'').toUpperCase();
-  const toCode=String(route?.toCode||destination.iata_code||to||'').toUpperCase();
-  const routeOut=(fromCode&&toCode)?{
+  const fromCode=String(route?.fromCode||origin.iata_code||'').toUpperCase();
+  const toCode=String(route?.toCode||destination.iata_code||'').toUpperCase();
+  // Only build a displayed journey from the backend's authoritative route.
+  // Never fall back to the provisional ADS-B route here.
+  const routeOut=(flightNumber&&fromCode&&toCode)?{
    status:'FOUND',fromCode,toCode,
-   from:route?.from||origin.name||origin.municipality||liveRoute?.from||fromCode,
-   to:route?.to||destination.name||destination.municipality||liveRoute?.to||toCode,
-   fromLat:route?.fromLat??origin.latitude??origin.lat??liveRoute?.fromLat,
-   fromLon:route?.fromLon??origin.longitude??origin.lon??origin.lng??liveRoute?.fromLon,
-   toLat:route?.toLat??destination.latitude??destination.lat??liveRoute?.toLat,
-   toLon:route?.toLon??destination.longitude??destination.lon??destination.lng??liveRoute?.toLon,
+   from:route?.from||origin.name||origin.municipality||fromCode,
+   to:route?.to||destination.name||destination.municipality||toCode,
+   fromLat:route?.fromLat??origin.latitude??origin.lat,
+   fromLon:route?.fromLon??origin.longitude??origin.lon??origin.lng,
+   toLat:route?.toLat??destination.latitude??destination.lat,
+   toLon:route?.toLon??destination.longitude??destination.lon??destination.lng,
    flightNumber,airlineCode,airlineName,source:'IdentityLookup'
   }:null;
   skyDebug(flightNumber?'OK':'WARN','FRONTEND TRUST DECISION',{provider,trustedProvider,acceptedFlightNumber:flightNumber||'',routeFrom:fromCode,routeTo:toCode});
@@ -2069,14 +2074,15 @@ async function lookupFlightIdentity(x,routeOverride=null){
 }
 function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero)hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
  hydrateCachedIdentity(x);
- const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=normalFlightCode(x.flightNumber||'');
- // Only start identity resolution with the current route when one is available.
- // This prevents the backend from being asked to guess a passenger flight from the ADS-B callsign alone.
- // Route first, then passenger-flight identity. V55 identity resolution requires
- // an exact origin/destination pair; do not spend a backend request on a
- // callsign-only identity lookup before the route has been resolved.
- if(x?.callsign&&(!journey?.fromCode||!journey?.toCode)&&!x?.liveRoute){ enrichLiveRoute(x); }
- if(x?.callsign&&journey?.fromCode&&journey?.toCode&&(!x?.identityStatus||x.identityStatus!=='FOUND')) lookupFlightIdentity(x,journey);
+ const liveJourney=liveJourneyFor(x);
+ // For Featured aircraft, never use the raw ADS-B/ADSBdb route as the displayed
+ // journey until commercial identity is verified. A stale route such as STN-NAP
+ // must not be allowed onto the card while the aircraft is actually ALC-BRS.
+ const identityReady=x?.identityStatus==='FOUND'&&x?.liveRoute?.status==='FOUND';
+ const watchedJourney=liveJourney&&liveJourney!==x?.liveRoute?liveJourney:null;
+ const journey=identityReady?x.liveRoute:watchedJourney;
+ const airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=normalFlightCode(x.flightNumber||'');
+ if(x?.callsign&&(!x?.identityStatus||x.identityStatus!=='FOUND')) lookupFlightIdentity(x);
  setHeroAircraft(x,journey);
  setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',(flightNumber||x.callsign||'LIVE AIRCRAFT').toUpperCase());setTextSafe('homeStatus','LIVE');
  $('airlineBadge').textContent=(x.airlineCode||flightNumber.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('aircraftReg').textContent=String(x.r||x.registration||'—').toUpperCase()||'—';$('aircraftRegNote').textContent=x.r?'AIRCRAFT REG':'REGISTRATION';$('aircraftCallsign').textContent=String(x.callsign||'—').toUpperCase()||'—';
@@ -2091,10 +2097,9 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  const journeyDistance=journey&&journey.toLat!=null&&journey.toLon!=null&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),Number(journey.toLat),Number(journey.toLon)):null;
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
  const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=journey.from||journey.fromName||'—';$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=journey.to||journey.toName||'—';$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
- // Identity lookup is the authoritative flight-number resolver for the
- // Featured/nearest aircraft. It runs even if another route lookup populated
- // a provisional callsign-derived number first.
- if(x?.callsign&&!x?.identityStatus) lookupFlightIdentity(x);
+ // Identity lookup above is deliberately route-independent. Once FOUND,
+ // applyIdentity() replaces any provisional live route with the exact-date
+ // schedule route returned by the backend.
 }
 const ROUTE_CACHE_TTL=30*60*1000;
 const ROUTE_FAILURE_TTL=5*60*1000;
