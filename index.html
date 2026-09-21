@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- Sky Around Me V60.22: V60.20 baseline + future-only watched dates + optional 100 KM outer airspace awareness. -->
+<!-- Sky Around Me V60.23: My Flights layout refinement — footer credits, two-column watchlist, and Maximum Distance directly under SKY SETTINGS. -->
 <title>Sky Around Me</title>
 <!-- Sky Around Me v60.19: V60.18 regression fix — restore route enrichment, map cycle, and centered telemetry. V60.18 map/API logic otherwise retained.
 <!-- Sky Around Me v52: destination route/progress restore + exact flight/date watched-route correction; v46 AirLabs resolver retained
@@ -62,7 +62,7 @@
 .map-page{padding-top:22px}.map-wrap{position:relative;height:calc(100vh - 145px);min-height:600px;border:1px solid #d9dcda;border-radius:25px;overflow:hidden;background:#eef0ee}.map{position:absolute;inset:0}.leaflet-container{background:#eef0ee;font:inherit}.map .leaflet-tile-pane{filter:grayscale(1) saturate(.18) brightness(1.12) contrast(.82);opacity:.72}.map .leaflet-control-attribution{font-size:7px;background:rgba(248,248,244,.58)!important;color:#6e7777;padding:1px 4px}.leaflet-control-zoom{display:none!important}.hud{position:absolute;z-index:500;pointer-events:none}.top-hud{top:16px;left:16px;right:16px;display:flex;justify-content:space-between;gap:12px}.pill{background:rgba(248,248,244,.90);backdrop-filter:blur(12px);border:1px solid #e1e2de;border-radius:12px;padding:9px 11px;font-size:11px;color:#111;box-shadow:0 7px 18px rgba(23,30,30,.08)}.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a47d;margin-right:7px}.bottom-hud{left:16px;bottom:16px}.range{font-weight:800}.aircraft-icon,.featured-icon{background:transparent!important;border:0!important}.live-aircraft-marker{position:relative;width:34px;height:34px;display:grid;place-items:center;transform-origin:center}.live-aircraft-ring{position:absolute;inset:0;border-radius:50%;background:#fff;border:1px solid #d5ddda;box-shadow:0 3px 10px rgba(23,30,30,.14)}.live-aircraft-shape{position:relative;z-index:2;width:20px;height:20px;display:grid;place-items:center;color:#111}.live-aircraft-shape svg{width:20px;height:20px;display:block}.live-aircraft-marker.tracked .live-aircraft-shape{color:#fff}.live-aircraft-marker.tracked .live-aircraft-ring{background:#111;border-color:#111;box-shadow:0 4px 12px rgba(23,30,30,.22)}.outer-aircraft-icon{background:transparent!important;border:0!important}.outer-aircraft-marker{position:relative;width:34px;height:34px;display:grid;place-items:center;transform-origin:center;opacity:.56;filter:grayscale(1)}.outer-aircraft-marker .live-aircraft-ring{background:rgba(230,236,233,.72);border-color:#9da8a4;box-shadow:0 2px 7px rgba(23,30,30,.08)}.outer-aircraft-marker .live-aircraft-shape{color:#4f5c5b}.map-card{position:absolute;z-index:600;right:16px;top:16px;width:320px;background:rgba(248,248,244,.96);color:#111;border:1px solid #e1e2de;border-radius:18px;padding:17px;box-shadow:0 12px 32px rgba(23,30,30,.10);backdrop-filter:blur(16px)}.map-card .status{color:#14836d;font-size:9px;letter-spacing:.15em;font-weight:900}.map-card .callsign{font-size:29px;font-weight:900;margin-top:6px;letter-spacing:-.03em}.map-card .desc{font-size:11px;color:#697475;margin-top:5px}.map-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:14px}.map-stat{padding:10px;background:#eef0ed;border-radius:10px}.map-stat span{display:block;color:#778080;font-size:8px;letter-spacing:.1em;font-weight:800}.map-stat b{display:block;margin-top:4px;font-size:16px}.live-map-route{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;padding-top:13px;border-top:1px solid #dfe1dd}.live-map-route-block{min-width:0}.live-map-route-block:last-child{text-align:right}.live-map-route label{display:block;font-size:7px;color:#778080;letter-spacing:.16em;font-weight:900}.live-map-route strong{display:block;font-size:17px;margin-top:4px;letter-spacing:.03em}.live-map-route small{display:block;font-size:8px;color:#8a9191;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.path-info{margin-top:12px;font-size:9px;color:#697475;line-height:1.45}
 /* PAGE 3 */
 .app-footer{margin-top:30px;padding:22px 8px 6px;border-top:1px solid var(--line);text-align:center;color:var(--muted)}.app-footer-brand{font-size:8px;font-weight:900;letter-spacing:.18em;color:#687171}.app-footer-sub{font-size:7px;letter-spacing:.12em;margin-top:4px;color:#929898}.app-footer-copy{font-size:8px;margin-top:12px;line-height:1.6}.app-footer a{color:inherit;text-decoration:none;border-bottom:1px solid #cfd3d0}.app-footer a:hover{color:var(--ink)}@media(max-width:700px){.app-footer{margin-top:22px;padding-top:18px}.app-footer-copy{font-size:7px}}
-.flights-page{padding-top:28px}.page-intro{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px}.page-intro p{color:var(--muted);font-size:12px;line-height:1.5;max-width:560px;margin:8px 0 0}.flight-layout{display:grid;grid-template-columns:1fr 1.35fr;gap:18px}.add-card{padding:26px}.add-card h2,.watch-card h2{margin:0;font-size:24px;letter-spacing:-.03em}.add-card .sub{color:var(--muted);font-size:11px;line-height:1.5;margin:8px 0 22px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form label{font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.13em;display:block;margin:0 0 6px}.form input{width:100%;min-height:44px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:0 12px;font-size:13px;color:#111}.form .wide{grid-column:1/-1}.form .btn{grid-column:1/-1;margin-top:4px}.hint{font-size:9px;color:var(--muted);margin-top:12px;line-height:1.45}.watch-card{padding:26px}.watch-list{margin-top:18px;display:grid;gap:10px}.flight-row{display:grid;grid-template-columns:1fr auto;gap:15px;align-items:center;padding:16px;background:#fff;border:1px solid var(--line);border-radius:16px}.flight-countdown{margin-top:8px;font-size:11px;font-weight:800;letter-spacing:.04em;color:#1f5d67}.flight-time{color:var(--muted);font-size:9px;margin-left:8px}.flight-main{display:flex;align-items:center;gap:15px}.route-badge{width:44px;height:44px;border-radius:13px;background:#eef1ef;display:grid;place-items:center;font-size:18px}.flight-row strong{font-size:14px}.flight-row small{display:block;color:var(--muted);font-size:10px;margin-top:4px}.state{font-size:8px;letter-spacing:.12em;font-weight:900;padding:7px 9px;border-radius:999px;background:#eef5f2;color:var(--live);white-space:nowrap}.state.wait{background:#f2f2ef;color:#777}.state.completed{background:#f0f0ed;color:#858987}.flight-row.completed{opacity:.72;background:#f7f7f4}.flight-row.completed .route-badge{background:#eceeeb}.flight-row.completed strong{color:#666}.flight-row.completed small{color:#8b8f8d}.remove{border:0;background:transparent;color:#9a9e9e;font-size:10px;margin-left:8px}.empty-list{padding:35px;text-align:center;color:var(--muted);font-size:11px;border:1px dashed var(--line);border-radius:16px}.selected-note{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--accent2);font-size:10px;line-height:1.45;color:#28515e}.sky-settings{margin-top:18px;padding:18px 20px;border-top:1px solid var(--line);background:#f3f4f0;border-radius:16px}.sky-settings-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}.sky-settings-title{font-size:12px;font-weight:900;letter-spacing:.08em}.sky-settings-value{font-size:12px;font-weight:900}.sky-settings-sub{font-size:9px;color:var(--muted);margin-top:4px}.sky-setting-row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;margin-top:14px}.sky-range{width:100%;accent-color:var(--accent)}.sky-number{width:76px;height:38px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:0 10px;font-size:13px;font-weight:800;text-align:center}.aircraft-filter-setting{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.aircraft-filter-setting>label,.range-setting>label{font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.13em;display:block;margin-bottom:7px}.filter-note{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.35}.extended-setting{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.extended-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.extended-copy{min-width:0}.extended-copy strong{display:block;font-size:10px;font-weight:900;letter-spacing:.08em}.extended-copy small{display:block;font-size:9px;color:var(--muted);line-height:1.35;margin-top:4px}.toggle{position:relative;width:48px;height:28px;flex:0 0 auto}.toggle input{position:absolute;opacity:0;width:1px;height:1px}.toggle-track{position:absolute;inset:0;border-radius:999px;background:#d5d9d6;border:1px solid #c8ceca;transition:.18s}.toggle-track::after{content:'';position:absolute;width:22px;height:22px;left:2px;top:2px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(23,30,30,.18);transition:.18s}.toggle input:checked + .toggle-track{background:#111;border-color:#111}.toggle input:checked + .toggle-track::after{transform:translateX(20px)}.range-setting{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.type-switch{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-top:12px;background:#e4e6e1;padding:4px;border-radius:11px}.type-switch button{border:0;background:transparent;color:#6d7372;min-height:38px;padding:8px 6px;border-radius:8px;font-size:8px;font-weight:900;letter-spacing:.06em;line-height:1.15}.type-switch button.active{background:#fff;color:#111;box-shadow:0 2px 7px rgba(0,0,0,.07)}.type-switch button:nth-child(1){grid-column:span 2}.type-switch button:nth-child(2){grid-column:span 2}.type-switch button:nth-child(3){grid-column:span 2}.type-switch button:nth-child(4){grid-column:span 3}.type-switch button:nth-child(5){grid-column:span 3}.location-row select{min-width:0}.location-setting{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.location-setting>label{font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.13em;display:block;margin-bottom:6px}.location-row{display:grid;grid-template-columns:1fr auto;gap:8px}.location-row select{min-height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:0 11px;font-size:11px;font-weight:800;color:#111}.location-btn{padding:9px 12px;white-space:nowrap}.custom-location{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px;align-items:center}.custom-location input{min-height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:0 11px;font-size:12px;color:#111}.custom-location span{grid-column:1/-1;font-size:9px;color:var(--muted)}.current-location{font-size:9px;color:var(--muted);margin-top:6px}
+.flights-page{padding-top:28px}.page-intro{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px}.page-intro p{color:var(--muted);font-size:12px;line-height:1.5;max-width:560px;margin:8px 0 0}.flight-layout{display:grid;grid-template-columns:1fr 1.35fr;gap:18px}.add-card{padding:26px}.add-card h2,.watch-card h2{margin:0;font-size:24px;letter-spacing:-.03em}.add-card .sub{color:var(--muted);font-size:11px;line-height:1.5;margin:8px 0 22px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form label{font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.13em;display:block;margin:0 0 6px}.form input{width:100%;min-height:44px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:0 12px;font-size:13px;color:#111}.form .wide{grid-column:1/-1}.form .btn{grid-column:1/-1;margin-top:4px}.hint{font-size:9px;color:var(--muted);margin-top:12px;line-height:1.45}.watch-card{padding:26px}.watch-list{margin-top:18px;display:grid;gap:10px}.flight-row{display:grid;grid-template-columns:1fr auto;gap:15px;align-items:center;padding:16px;background:#fff;border:1px solid var(--line);border-radius:16px}.flight-countdown{margin-top:8px;font-size:11px;font-weight:800;letter-spacing:.04em;color:#1f5d67}.flight-time{color:var(--muted);font-size:9px;margin-left:8px}.flight-main{display:flex;align-items:center;gap:15px}.route-badge{width:44px;height:44px;border-radius:13px;background:#eef1ef;display:grid;place-items:center;font-size:18px}.flight-row strong{font-size:14px}.flight-row small{display:block;color:var(--muted);font-size:10px;margin-top:4px}.state{font-size:8px;letter-spacing:.12em;font-weight:900;padding:7px 9px;border-radius:999px;background:#eef5f2;color:var(--live);white-space:nowrap}.state.wait{background:#f2f2ef;color:#777}.state.completed{background:#f0f0ed;color:#858987}.flight-row.completed{opacity:.72;background:#f7f7f4}.flight-row.completed .route-badge{background:#eceeeb}.flight-row.completed strong{color:#666}.flight-row.completed small{color:#8b8f8d}.remove{border:0;background:transparent;color:#9a9e9e;font-size:10px;margin-left:8px}.empty-list{padding:35px;text-align:center;color:var(--muted);font-size:11px;border:1px dashed var(--line);border-radius:16px}.selected-note{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--accent2);font-size:10px;line-height:1.45;color:#28515e}.sky-settings{margin-top:18px;padding:18px 20px;border-top:1px solid var(--line);background:#f3f4f0;border-radius:16px}.sky-settings-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}.sky-settings-title{font-size:12px;font-weight:900;letter-spacing:.08em}.sky-settings-value{font-size:12px;font-weight:900}.sky-settings-sub{font-size:9px;color:var(--muted);margin-top:4px}.sky-setting-row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;margin-top:14px}.sky-range{width:100%;accent-color:var(--accent)}.sky-number{width:76px;height:38px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:0 10px;font-size:13px;font-weight:800;text-align:center}.aircraft-filter-setting{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.aircraft-filter-setting>label,.range-setting>label{font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.13em;display:block;margin-bottom:7px}.filter-note{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.35}.extended-setting{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.extended-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.extended-copy{min-width:0}.extended-copy strong{display:block;font-size:10px;font-weight:900;letter-spacing:.08em}.extended-copy small{display:block;font-size:9px;color:var(--muted);line-height:1.35;margin-top:4px}.toggle{position:relative;width:48px;height:28px;flex:0 0 auto}.toggle input{position:absolute;opacity:0;width:1px;height:1px}.toggle-track{position:absolute;inset:0;border-radius:999px;background:#d5d9d6;border:1px solid #c8ceca;transition:.18s}.toggle-track::after{content:'';position:absolute;width:22px;height:22px;left:2px;top:2px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(23,30,30,.18);transition:.18s}.toggle input:checked + .toggle-track{background:#111;border-color:#111}.toggle input:checked + .toggle-track::after{transform:translateX(20px)}.range-setting{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.range-setting-primary{margin-top:14px}.range-setting-primary>.sky-setting-row{margin-top:10px}.type-switch{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-top:12px;background:#e4e6e1;padding:4px;border-radius:11px}.type-switch button{border:0;background:transparent;color:#6d7372;min-height:38px;padding:8px 6px;border-radius:8px;font-size:8px;font-weight:900;letter-spacing:.06em;line-height:1.15}.type-switch button.active{background:#fff;color:#111;box-shadow:0 2px 7px rgba(0,0,0,.07)}.type-switch button:nth-child(1){grid-column:span 2}.type-switch button:nth-child(2){grid-column:span 2}.type-switch button:nth-child(3){grid-column:span 2}.type-switch button:nth-child(4){grid-column:span 3}.type-switch button:nth-child(5){grid-column:span 3}.location-row select{min-width:0}.location-setting{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.location-setting>label{font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.13em;display:block;margin-bottom:6px}.location-row{display:grid;grid-template-columns:1fr auto;gap:8px}.location-row select{min-height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:0 11px;font-size:11px;font-weight:800;color:#111}.location-btn{padding:9px 12px;white-space:nowrap}.custom-location{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px;align-items:center}.custom-location input{min-height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:0 11px;font-size:12px;color:#111}.custom-location span{grid-column:1/-1;font-size:9px;color:var(--muted)}.current-location{font-size:9px;color:var(--muted);margin-top:6px}
 /* edit overlay */
 .edit-panel{display:none;margin-top:12px;padding:18px;border:1px solid var(--line);background:#fff;border-radius:15px}.edit-panel.show{display:block}
 @media(max-width:1050px){.telemetry{min-width:0}.identity{align-items:flex-start;flex-direction:column}.flight-layout{grid-template-columns:1fr}.map-card{width:300px}}
@@ -101,7 +101,7 @@
   .watch-live-grid b{font-size:13px}
   #editFlight{display:none}
 
-  /* Page 3 is intentionally document-scrolling: its settings extend below the fold. */
+  /* Page 3 layout: Watch a Flight + Saved Flights side-by-side; settings remain contained on the left. */
   .flights-page{padding-bottom:40px}
   .flight-layout{align-items:start}
   .add-card,.watch-card{min-width:0}
@@ -411,7 +411,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .watch-state-wrap{text-align:right;min-width:72px}.watch-state-wrap small{display:block;font-size:7px;color:var(--muted);letter-spacing:.12em;font-weight:800;margin-top:5px;min-height:8px}.watch-bottom-head{align-items:flex-start;}
 
 
-/* V60.26 — refined liquid-glass quiet state + centered aircraft information */
+/* V60 — refined liquid-glass quiet state + centered aircraft information */
 .hero-quiet-state{
   background:linear-gradient(135deg,rgba(255,255,255,.34),rgba(246,250,250,.20));
   border:1px solid rgba(255,255,255,.62);
@@ -451,7 +451,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 </style>
 
 <style>
-/* V60.26 — FEATURED HERO GLASS OVERLAY
+/* V60.23 — FEATURED HERO GLASS OVERLAY
    Map-first presentation: the Featured map fills the hero and the live aircraft
    information sits in a compact glass panel over the bottom of that map.
    NEXT WATCHED FLIGHT remains outside the hero and is unchanged. */
@@ -483,19 +483,19 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
     right:24px!important;
     bottom:16px!important;
     margin:0!important;
-    padding:10px 20px 11px!important;
+    padding:14px 22px 15px!important;
     z-index:20!important;
-    background:rgba(248,248,244,.46)!important;
-    border:1px solid rgba(255,255,255,.58)!important;
+    background:rgba(248,248,244,.72)!important;
+    border:1px solid rgba(255,255,255,.72)!important;
     border-radius:20px!important;
-    box-shadow:0 14px 36px rgba(23,30,30,.14),inset 0 1px 0 rgba(255,255,255,.42),inset 0 -1px 0 rgba(255,255,255,.12)!important;
-    backdrop-filter:blur(24px) saturate(1.18)!important;
-    -webkit-backdrop-filter:blur(24px) saturate(1.18)!important;
+    box-shadow:0 14px 36px rgba(23,30,30,.16),inset 0 1px 0 rgba(255,255,255,.55)!important;
+    backdrop-filter:blur(18px) saturate(1.08)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
   }
   .hero .hero-bottom .divider{display:none!important}
   .hero .identity{
     grid-template-columns:minmax(245px,1.05fr) minmax(620px,2.95fr)!important;
-    gap:18px!important;
+    gap:24px!important;
     align-items:center!important;
   }
   .hero .identity-primary{min-width:0!important}
@@ -503,23 +503,20 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   .hero .aircraft-type{font-size:10px!important;margin-top:3px!important}
   .hero .telemetry{
     grid-template-columns:repeat(6,minmax(0,1fr))!important;
-    gap:14px!important;
+    gap:17px!important;
     align-items:center!important;
   }
   .hero .telemetry .metric b{font-size:16px!important;margin-top:4px!important}
   .hero .telemetry .metric label{font-size:7px!important}
   .hero .telemetry .metric small{font-size:8px!important;margin-top:2px!important}
   .hero .journey-info{
-    grid-template-columns:72px minmax(220px,1fr) 72px!important;
-    gap:8px!important;
-    margin-top:5px!important;
-    padding-top:5px!important;
-    border-top:1px solid rgba(140,151,150,.20)!important;
-    align-items:center!important;
+    margin-top:9px!important;
+    padding-top:9px!important;
+    border-top:1px solid rgba(140,151,150,.25)!important;
   }
-  .hero .journey-end b{font-size:13px!important}
-  .hero .journey-end small{font-size:7px!important}
-  .hero .journey-percent{font-size:7px!important;margin-bottom:3px!important}
+  .hero .journey-end b{font-size:14px!important}
+  .hero .journey-end small{font-size:8px!important}
+  .hero .journey-percent{font-size:7px!important}
   .hero .progress{background:rgba(100,110,109,.18)!important}
   .hero .edit-panel{margin-top:10px!important}
 }
@@ -536,11 +533,6 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 @media (max-width:700px){
   /* Keep the existing mobile layout untouched. */
 }
-
-/* V60.26 — stronger Extended Airspace aircraft visibility */
-.outer-aircraft-marker{opacity:.72!important;filter:grayscale(1) brightness(.78)!important;}
-.outer-aircraft-marker .live-aircraft-ring{background:rgba(205,214,211,.78)!important;border-color:#7f8c88!important;box-shadow:0 2px 8px rgba(23,30,30,.14)!important;}
-.outer-aircraft-marker .live-aircraft-shape{color:#354341!important;}
 </style>
 </head>
 <body>
@@ -619,7 +611,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   <div class="panel add-card"><h2>Watch a flight</h2><div class="sub">Enter only the flight number and date. Sky Around Me will look up the scheduled route and use the correct departure and arrival airports for that date.</div>
    <div class="form"><div><label>FLIGHT NUMBER</label><input id="listFlight" placeholder="e.g. SQ23"></div><div><label>DATE</label><input id="listDate" type="date"></div><div class="wide"><label>NAME</label><input id="listName" placeholder="Flight Name"></div><button class="btn primary" id="listSave">ADD TO WATCHLIST</button></div>
    <div class="hint">Route lookup is automatic. Enter the exact commercial flight number and date. Saved flights remain on this iPad.</div>
-   <div class="sky-settings"><div class="sky-settings-head"><div><div class="sky-settings-title">SKY SETTINGS</div><div class="sky-settings-sub">Choose what you want to see, where to watch, and how far out.</div></div><div class="sky-settings-value" id="rangeValue">100 KM</div></div><div class="location-setting"><label>WATCH LOCATION</label><div class="location-row"><select id="locationSelect" aria-label="Watch location"><option value="device">DEVICE LOCATION</option><option value="lusk">LUSK, IRELAND</option><option value="martock">MARTOCK, UK</option><option value="lhr">LONDON HEATHROW, UK</option><option value="custom">CUSTOM PLACE…</option></select><button type="button" class="btn location-btn" id="useDeviceLocation">USE DEVICE</button></div><div class="custom-location" id="customLocation" hidden><input id="placeSearch" placeholder="Search for a place e.g. Montpellier" aria-label="Place name"><button type="button" class="btn" id="findPlace">FIND PLACE</button><span id="locationMessage">Search uses the place name only.</span></div><div class="current-location" id="currentLocation">Device Location</div></div><div class="range-setting"><label>MAXIMUM DISTANCE</label><div class="sky-setting-row"><input class="sky-range" id="rangeInput" type="range" min="1" max="250" step="1" value="100" aria-label="Maximum aircraft distance in kilometres"><input class="sky-number" id="rangeNumber" type="number" min="1" max="250" step="1" value="100" aria-label="Maximum aircraft distance in kilometres"></div><div class="extended-setting"><label style="font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.13em;display:block;margin-bottom:7px">EXTENDED AIRSPACE</label><div class="extended-row"><div class="extended-copy"><strong>SHOW OUTER AIRCRAFT</strong><small>Shows aircraft up to 100 KM outside your selected radius. Outer aircraft are not identified or selectable until they enter your active radius.</small></div><label class="toggle" aria-label="Show outer aircraft"><input id="extendedAirspaceToggle" type="checkbox"><span class="toggle-track"></span></label></div></div></div>
+   <div class="sky-settings"><div class="sky-settings-head"><div><div class="sky-settings-title">SKY SETTINGS</div><div class="sky-settings-sub">Choose what you want to see, where to watch, and how far out.</div></div><div class="sky-settings-value" id="rangeValue">100 KM</div></div><div class="range-setting range-setting-primary"><label>MAXIMUM DISTANCE</label><div class="sky-setting-row"><input class="sky-range" id="rangeInput" type="range" min="1" max="250" step="1" value="100" aria-label="Maximum aircraft distance in kilometres"><input class="sky-number" id="rangeNumber" type="number" min="1" max="250" step="1" value="100" aria-label="Maximum aircraft distance in kilometres"></div><div class="extended-setting"><label style="font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.13em;display:block;margin-bottom:7px">EXTENDED AIRSPACE</label><div class="extended-row"><div class="extended-copy"><strong>SHOW OUTER AIRCRAFT</strong><small>Shows aircraft up to 100 KM outside your selected radius. Outer aircraft are not identified or selectable until they enter your active radius.</small></div><label class="toggle" aria-label="Show outer aircraft"><input id="extendedAirspaceToggle" type="checkbox"><span class="toggle-track"></span></label></div></div></div><div class="location-setting"><label>WATCH LOCATION</label><div class="location-row"><select id="locationSelect" aria-label="Watch location"><option value="device">DEVICE LOCATION</option><option value="lusk">LUSK, IRELAND</option><option value="martock">MARTOCK, UK</option><option value="lhr">LONDON HEATHROW, UK</option><option value="custom">CUSTOM PLACE…</option></select><button type="button" class="btn location-btn" id="useDeviceLocation">USE DEVICE</button></div><div class="custom-location" id="customLocation" hidden><input id="placeSearch" placeholder="Search for a place e.g. Montpellier" aria-label="Place name"><button type="button" class="btn" id="findPlace">FIND PLACE</button><span id="locationMessage">Search uses the place name only.</span></div><div class="current-location" id="currentLocation">Device Location</div></div></div>
   </div>
   <div class="panel watch-card"><h2>Saved flights</h2><div class="watch-list" id="watchList"></div><div class="selected-note">The selected watch location controls the airspace radius, nearest aircraft and map centre. Device Location is the default option; named places can be saved by selecting them here.</div></div>
  </div>
@@ -1021,13 +1013,12 @@ function renderHeroFlightMap(live,watch){
         if(mapRect&&infoRect&&infoRect.top>mapRect.top){
          coveredHeight=Math.max(0,mapRect.bottom-infoRect.top);
         }
-        const mapHeight=Math.max(220,Number(size?.y)||350);
-        const visibleHeight=Math.max(220,mapHeight-coveredHeight-bottomMargin);
+        const visibleHeight=Math.max(220,(Number(size?.y)||350)-coveredHeight-bottomMargin);
 
         // Size the local-airspace camera against the map area that is
         // actually visible above the floating flight-information glass.
-        // This keeps the selected-radius circle inside the visible map.
-        const targetMPerPx=(radiusM*2)/(visibleHeight*0.82);
+        // This keeps the selected-radius circle from disappearing underneath it.
+        const targetMPerPx=(radiusM*2)/(visibleHeight*0.78);
         const mercatorMPerPx=156543.03392*Math.max(0.15,Math.cos(lat*Math.PI/180));
         let zoom=Math.log2(mercatorMPerPx/targetMPerPx);
         zoom=Math.max(2,Math.min(18,Math.round(zoom)));
@@ -1037,9 +1028,7 @@ function renderHeroFlightMap(live,watch){
         // map. Shift the map content upward so the device/radius is centred in
         // the visible portion rather than underneath the overlay.
         if(coveredHeight>0){
-         // Centre the local-airspace view in the portion of the map that
-         // remains visible above the glass information panel.
-         const shiftY=Math.round((coveredHeight+bottomMargin)/2);
+         const shiftY=Math.round(coveredHeight/2+bottomMargin/2);
          heroFlightMap.panBy([0,-shiftY],{animate:false});
         }
 
