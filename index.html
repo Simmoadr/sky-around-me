@@ -1546,56 +1546,49 @@ function heroCurvedRoutePoints(a,p,b,count=160){
  const valid=v=>Array.isArray(v)&&v.length===2&&v.every(Number.isFinite);
  if(!valid(a)||!valid(p)||!valid(b))return heroRoutePoints(a,b,count);
 
- // Start with the natural great-circle route. This keeps the attractive
- // long-haul arc we had before, rather than replacing it with a straight
- // A -> aircraft -> B line.
- const base=heroRoutePoints(a,b,count);
+ // Build the visible flight path explicitly through the live ADS-B position.
+ // The previous Gaussian deformation could place the exact aircraft point in
+ // the route array while the adjacent segments still visually missed it.
+ // This version creates two smooth cubic curves: FROM -> AIRCRAFT and
+ // AIRCRAFT -> TO. The aircraft position is therefore an exact vertex in the
+ // rendered route, not merely a point that the curve is nudged toward.
  const lat0=((Number(a[0])+Number(p[0])+Number(b[0]))/3)*Math.PI/180;
  const kx=111.32*Math.max(0.2,Math.cos(lat0));
  const ky=111.32;
  const xy=v=>[Number(v[1])*kx,Number(v[0])*ky];
  const ll=v=>[v[1]/ky,v[0]/kx];
- const P=xy(p);
- const baseXY=base.map(xy);
+ const A=xy(a),P=xy(p),B=xy(b);
+ const dist=(u,v)=>Math.hypot(v[0]-u[0],v[1]-u[1]);
+ const norm=v=>{const d=Math.hypot(v[0],v[1])||1;return [v[0]/d,v[1]/d]};
+ const dirAB=norm([B[0]-A[0],B[1]-A[1]]);
+ const dirAP=norm([P[0]-A[0],P[1]-A[1]]);
+ const dirPB=norm([B[0]-P[0],B[1]-P[1]]);
 
- // Find the point on the natural route nearest to the live aircraft.
- // This gives us the aircraft's position along the route without using the
- // old straight-line routeProgress() geometry.
- let nearest=0,best=Infinity;
- for(let i=0;i<baseXY.length;i++){
-   const dx=baseXY[i][0]-P[0],dy=baseXY[i][1]-P[1];
-   const d2=dx*dx+dy*dy;
-   if(d2<best){best=d2;nearest=i}
- }
-
- const tP=nearest/count;
- const crossTrackKm=Math.sqrt(best);
- if(crossTrackKm<0.15){
-   // Aircraft is already effectively on the natural arc. Keep the beautiful
-   // original curve, but make the aircraft point exact so there is no visible
-   // sub-pixel mismatch.
-   const out=base.slice();
-   out[nearest]=[p[0],p[1]];
-   return out;
- }
-
- // Pull the great-circle arc smoothly toward the actual aircraft position.
- // The Gaussian envelope is 1.0 at the aircraft and fades to zero toward both
- // airports. Therefore the rendered curve keeps its natural arc, bends only
- // as much as necessary, and passes exactly through the live ADS-B position.
- // Wider influence for larger cross-track errors prevents a sharp kink.
- const sigma=Math.max(0.075,Math.min(0.24,0.075+crossTrackKm/900));
- const out=baseXY.map((q,i)=>{
-   const t=i/count;
-   const z=(t-tP)/sigma;
-   const w=Math.exp(-(z*z));
-   return ll([q[0]+(P[0]-baseXY[nearest][0])*w,
-              q[1]+(P[1]-baseXY[nearest][1])*w]);
- });
-
- // Force exact endpoints and exact aircraft position.
+ // Use the overall route direction as the tangent through the aircraft.
+ // This keeps the two legs visually smooth while still allowing the live
+ // aircraft to be off the original airport-to-airport great-circle.
+ const tangent=dirAB;
+ const dAP=dist(A,P), dPB=dist(P,B);
+ const bend=Math.min(0.42,Math.max(0.18,0.30+Math.abs(dirAP[0]*dirPB[1]-dirAP[1]*dirPB[0])*0.10));
+ const c1a=[A[0]+dirAP[0]*dAP*bend,A[1]+dirAP[1]*dAP*bend];
+ const c2a=[P[0]-tangent[0]*dAP*bend,P[1]-tangent[1]*dAP*bend];
+ const c1b=[P[0]+tangent[0]*dPB*bend,P[1]+tangent[1]*dPB*bend];
+ const c2b=[B[0]-dirPB[0]*dPB*bend,B[1]-dirPB[1]*dPB*bend];
+ const cubic=(q0,q1,q2,q3,t)=>{
+   const u=1-t,uu=u*u,tt=t*t;
+   return [
+     uu*u*q0[0]+3*uu*t*q1[0]+3*u*tt*q2[0]+tt*t*q3[0],
+     uu*u*q0[1]+3*uu*t*q1[1]+3*u*tt*q2[1]+tt*t*q3[1]
+   ];
+ };
+ const first=Math.max(12,Math.round(count*(dAP/(dAP+dPB||1))));
+ const second=Math.max(12,count-first);
+ const out=[];
+ for(let i=0;i<=first;i++){out.push(ll(cubic(A,c1a,c2a,P,i/first)));}
+ for(let i=1;i<=second;i++){out.push(ll(cubic(P,c1b,c2b,B,i/second)));}
+ // Hard guarantees: airport endpoints and the exact live ADS-B coordinate.
  out[0]=[a[0],a[1]];
- out[nearest]=[p[0],p[1]];
+ out[first]=[p[0],p[1]];
  out[out.length-1]=[b[0],b[1]];
  return out;
 }
@@ -1732,10 +1725,12 @@ function renderHeroFlightMap(live,watch){
         const size=heroFlightMap.getSize();
         const deviceLat=Number(S.lat);
         const deviceLon=Number(S.lon);
-        const cameraLat=Number(pos?.[0]);
-        const cameraLon=Number(pos?.[1]);
-        const lat=Number.isFinite(cameraLat)?cameraLat:deviceLat;
-        const lon=Number.isFinite(cameraLon)?cameraLon:deviceLon;
+        // LOCAL AIRSPACE is a device-centred view. The Featured aircraft is
+        // a highlighted item inside that radius, not the camera target.
+        // Keep the device/radius centred in the visible map area above the
+        // floating flight-information panel.
+        const lat=deviceLat;
+        const lon=deviceLon;
         const radiusM=Math.max(1000,Number(S.rangeKm||100)*1000);
         const infoBox=document.querySelector('.hero-bottom');
         const mapEl=document.getElementById('heroFlightMap');
@@ -2231,7 +2226,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  $('route').innerHTML=journey&&journey.fromCode&&journey.toCode?`<span class="route-live-code">${journey.fromCode} → ${journey.toCode}</span>`:'LIVE AIRCRAFT';$('schedule').textContent=journey&&journey.fromCode&&journey.toCode?airline.toUpperCase()+' · '+model.toUpperCase():S.locationName.toUpperCase()+' · '+x.d.toFixed(1)+' KM AWAY';
  const journeyDistance=journey&&journey.toLat!=null&&journey.toLon!=null&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),Number(journey.toLat),Number(journey.toLon)):null;
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
- const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=journey.from||journey.fromName||'—';$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=journey.to||journey.toName||'—';$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
+ const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const rawPct=routeProgress(journey,x)*100;const pct=rawPct>=99.8?99:Math.floor(rawPct);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=journey.from||journey.fromName||'—';$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=journey.to||journey.toName||'—';$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
 }
 const ROUTE_CACHE_TTL=30*60*1000;
 const ROUTE_FAILURE_TTL=5*60*1000;
@@ -2415,7 +2410,7 @@ function watchedCompletion(f,live){
  const a=f.fromLat!=null&&f.fromLon!=null?[Number(f.fromLat),Number(f.fromLon)]:routePoint(f.fromCode);
  const b=f.toLat!=null&&f.toLon!=null?[Number(f.toLat),Number(f.toLon)]:routePoint(f.toCode);
  if(!a||!b||!a.every(Number.isFinite)||!b.every(Number.isFinite))return null;
- return Math.round(routeProgress(f,live)*100);
+ const raw=routeProgress(f,live)*100;return raw>=99.8?99:Math.floor(raw);
 }
 function formatWatchArrival(f){
  const raw=f?.arrivalTime||f?.arrTime||'';
