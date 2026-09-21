@@ -2082,7 +2082,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  const watchedJourney=liveJourney&&liveJourney!==x?.liveRoute?liveJourney:null;
  const journey=identityReady?x.liveRoute:watchedJourney;
  const airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x),flightNumber=normalFlightCode(x.flightNumber||'');
- if(x?.callsign&&(!x?.identityStatus||x.identityStatus!=='FOUND')) lookupFlightIdentity(x);
+ if(x?.callsign&&!x?.identityStatus) lookupFlightIdentity(x);
  setHeroAircraft(x,journey);
  setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',(flightNumber||x.callsign||'LIVE AIRCRAFT').toUpperCase());setTextSafe('homeStatus','LIVE');
  $('airlineBadge').textContent=(x.airlineCode||flightNumber.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('aircraftReg').textContent=String(x.r||x.registration||'—').toUpperCase()||'—';$('aircraftRegNote').textContent=x.r?'AIRCRAFT REG':'REGISTRATION';$('aircraftCallsign').textContent=String(x.callsign||'—').toUpperCase()||'—';
