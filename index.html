@@ -366,6 +366,9 @@
 #skyDebugActions{display:flex;gap:6px}
 .sky-debug-btn{border:1px solid rgba(99,230,190,.3);background:rgba(255,255,255,.06);color:#dffcf5;border-radius:7px;padding:6px 9px;font:700 8px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;cursor:pointer}
 #skyDebugSummary{padding:9px 12px;font-size:9px;line-height:1.5;border-bottom:1px solid rgba(255,255,255,.10);color:#9db6bc}
+#skyAirLabsUsage{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.10);font-size:9px;line-height:1.5;color:#dffcf5;background:rgba(255,209,102,.045)}
+#skyAirLabsUsage strong{color:#ffd166;letter-spacing:.08em}
+#skyAirLabsUsage .airlabs-breakdown{color:#9db6bc;margin-top:2px}
 #skyDebugLog{padding:10px 12px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:9px;line-height:1.55;max-height:60vh}
 .sky-debug-ok{color:#63e6be}.sky-debug-warn{color:#ffd166}.sky-debug-error{color:#ff8585}.sky-debug-key{color:#9ad9ff}.sky-debug-muted{color:#78929b}
 body.sky-debug-enabled #skyDebugPanel{display:flex}
@@ -1672,9 +1675,10 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 <div id="skyDebugPanel" aria-label="Sky Around Me debug console">
  <div id="skyDebugHead">
   <strong>SKY AROUND ME · IDENTITY DEBUG</strong>
-  <div id="skyDebugActions"><button class="sky-debug-btn" id="skyDebugRerun">RERUN IDENTITY</button><button class="sky-debug-btn" id="skyDebugCopy">COPY LOG</button><button class="sky-debug-btn" id="skyDebugClear">CLEAR</button><button class="sky-debug-btn" id="skyDebugClose">CLOSE</button></div>
+  <div id="skyDebugActions"><button class="sky-debug-btn" id="skyDebugRerun">RERUN IDENTITY</button><button class="sky-debug-btn" id="skyDebugCopy">COPY LOG</button><button class="sky-debug-btn" id="skyDebugClear">CLEAR</button><button class="sky-debug-btn" id="skyAirLabsReset">RESET CREDITS</button><button class="sky-debug-btn" id="skyDebugClose">CLOSE</button></div>
  </div>
  <div id="skyDebugSummary">Waiting for the Featured aircraft identity resolver…</div>
+ <div id="skyAirLabsUsage"><strong>AIRLABS CREDITS OBSERVED: 0 TODAY</strong><div class="airlabs-breakdown">Schedule 0 · Callsign 0 · Flight 0 · Realtime 0 · Other 0</div></div>
  <div id="skyDebugLog"></div>
 </div>
 
@@ -2765,7 +2769,23 @@ function skyDebug(level,message,data){
  const summary=document.getElementById('skyDebugSummary');
  if(summary)summary.textContent=`${message}${data&&data.status?` · ${data.status}`:''}`;
 }
-function skyDebugReset(){SKY_DEBUG_LOG.length=0;const log=document.getElementById('skyDebugLog');if(log)log.innerHTML='';const summary=document.getElementById('skyDebugSummary');if(summary)summary.textContent='Debug log cleared.'}
+const AIRLABS_USAGE_KEY='skyAroundMeAirLabsUsageV1';
+function airLabsUsageLoad(){
+ try{const today=new Date().toISOString().slice(0,10);const raw=JSON.parse(localStorage.getItem(AIRLABS_USAGE_KEY)||'{}');if(raw.date!==today)return {date:today,total:0,byType:{},events:[]};return {date:today,total:Number(raw.total)||0,byType:raw.byType&&typeof raw.byType==='object'?raw.byType:{},events:Array.isArray(raw.events)?raw.events:[]};}
+ catch(e){return {date:new Date().toISOString().slice(0,10),total:0,byType:{},events:[]}}
+}
+let AIRLABS_USAGE=airLabsUsageLoad();
+function airLabsUsageSave(){try{localStorage.setItem(AIRLABS_USAGE_KEY,JSON.stringify(AIRLABS_USAGE))}catch(e){}}
+function airLabsUsageRender(){const el=document.getElementById('skyAirLabsUsage');if(!el)return;const b=AIRLABS_USAGE.byType||{};el.innerHTML='<strong>AIRLABS CREDITS OBSERVED: '+AIRLABS_USAGE.total+' TODAY</strong><div class="airlabs-breakdown">Schedule '+(b.schedules||0)+' · Callsign '+(b.callsign||0)+' · Flight '+(b.flight||0)+' · Realtime '+(b.realtime||0)+' · Other '+(b.other||0)+'</div>';}
+function airLabsUsageRecord(response,requestLabel){
+ if(!response||!response.headers)return;const calls=Number(response.headers.get('X-SkyAroundMe-AirLabs-Calls')||0);if(!Number.isFinite(calls)||calls<=0){airLabsUsageRender();return;}
+ let events=[];try{events=JSON.parse(response.headers.get('X-SkyAroundMe-AirLabs-Events')||'[]')}catch(e){}
+ const now=new Date().toLocaleTimeString('en-GB',{hour12:false});if(!Array.isArray(events)||!events.length)events=Array.from({length:calls},(_,i)=>({n:i+1,label:requestLabel||'other',endpoint:''}));
+ events.forEach(ev=>{const type=String(ev?.label||requestLabel||'other').toLowerCase();const key=['schedules','callsign','flight','realtime'].includes(type)?type:'other';AIRLABS_USAGE.total++;AIRLABS_USAGE.byType[key]=(AIRLABS_USAGE.byType[key]||0)+1;AIRLABS_USAGE.events.push({time:now,label:key,endpoint:ev?.endpoint||'',request:requestLabel||''});skyDebug('WARN','AIRLABS CREDIT USED',{credit:AIRLABS_USAGE.total,type:key,endpoint:ev?.endpoint||'',request:requestLabel||''});});
+ if(AIRLABS_USAGE.events.length>500)AIRLABS_USAGE.events=AIRLABS_USAGE.events.slice(-500);airLabsUsageSave();airLabsUsageRender();
+}
+function airLabsUsageReset(){AIRLABS_USAGE={date:new Date().toISOString().slice(0,10),total:0,byType:{},events:[]};airLabsUsageSave();airLabsUsageRender();skyDebug('OK','AirLabs usage counter reset')}
+function skyDebugReset(){SKY_DEBUG_LOG.length=0;const log=document.getElementById('skyDebugLog');if(log)log.innerHTML='';const summary=document.getElementById('skyDebugSummary');if(summary)summary.textContent='Debug log cleared.';airLabsUsageRender()}
 function skyDebugCopy(){const text=SKY_DEBUG_LOG.map(x=>`[${x.ts}] ${x.level} ${x.message}`+(x.data==null?'':'\n'+JSON.stringify(x.data,null,2))).join('\n\n');navigator.clipboard?.writeText(text).then(()=>skyDebug('OK','Debug log copied to clipboard')).catch(()=>skyDebug('WARN','Clipboard copy failed — select/copy the log manually'));}
 function skyDebugSelectedAircraft(){
  const x=S.featured&&Array.isArray(S.lastAllItems)?S.lastAllItems.find(a=>a.icao===S.featured):null;
@@ -2773,6 +2793,8 @@ function skyDebugSelectedAircraft(){
 }
 if(SKY_DEBUG_ENABLED){document.body.classList.add('sky-debug-enabled');window.addEventListener('DOMContentLoaded',()=>{
  document.getElementById('skyDebugClear')?.addEventListener('click',skyDebugReset);
+ document.getElementById('skyAirLabsReset')?.addEventListener('click',airLabsUsageReset);
+ airLabsUsageRender();
  document.getElementById('skyDebugCopy')?.addEventListener('click',skyDebugCopy);
  document.getElementById('skyDebugClose')?.addEventListener('click',()=>document.getElementById('skyDebugPanel')?.remove());
  document.getElementById('skyDebugRerun')?.addEventListener('click',async()=>{
@@ -2975,6 +2997,7 @@ async function lookupFlightRoute(callsign,date,registration){
  const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
  try{
   const r=await fetch(`${SKY_AROUND_ME_NETLIFY}?${params}`,{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
+  airLabsUsageRecord(r,'callsign');
   if(!r.ok){const e=new Error('Flight route lookup HTTP '+r.status);e.status=r.status;throw e}
   const j=await r.json();
   const rr=j?.route||{};
@@ -3311,6 +3334,7 @@ async function lookupWatchedSchedule(flight,date){
  try{
   if(SKY_DEBUG_ENABLED)skyDebug('OK','AIRLABS SCHEDULE REQUEST',{flight:clean,date,mode:'schedule lookup'});
   const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+  airLabsUsageRecord(r,'schedules');
   const j=await r.json();
   if(SKY_DEBUG_ENABLED)skyDebug(j?._skyAirLabsDebug?.calls?'OK':'WARN','AIRLABS RESULT',{flight:clean,date,status:j?.status||'',source:j?.source||'',cache:r.headers.get('X-SkyAroundMe-Lookup-Cache')||'MISS',airLabsCalls:j?._skyAirLabsDebug?.calls??Number(r.headers.get('X-SkyAroundMe-AirLabs-Calls')||0),events:j?._skyAirLabsDebug?.events||[]});
   if(j&&(j.status==='FOUND'||j.status==='ROUTE_FOUND'))return j;
@@ -3613,6 +3637,7 @@ async function searchGlobalWatchedFlight(f){
      const url=`${SKY_AROUND_ME_NETLIFY}?${params.toString()}`;
      if(SKY_DEBUG_ENABLED)skyDebug('OK','WATCHED ADS-B IDENTITY REQUEST',{flight:baseParams.flight,date:baseParams.date,hex:baseParams.hex,registration:baseParams.registration,mode:'ADS-B only'});
      const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+     airLabsUsageRecord(r,'other');
      const j=await r.json();
      if(SKY_DEBUG_ENABLED)skyDebug(j?.status==='FOUND'?'OK':'WARN','WATCHED ADS-B IDENTITY RESULT',{flight:baseParams.flight,status:j?.status||'',source:j?.source||'',airLabsCalls:j?._skyAirLabsDebug?.calls??Number(r.headers.get('X-SkyAroundMe-AirLabs-Calls')||0),airLabsEvents:j?._skyAirLabsDebug?.events||[]});
      if(j?.status==='FOUND'&&Array.isArray(j.ac)&&j.ac.length){
@@ -3628,6 +3653,7 @@ async function searchGlobalWatchedFlight(f){
      const url=`${SKY_AROUND_ME_NETLIFY}?${params.toString()}`;
      if(SKY_DEBUG_ENABLED)skyDebug('OK','WATCHED ADS-B REQUEST',{flight:baseParams.flight,date:baseParams.date,callsign,mode:'ADS-B only'});
      const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+     airLabsUsageRecord(r,'other');
      const j=await r.json();
      if(SKY_DEBUG_ENABLED)skyDebug(j?.status==='FOUND'?'OK':'WARN','WATCHED ADS-B RESULT',{flight:baseParams.flight,date:baseParams.date,callsign,status:j?.status||'',source:j?.source||'',airLabsCalls:j?._skyAirLabsDebug?.calls??Number(r.headers.get('X-SkyAroundMe-AirLabs-Calls')||0),airLabsEvents:j?._skyAirLabsDebug?.events||[]});
      if(j?.status==='FOUND'&&Array.isArray(j.ac)&&j.ac.length){
