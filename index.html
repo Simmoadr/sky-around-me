@@ -306,7 +306,7 @@
 .hero-airport-label{position:absolute;min-width:76px;pointer-events:none;transform:translate(-50%,-100%);text-align:center;white-space:nowrap}.hero-airport-label.to{transform:translate(-50%,8px)}.hero-airport-label span{display:inline-block;font-size:11px;font-weight:950;letter-spacing:.04em;color:#111416;background:rgba(248,248,244,.91);padding:3px 6px;border-radius:6px;border:1px solid rgba(215,222,219,.85);box-shadow:0 3px 9px rgba(23,30,30,.07)}.hero-airport-label small{display:block;margin-top:3px;font-size:7px;color:#697273;font-weight:700;letter-spacing:.02em}
 .hero-bottom{padding:17px 36px 20px;flex:0 0 auto;background:#f8f8f4}.hero-bottom .divider{margin-bottom:14px}.identity{grid-template-columns:minmax(260px,1.35fr) minmax(145px,.65fr) minmax(500px,2.6fr);gap:24px;align-items:center}.hero .airline-brand{gap:8px;align-items:center;min-height:24px}.hero .callsign-note{display:inline-flex;align-items:center;margin-left:7px;padding-left:10px;border-left:1px solid #d7ddda;white-space:nowrap}.hero .flight-name{margin-top:5px;font-size:32px}.hero .aircraft-type{margin-top:3px}.aircraft-registration{align-self:center;padding-left:24px}.aircraft-registration b{font-size:19px}.telemetry{gap:20px}.metric b{font-size:18px}.journey-info{margin-top:14px;padding-top:11px}.journey-end b{font-size:15px}.journey-percent{margin-bottom:6px}
 @media (min-width:701px) and (orientation:landscape) and (max-height:900px){.app{padding:8px 16px 10px}.topbar{padding-bottom:7px}.home{padding-top:6px;height:calc(100vh - 48px)}.hero{height:calc(100vh - 250px);min-height:480px;max-height:none}.sky{min-height:0;height:360px;flex:1 1 auto}.hero-bottom{padding:14px 32px 16px}.hero .flight-name{font-size:29px}.journey-info{margin-top:10px}.watch-bottom{margin-top:8px;padding:12px 18px}.watch-bottom-title{font-size:16px}.watch-bottom-body{margin-top:8px}.watch-live-grid{padding-top:8px}}
-@media (min-width:701px) and (orientation:landscape) and (max-height:760px){.hero{height:calc(100vh - 230px);min-height:455px}.hero-bottom{padding:11px 28px 12px}.hero .flight-name{font-size:27px}.identity{grid-template-columns:minmax(230px,1.25fr) minmax(125px,.55fr) minmax(430px,2.4fr);gap:18px}.metric b{font-size:16px}.journey-info{margin-top:8px;padding-top:8px}.watch-bottom{margin-top:6px;padding:9px 16px}.watch-bottom-body{margin-top:6px}.watch-live-grid{padding-top:6px}}
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){.hero{height:calc(100vh - 160px);min-height:525px}.hero-bottom{padding:11px 28px 12px}.hero .flight-name{font-size:27px}.identity{grid-template-columns:minmax(230px,1.25fr) minmax(125px,.55fr) minmax(430px,2.4fr);gap:18px}.metric b{font-size:16px}.journey-info{margin-top:8px;padding-top:8px}.watch-bottom{margin-top:6px;padding:9px 16px}.watch-bottom-body{margin-top:6px}.watch-live-grid{padding-top:6px}}
 @media(max-width:1100px) and (min-width:801px){.identity{grid-template-columns:minmax(220px,1fr) minmax(120px,.55fr) minmax(390px,1.8fr);gap:16px}.telemetry{gap:12px}.hero-map-brand{left:16px}.hero-map-status{right:16px}}
 @media(max-width:800px){.home{padding-top:8px}.hero{min-height:650px;height:auto}.sky{height:320px;min-height:320px}.hero-bottom{padding:16px 22px 20px}.identity{grid-template-columns:1fr;gap:12px}.aircraft-registration{padding-left:0;border-left:0;border-top:1px solid #dfe1dd;padding-top:10px}.telemetry{grid-template-columns:repeat(2,1fr);width:100%}.hero-map-brand{left:14px;top:14px}.hero-map-status{right:14px;top:14px;min-width:145px}.hero-map-caption{top:14px}.hero-map-recenter{right:14px;top:92px}.hero-airport-label span{font-size:10px}}
 
@@ -449,6 +449,18 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .identity{grid-template-columns:minmax(260px,1.05fr) minmax(0,2.95fr);align-items:center;}
 .telemetry{width:min(100%,960px);margin-left:auto;margin-right:auto;justify-self:center;align-items:center;}
 @media(max-width:1050px){.telemetry{width:100%;margin-left:0;margin-right:0;}}
+</style>
+
+<style>
+/* V62.2 — iPad 8th Gen landscape space + LOCAL AIRSPACE camera framing.
+   Use the otherwise-unused lower viewport space for the Featured hero while
+   keeping the glass flight-information bar at the bottom. */
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .home{height:auto!important;min-height:0!important;}
+  .hero{height:calc(100vh - 160px)!important;min-height:525px!important;max-height:none!important;}
+  .hero .sky,.hero .aircraft-stage,.hero .aircraft-stage-art,.hero #heroAircraft,.hero .hero-flight-map{height:100%!important;min-height:0!important;}
+  .hero .hero-bottom{bottom:14px!important;}
+}
 </style>
 
 <style>
@@ -1732,10 +1744,11 @@ function renderHeroFlightMap(live,watch){
         const size=heroFlightMap.getSize();
         const deviceLat=Number(S.lat);
         const deviceLon=Number(S.lon);
-        const cameraLat=Number(pos?.[0]);
-        const cameraLon=Number(pos?.[1]);
-        const lat=Number.isFinite(cameraLat)?cameraLat:deviceLat;
-        const lon=Number.isFinite(cameraLon)?cameraLon:deviceLon;
+                // V62.2 — LOCAL AIRSPACE camera is centred on the device/radius, not the
+        // featured aircraft. This keeps the selected radius visually centred
+        // in the usable map area on iPad, with the flight card floating below.
+        const lat=deviceLat;
+        const lon=deviceLon;
         const radiusM=Math.max(1000,Number(S.rangeKm||100)*1000);
         const infoBox=document.querySelector('.hero-bottom');
         const mapEl=document.getElementById('heroFlightMap');
