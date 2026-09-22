@@ -1648,23 +1648,22 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
    2) watched flight in hero + the NEXT different watched flight below. */
 </style>
 
-<style id="v6310-ipad-final-fit">
-/* V63.10 — iPad landscape final viewport fit.
-   Safari's browser chrome reduces the usable visual viewport. Use the dynamic
-   viewport and give the Featured hero the space that was previously left as
-   empty grey area below the watched-flight card. */
+<style id="v6311-ipad-final-fit">
+/* V63.11 — consume the remaining wall-mounted iPad whitespace.
+   100dvh tracks the visible viewport; the remaining gap was layout padding /
+   an over-constrained hero height, not useful browser space. */
+@media (min-width:701px) and (orientation:landscape){
+  .app{padding-bottom:0!important;}
+  .home{padding-bottom:0!important;}
+  .hero{height:calc(100dvh - 132px)!important;max-height:none!important;}
+  .watch-bottom-compact{margin-bottom:0!important;}
+}
 @media (min-width:701px) and (orientation:landscape) and (max-height:800px){
-  .home{
-    height:calc(100dvh - 59px)!important;
-    min-height:0!important;
-    padding-top:6px!important;
-    box-sizing:border-box!important;
-  }
-  .hero{
-    height:calc(100dvh - 160px)!important;
-    min-height:525px!important;
-    max-height:605px!important;
-  }
+  .home{height:calc(100dvh - 59px)!important;min-height:0!important;padding-top:6px!important;box-sizing:border-box!important;}
+  .hero{height:calc(100dvh - 132px)!important;min-height:525px!important;max-height:none!important;}
+}
+@media (min-width:701px) and (orientation:landscape) and (max-height:700px){
+  .hero{height:calc(100dvh - 125px)!important;}
 }
 </style>
 </head>
@@ -2072,7 +2071,7 @@ const AIRPORT_DISPLAY_NAMES={
  DUB:'Dublin',SNN:'Shannon',CDG:'Paris Charles de Gaulle',AMS:'Amsterdam Schiphol',FRA:'Frankfurt',MUC:'Munich',ZRH:'Zurich',
  JFK:'New York JFK',EWR:'Newark',LGA:'LaGuardia',CLT:'Charlotte Douglas',RDU:'Raleigh-Durham',MIA:'Miami',BOS:'Boston Logan',
  SIN:'Singapore Changi',BKK:'Bangkok Suvarnabhumi',HKG:'Hong Kong',NRT:'Tokyo Narita',HND:'Tokyo Haneda',ICN:'Seoul Incheon',
- DXB:'Dubai',DOH:'Doha Hamad',SYD:'Sydney',MEL:'Melbourne',LAX:'Los Angeles',SFO:'San Francisco',ORD:'Chicago O’Hare',
+ DXB:'Dubai International',DOH:'Doha Hamad International',AUH:'Abu Dhabi Zayed International',AGP:'Málaga Airport',MAN:'Manchester Airport',DUB:'Dublin Airport',LGW:'London Gatwick',STN:'London Stansted',EDI:'Edinburgh Airport',SYD:'Sydney',MEL:'Melbourne',LAX:'Los Angeles',SFO:'San Francisco',ORD:'Chicago O’Hare',
  DFW:'Dallas Fort Worth',DEN:'Denver',SEA:'Seattle',LAS:'Las Vegas',YYZ:'Toronto Pearson',YVR:'Vancouver',MEX:'Mexico City',
  FCO:'Rome Fiumicino',VIE:'Vienna',CPH:'Copenhagen',OSL:'Oslo',ARN:'Stockholm Arlanda',HEL:'Helsinki',BCN:'Barcelona',MAD:'Madrid',LIS:'Lisbon',
  PMI:'Palma de Mallorca',AGP:'Málaga Airport',BZR:'Béziers Cap d’Agde',TRN:'Turin',EDI:'Edinburgh',CGK:'Jakarta Soekarno-Hatta',KHH:'Kaohsiung International',FCO:'Rome Fiumicino'
@@ -2418,7 +2417,7 @@ function recenterHeroMap(){
  setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),80);
 }
 let airportCoords={
- JFK:[40.6413,-73.7781],SIN:[1.3644,103.9915],LHR:[51.4700,-0.4543],BHX:[52.4539,-1.7480],FAO:[37.0144,-7.9659],DUS:[51.2895,6.7668],HAJ:[52.4611,9.6851],LBA:[53.8659,-1.6600],LPA:[27.9319,-15.3867],BRS:[51.3827,-2.7191],BZR:[43.3235,3.3533],CDG:[49.0097,2.5479],AMS:[52.3105,4.7683],FRA:[50.0379,8.5622],MUC:[48.3538,11.7861],CLT:[35.2140,-80.9431],RDU:[35.8801,-78.7880],LGA:[40.7769,-73.8740],EWR:[40.6895,-74.1745],MEX:[19.4363,-99.0721],SAF:[1.3502,103.9944],SFO:[37.6213,-122.3790],LAX:[33.9416,-118.4085],ORD:[41.9742,-87.9073],DFW:[32.8998,-97.0403],DXB:[25.2532,55.3657],DOH:[25.2731,51.6081],HND:[35.5494,139.7798],NRT:[35.7720,140.3929],SYD:[-33.9399,151.1753]
+ JFK:[40.6413,-73.7781],SIN:[1.3644,103.9915],LHR:[51.4700,-0.4543],LGW:[51.1537,-0.1821],STN:[51.8860,0.2389],MAN:[53.3650,-2.2720],DUB:[53.4264,-6.2499],EDI:[55.9500,-3.3725],AGP:[36.6749,-4.4991],AUH:[24.4330,54.6511],BHX:[52.4539,-1.7480],FAO:[37.0144,-7.9659],DUS:[51.2895,6.7668],HAJ:[52.4611,9.6851],LBA:[53.8659,-1.6600],LPA:[27.9319,-15.3867],BRS:[51.3827,-2.7191],BZR:[43.3235,3.3533],CDG:[49.0097,2.5479],AMS:[52.3105,4.7683],FRA:[50.0379,8.5622],MUC:[48.3538,11.7861],CLT:[35.2140,-80.9431],RDU:[35.8801,-78.7880],LGA:[40.7769,-73.8740],EWR:[40.6895,-74.1745],MEX:[19.4363,-99.0721],SAF:[1.3502,103.9944],SFO:[37.6213,-122.3790],LAX:[33.9416,-118.4085],ORD:[41.9742,-87.9073],DFW:[32.8998,-97.0403],DXB:[25.2532,55.3657],DOH:[25.2731,51.6081],HND:[35.5494,139.7798],NRT:[35.7720,140.3929],SYD:[-33.9399,151.1753]
 };
 function routePoint(code){const p=airportCoords[String(code||'').toUpperCase()];return p?[p[0],p[1]]:null}
 
@@ -2670,7 +2669,9 @@ function routeAirport(code,name){
   const point=routePoint(c);
   const known={LHR:'London Heathrow',JFK:'New York JFK',SIN:'Singapore Changi',BHX:'Birmingham',AGP:'Málaga Airport',FAO:'Faro',DUS:'Düsseldorf',HAJ:'Hannover',LBA:'Leeds Bradford',LPA:'Gran Canaria Airport',BFS:'Belfast International Airport',BVA:'Paris Beauvais–Tillé Airport',BRS:'Bristol',BZR:'Béziers',CDG:'Paris Charles de Gaulle',AMS:'Amsterdam Schiphol',FRA:'Frankfurt',MUC:'Munich',CLT:'Charlotte',RDU:'Raleigh-Durham',LGA:'New York LaGuardia',EWR:'Newark',MEX:'Mexico City',SAF:'Santa Fe',SFO:'San Francisco',LAX:'Los Angeles',ORD:'Chicago O’Hare',DFW:'Dallas/Fort Worth',DXB:'Dubai',DOH:'Doha',HND:'Tokyo Haneda',NRT:'Tokyo Narita',SYD:'Sydney'};
   const supplied=String(name||'').trim();
-  const safeName=(supplied && supplied.toUpperCase()!==c)?supplied:(known[c]||c);
+  // IATA code is authoritative. Ignore a provider name if it conflicts with a known code.
+  const canonical=AIRPORT_DISPLAY_NAMES[c]||known[c];
+  const safeName=canonical||((supplied && supplied.toUpperCase()!==c)?supplied:c);
   return {code:c,name:safeName,lat:point?.[0]??null,lon:point?.[1]??null};
 }
 function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
@@ -2938,7 +2939,7 @@ const ROUTE_TIMEOUT=5000;
 const liveRouteCache=new Map();
 const liveRoutePending=new Map();
 function utcDateKey(){return new Date().toISOString().slice(0,10)}
-function routeCacheKey(flight,date,registration){return 'route-v7|'+normalFlightCode(flight)+'|'+normalFlightCode(registration||'')+'|'+date}
+function routeCacheKey(flight,date,registration){return 'route-v8|'+normalFlightCode(flight)+'|'+normalFlightCode(registration||'')+'|'+date}
 async function lookupFlightRoute(callsign,date,registration){
  const cs=normalFlightCode(callsign);
  const reg=String(registration||'').trim().toUpperCase();
