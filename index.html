@@ -1648,6 +1648,25 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
    2) watched flight in hero + the NEXT different watched flight below. */
 </style>
 
+<style id="v6310-ipad-final-fit">
+/* V63.10 — iPad landscape final viewport fit.
+   Safari's browser chrome reduces the usable visual viewport. Use the dynamic
+   viewport and give the Featured hero the space that was previously left as
+   empty grey area below the watched-flight card. */
+@media (min-width:701px) and (orientation:landscape) and (max-height:800px){
+  .home{
+    height:calc(100dvh - 59px)!important;
+    min-height:0!important;
+    padding-top:6px!important;
+    box-sizing:border-box!important;
+  }
+  .hero{
+    height:calc(100dvh - 160px)!important;
+    min-height:525px!important;
+    max-height:605px!important;
+  }
+}
+</style>
 </head>
 <body>
 
@@ -2079,56 +2098,43 @@ function heroCurvedRoutePoints(a,p,b,count=160){
  const valid=v=>Array.isArray(v)&&v.length===2&&v.every(Number.isFinite);
  if(!valid(a)||!valid(p)||!valid(b))return heroRoutePoints(a,b,count);
 
- // Start with the natural great-circle route. This keeps the attractive
- // long-haul arc we had before, rather than replacing it with a straight
- // A -> aircraft -> B line.
- const base=heroRoutePoints(a,b,count);
+ // Build ONE continuous curve through the live aircraft. The previous
+ // Gaussian pull could create a visible kink where the completed and
+ // remaining legs met. A quadratic Bezier gives us a single smooth tangent
+ // from origin -> aircraft -> destination while still passing exactly
+ // through the real ADS-B position.
  const lat0=((Number(a[0])+Number(p[0])+Number(b[0]))/3)*Math.PI/180;
  const kx=111.32*Math.max(0.2,Math.cos(lat0));
  const ky=111.32;
  const xy=v=>[Number(v[1])*kx,Number(v[0])*ky];
  const ll=v=>[v[1]/ky,v[0]/kx];
- const P=xy(p);
- const baseXY=base.map(xy);
-
- // Find the point on the natural route nearest to the live aircraft.
- // This gives us the aircraft's position along the route without using the
- // old straight-line routeProgress() geometry.
- let nearest=0,best=Infinity;
- for(let i=0;i<baseXY.length;i++){
-   const dx=baseXY[i][0]-P[0],dy=baseXY[i][1]-P[1];
-   const d2=dx*dx+dy*dy;
-   if(d2<best){best=d2;nearest=i}
+ const A=xy(a),P=xy(p),B=xy(b);
+ const dist=(u,v)=>Math.hypot(u[0]-v[0],u[1]-v[1]);
+ const ap=dist(A,P),pb=dist(P,B);
+ const total=ap+pb;
+ let t=total>0?ap/total:.5;
+ // Avoid an unstable control point when the live aircraft is extremely
+ // close to either airport. The displayed route still passes through P.
+ t=Math.max(.12,Math.min(.88,t));
+ const denom=2*t*(1-t);
+ const C=[
+   (P[0]-(1-t)*(1-t)*A[0]-t*t*B[0])/denom,
+   (P[1]-(1-t)*(1-t)*A[1]-t*t*B[1])/denom
+ ];
+ const out=[];
+ for(let i=0;i<=count;i++){
+   const u=i/count;
+   const v=1-u;
+   out.push(ll([
+     v*v*A[0]+2*v*u*C[0]+u*u*B[0],
+     v*v*A[1]+2*v*u*C[1]+u*u*B[1]
+   ]));
  }
-
- const tP=nearest/count;
- const crossTrackKm=Math.sqrt(best);
- if(crossTrackKm<0.15){
-   // Aircraft is already effectively on the natural arc. Keep the beautiful
-   // original curve, but make the aircraft point exact so there is no visible
-   // sub-pixel mismatch.
-   const out=base.slice();
-   out[nearest]=[p[0],p[1]];
-   return out;
- }
-
- // Pull the great-circle arc smoothly toward the actual aircraft position.
- // The Gaussian envelope is 1.0 at the aircraft and fades to zero toward both
- // airports. Therefore the rendered curve keeps its natural arc, bends only
- // as much as necessary, and passes exactly through the live ADS-B position.
- // Wider influence for larger cross-track errors prevents a sharp kink.
- const sigma=Math.max(0.075,Math.min(0.24,0.075+crossTrackKm/900));
- const out=baseXY.map((q,i)=>{
-   const t=i/count;
-   const z=(t-tP)/sigma;
-   const w=Math.exp(-(z*z));
-   return ll([q[0]+(P[0]-baseXY[nearest][0])*w,
-              q[1]+(P[1]-baseXY[nearest][1])*w]);
- });
-
- // Force exact endpoints and exact aircraft position.
+ // Pin the three important points exactly. This also prevents any floating
+ // point drift at the airports or live aircraft marker.
  out[0]=[a[0],a[1]];
- out[nearest]=[p[0],p[1]];
+ const liveIndex=Math.max(0,Math.min(count,Math.round(t*count)));
+ out[liveIndex]=[p[0],p[1]];
  out[out.length-1]=[b[0],b[1]];
  return out;
 }
@@ -2312,45 +2318,42 @@ function renderHeroFlightMap(live,watch){
          [lat+latDelta,lon+lonDelta]
         );
 
+        // Fit the complete radius into the genuinely visible portion of the
+        // map. The glass information bar sits on top of the Leaflet map, so
+        // the bottom padding must be asymmetric; otherwise Leaflet centres the
+        // circle behind the card. This is the same framing as manually dragging
+        // the map upward, but it is deterministic on every refresh.
         heroFlightMap.fitBounds(radiusBounds,{
-         padding:[topPad,sidePad],
+         paddingTopLeft:[sidePad,topPad],
+         paddingBottomRight:[sidePad,bottomPad],
          maxZoom:18,
          animate:false
         });
 
-        // After fitBounds settles, work out exactly how much the circle overlaps
-        // the bottom information card and pan the map upward by that amount.
-        // Also keep a small breathing space below the top HUD.
-        const protectRadiusFromCard=()=>{
+        // Safari/iPad can settle the overlay dimensions a frame after the first
+        // fit. Re-run the exact same fit after layout settles rather than doing
+        // an additional pan that can slowly push the radius off-centre.
+        const refitLocalRadius=()=>{
          if(!heroFlightMap||heroMapMode!=='airspace')return;
          heroFlightMap.invalidateSize(true);
          const mapEl2=document.getElementById('heroFlightMap');
-         const mapRect2=mapEl2?.getBoundingClientRect();
          const infoRect2=infoBox?.getBoundingClientRect();
+         const mapRect2=mapEl2?.getBoundingClientRect();
          if(!mapRect2)return;
-
-         const northPt=heroFlightMap.latLngToContainerPoint([lat+latDelta,lon]);
-         const southPt=heroFlightMap.latLngToContainerPoint([lat-latDelta,lon]);
-         const circleTop=northPt.y;
-         const circleBottom=southPt.y;
-         const topLimit=topPad;
-         const bottomLimit=infoRect2&&infoRect2.top>mapRect2.top
-           ? (infoRect2.top-mapRect2.top-14)
-           : (heroFlightMap.getSize().y-bottomPad);
-
-         let panY=0;
-         if(circleBottom>bottomLimit)panY+=circleBottom-bottomLimit;
-         if(circleTop-panY<topLimit)panY-=topLimit-(circleTop-panY);
-         if(Math.abs(panY)>1){
-          // Positive Y moves the map contents upward, matching a manual upward
-          // drag while preserving the current zoom.
-          heroFlightMap.panBy([0,Math.round(panY)],{animate:false});
+         let bottomPad2=bottomPad;
+         if(infoRect2&&infoRect2.top>mapRect2.top){
+          bottomPad2=Math.max(18,Math.ceil(mapRect2.bottom-infoRect2.top+18));
          }
+         heroFlightMap.fitBounds(radiusBounds,{
+          paddingTopLeft:[sidePad,topPad],
+          paddingBottomRight:[sidePad,bottomPad2],
+          maxZoom:18,
+          animate:false
+         });
         };
-
-        requestAnimationFrame(protectRadiusFromCard);
-        setTimeout(protectRadiusFromCard,80);
-        setTimeout(protectRadiusFromCard,250);
+        requestAnimationFrame(refitLocalRadius);
+        setTimeout(refitLocalRadius,80);
+        setTimeout(refitLocalRadius,250);
 
         // The radius circle is already drawn by the local-airspace layer above.
         // Do not add a second circle here; this function only controls the camera.
