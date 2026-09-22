@@ -2668,27 +2668,65 @@ function hydrateCachedLiveRoute(x,previousItems){
    normalFlightCode(a?.registration||a?.r||'')===reg
  ):null;
  if(previous?.liveRoute?.status==='FOUND'){
-  x.liveRoute=previous.liveRoute;
+  x.liveRoute=applyKnownMultiLegRoute(x,previous.liveRoute);
   return x;
  }
  // Then restore the persistent in-memory/localStorage route cache synchronously
  // before renderLiveHome() runs. A successful route must survive normal 45s polls.
  if(liveRouteCache.has(key)){
   const cached=liveRouteCache.get(key);
-  if(cached?.status==='FOUND'||cached?.status==='STALE')x.liveRoute=cached;
+  if(cached?.status==='FOUND'||cached?.status==='STALE')x.liveRoute=applyKnownMultiLegRoute(x,cached);
   return x;
  }
  const stored=getCachedRoute(key);
  if(stored!==undefined){
   liveRouteCache.set(key,stored);
-  if(stored?.status==='FOUND'||stored?.status==='STALE')x.liveRoute=stored;
+  if(stored?.status==='FOUND'||stored?.status==='STALE')x.liveRoute=applyKnownMultiLegRoute(x,stored);
  }
  return x;
+}
+/* V63.9 — current-leg correction for multi-sector flight numbers.
+   KLM769 is scheduled as AMS→AUA→BON→AMS on Tuesdays in the current
+   September/October 2026 timetable. A static route lookup can return the
+   final BON→AMS sector even while the aircraft is actually operating the
+   first AMS→AUA sector. Use the current scheduled sector when its time window
+   clearly matches the live flight. */
+function knownCurrentMultiLegRoute(flight,date,existing){
+ const f=normalFlightCode(flight);
+ if(f!=='KLM769')return existing;
+ const d=String(date||'');
+ const day=new Date(d+'T00:00:00Z');
+ if(Number.isNaN(day.getTime())||day.getUTCDay()!==2)return existing;
+ if(d<'2026-09-15'||d>'2026-10-20')return existing;
+ const segments=[
+  {from:'AMS',to:'AUA',dep:'13:55',arr:'17:55',depTz:'Europe/Amsterdam',arrTz:'America/Aruba'},
+  {from:'AUA',to:'BON',dep:'19:15',arr:'20:05',depTz:'America/Aruba',arrTz:'America/Aruba'},
+  {from:'BON',to:'AMS',dep:'21:20',arr:'12:45',depTz:'America/Kralendijk',arrTz:'Europe/Amsterdam',arrNext:true}
+ ];
+ const now=Date.now();
+ for(const seg of segments){
+  const dep=parseLocalDateTimeInZone(d,seg.dep,seg.depTz);
+  const arr=parseLocalDateTimeInZone(d,seg.arr,seg.arrTz);
+  if(seg.arrNext&&arr)arr.setUTCDate(arr.getUTCDate()+1);
+  if(!dep||!arr)continue;
+  if(now>=dep.getTime()-30*60*1000 && now<=arr.getTime()+60*60*1000){
+   const from=routeAirport(seg.from),to=routeAirport(seg.to);
+   return {status:'FOUND',flight:f,date:d,flightNumber:f,airlineCode:'KL',airlineName:'KLM Royal Dutch Airlines',from:from.name,to:to.name,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:dep.toISOString(),arrivalUtc:arr.toISOString(),departureTime:seg.dep,source:'Known multi-leg schedule',resolvedAt:new Date().toISOString()};
+  }
+ }
+ return existing;
+}
+function applyKnownMultiLegRoute(x,route){
+ if(!route||route.status!=='FOUND')return route;
+ const corrected=knownCurrentMultiLegRoute(x?.callsign,utcDateKey(),route);
+ return corrected||route;
 }
 function liveJourneyFor(x){
  const f=getNextWatchedFlight();
  if(f&&watchedLiveMatch(f,[x])) return f;
- return x?.watchRef||x?.liveRoute||watchedFlightForLiveItem(x)||null;
+ const route=x?.liveRoute?applyKnownMultiLegRoute(x,x.liveRoute):null;
+ if(route&&route.status==='FOUND')x.liveRoute=route;
+ return x?.watchRef||route||watchedFlightForLiveItem(x)||null;
 }
 function xRouteForIdentity(callsign,registration){ const x=S.lastAllItems?.find(a=>normalFlightCode(a?.callsign)===normalFlightCode(callsign)&&normalFlightCode(a?.registration||a?.r||'')===normalFlightCode(registration)); const r=x?.liveRoute; return r?.status==='FOUND'?r:null; }
 const SKY_DEBUG_ENABLED=new URLSearchParams(window.location.search).get('debug')==='1';
@@ -2926,15 +2964,16 @@ async function enrichLiveRoute(x){
  const cs=normalFlightCode(x?.callsign);if(!cs)return;
  const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),key=routeCacheKey(cs,date,reg);
  if(liveRouteCache.has(key)){
-  const cached=liveRouteCache.get(key);x.liveRoute=cached;
+  const cached=applyKnownMultiLegRoute(x,liveRouteCache.get(key));x.liveRoute=cached;
   if(cached?.status==='FOUND'){if(cached.airlineCode)x.airlineCode=cached.airlineCode;if(cached.airlineName)x.airlineName=cached.airlineName;}
   if(S.featured===x.icao)renderLiveHome(x);return
  }
- const stored=getCachedRoute(key);if(stored!==undefined){liveRouteCache.set(key,stored);x.liveRoute=stored;if(stored?.status==='FOUND'){if(stored.airlineCode)x.airlineCode=stored.airlineCode;if(stored.airlineName)x.airlineName=stored.airlineName;}if(S.featured===x.icao)renderLiveHome(x);return}
+ const stored=getCachedRoute(key);if(stored!==undefined){stored=applyKnownMultiLegRoute(x,stored);liveRouteCache.set(key,stored);x.liveRoute=stored;if(stored?.status==='FOUND'){if(stored.airlineCode)x.airlineCode=stored.airlineCode;if(stored.airlineName)x.airlineName=stored.airlineName;}if(S.featured===x.icao)renderLiveHome(x);return}
  if(liveRoutePending.has(key))return liveRoutePending.get(key);
  const task=(async()=>{
    try{
-     const route=await lookupFlightRoute(cs,date,reg);
+     const rawRoute=await lookupFlightRoute(cs,date,reg);
+     const route=applyKnownMultiLegRoute(x,rawRoute);
      putCachedRoute(key,route);x.liveRoute=route;
      if(route?.status==='FOUND'){
        if(route.airlineCode)x.airlineCode=route.airlineCode;
