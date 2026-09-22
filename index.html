@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Sky Around Me V61.3: watched-live state sync + full-journey fallback.
 <!-- Sky Around Me V60.42: Featured camera centre + status wording — footer credits, two-column watchlist, and Maximum Distance directly under SKY SETTINGS. -->
 <!-- Sky Around Me V61.2: frontend colour restoration from V60.48; backend unchanged. -->
 <title>Sky Around Me</title>
@@ -1815,6 +1816,11 @@ function stopHeroMapCycle(){if(heroMapCycleTimer){clearInterval(heroMapCycleTime
 function startHeroMapCycle(live,watch){
  const key=[live?.icao||live?.hex||live?.registration||'',watch?.fromCode||'',watch?.toCode||'',S.rangeKm].join('|');
  if(!live||!watch?.fromCode||!watch?.toCode){stopHeroMapCycle();return}
+ // A watched flight found outside the selected local radius is a fallback
+ // Featured flight. Keep its FULL JOURNEY visible rather than switching it
+ // into the local-airspace camera cycle. The local stream resumes the cycle
+ // automatically as soon as a nearest aircraft exists again.
+ if(!choose(S.lastItems||[])){stopHeroMapCycle();heroMapMode='journey';return}
  if(heroMapCycleKey===key&&heroMapCycleTimer)return;
  stopHeroMapCycle();heroMapCycleKey=key;heroMapMode='journey';
  heroMapCycleTimer=setInterval(()=>{
@@ -1827,7 +1833,7 @@ function setHeroAircraft(x,watch){renderHeroFlightMap(x,watch);startHeroMapCycle
 function setQuietHeroState(show){if(show)stopHeroMapCycle();const q=$('heroQuietState');if(q)q.classList.toggle('is-hidden',!show);const hero=$('hero');if(hero)hero.classList.toggle('hero-is-quiet',!!show);const brand=$('heroMapBrand');const status=$('heroMapStatus');const rec=$('heroMapRecenter');if(show){if(brand)brand.style.display='none';if(status)status.style.display='none';if(rec)rec.style.display='none'}else{if(brand)brand.style.display='';if(status)status.style.display='';if(rec)rec.style.display=''}}
 function recenterHeroMap(){
  if(!heroFlightMap)return;
- const live=(S.lastItems||[]).find(x=>x.icao===S.featured)||choose(S.lastItems||[]);
+ const live=(S.lastItems||[]).find(x=>x.icao===S.featured)||choose(S.lastItems||[])||S.watchLive||null;
  const journey=live?liveJourneyFor(live):null;
  const a=journey?.fromLat!=null&&journey?.fromLon!=null?[Number(journey.fromLat),Number(journey.fromLon)]:routePoint(journey?.fromCode);
  const b=journey?.toLat!=null&&journey?.toLon!=null?[Number(journey.toLat),Number(journey.toLon)]:routePoint(journey?.toCode);
@@ -2232,7 +2238,7 @@ async function lookupFlightIdentity(x,routeOverride=null){
 }
 function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero)hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
  hydrateCachedIdentity(x);
- const journey=liveJourneyFor(x),airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x);
+ const journey=liveJourneyFor(x),watchContext=x?.watchGlobal?(x.watchRef||null):null,airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x);
  // Only start identity resolution with the current route when one is available.
  // This prevents the backend from being asked to guess a passenger flight from the ADS-B callsign alone.
  // Route first, then passenger-flight identity. V55 identity resolution requires
@@ -2242,13 +2248,13 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  // FEATURED AIRCRAFT deliberately uses the live ADS-B callsign only.
  // Passenger flight-number resolution is reserved for My Flights / watched flights.
  setHeroAircraft(x,journey);
- const displayFlight=normalFlightCode(x?.callsign||'LIVE AIRCRAFT').toUpperCase();
+ const displayFlight=normalFlightCode(watchContext?.flightNumber||watchContext?.flight||x?.callsign||'LIVE AIRCRAFT').toUpperCase();
  setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',displayFlight);setTextSafe('homeStatus','LIVE');
  $('airlineBadge').textContent=(x.airlineCode||displayFlight.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('aircraftReg').textContent=String(x.r||x.registration||'—').toUpperCase()||'—';$('aircraftRegNote').textContent=x.r?'AIRCRAFT REG':'REGISTRATION';$('aircraftCallsign').textContent=displayFlight||'—';
  const csLabel=x.callsign?('CALLSIGN '+x.callsign.toUpperCase()):'';
  const verified=false;
  $('callsignNote').className='callsign-note flight-callsign-note';
- $('callsignNote').textContent=verified?('CALLSIGN '+x.callsign.toUpperCase()):'CALLSIGN';
+ $('callsignNote').textContent=watchContext?(x.callsign?('LIVE CALLSIGN '+x.callsign.toUpperCase()):'LIVE TRACKING'):(verified?('CALLSIGN '+x.callsign.toUpperCase()):'CALLSIGN');
  $('flightName').className='flight-name '+(verified?'flight-verified':'flight-callsign');
  $('flightName').textContent=displayFlight.toUpperCase();$('aircraftType').textContent=model;
  $('route').innerHTML=journey&&journey.fromCode&&journey.toCode?`<span class="route-live-code">${journey.fromCode} → ${journey.toCode}</span>`:'LIVE AIRCRAFT';$('schedule').textContent=journey&&journey.fromCode&&journey.toCode?airline.toUpperCase()+' · '+model.toUpperCase():S.locationName.toUpperCase()+' · '+x.d.toFixed(1)+' KM AWAY';
@@ -2475,8 +2481,8 @@ function renderHomeWatch(items){
 
  setTextSafe('homeWatchReg',next.registration||next.reg||'—');
  setTextSafe('homeWatchCallsign',next.callsign||'—');
- setTextSafe('homeWatchStatus',live?(phase==='LANDED'?'COMPLETED':'READY'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY')));
- setTextSafe('homeWatchStatusSub',live?(pct+'% COMPLETE'):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING FOR LIVE POSITION':state==='SCHEDULED'?countdownText(next):'flight day complete'));
+ setTextSafe('homeWatchStatus',live?(phase==='LANDED'?'COMPLETED':'LIVE'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY')));
+ setTextSafe('homeWatchStatusSub',live?(phase==='LANDED'?'FLIGHT ENDED':'LIVE TRACKING · '+pct+'% COMPLETE'):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING FOR LIVE POSITION':state==='SCHEDULED'?countdownText(next):'flight day complete'));
  const dep=formatDepartureDisplay(next);
  setTextSafe('homeWatchDeparture',dep.primary?.split(' · ')[0]||next.departureTime||'—');
  setTextSafe('homeWatchDepartureSub',formatWatchTimeZoneLabel(next.fromCode)||dep.secondary||'DEPARTURE LOCAL');
@@ -2499,8 +2505,8 @@ function renderHomeWatch(items){
  if(progressBar)progressBar.style.width=routeReady?`${pct}%`:'0%';
  if(progressPlane)progressPlane.style.left=routeReady?`${pct}%`:'0%';
  if(progressRow)progressRow.hidden=!routeReady;
- const st=$('homeWatchState');if(st){st.className='state '+(live?'live':(future||state==='SCHEDULED'||state==='TRACKING PENDING'?'wait':'active'));st.textContent=live?(phase==='LANDED'?'COMPLETED':'READY'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY'));}
- const stSub=$('homeWatchStateSub');if(stSub)stSub.textContent=live?`${pct}% COMPLETE`:(future?countdownText(next):state==='TRACKING PENDING'?'WAITING…':'');
+ const st=$('homeWatchState');if(st){st.className='state '+(live?'live':(future||state==='SCHEDULED'||state==='TRACKING PENDING'?'wait':'active'));st.textContent=live?(phase==='LANDED'?'COMPLETED':'LIVE'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY'));}
+ const stSub=$('homeWatchStateSub');if(stSub)stSub.textContent=live?(phase==='LANDED'?'FLIGHT ENDED':`LIVE TRACKING · ${pct}% COMPLETE`):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING…':'');
 
  // Existing live values remain available to the rest of the UI, even though the
  // compact card now presents identity/status in the six metric columns above.
@@ -2840,12 +2846,13 @@ async function refreshWatchStream(){
  if(!target)target=today.find(f=>flightState(f)==='TRACKING PENDING');
  if(!target)target=today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
  S.watchTarget=target||null;
- if(!target){S.watchLive=null;renderHomeWatch();return null;}
+ if(!target){S.watchLive=null;refreshHomeDisplay();renderHomeWatch();return null;}
 
  // Future flights are display-only. No live ADS-B lookup and absolutely no
  // AirLabs request is made before the scheduled departure time.
  if(dateKeyFromValue(target.date)!==todayKeyLocal()){
    S.watchLive=null;
+   refreshHomeDisplay();
    renderHomeWatch();
    return null;
  }
@@ -2853,6 +2860,7 @@ async function refreshWatchStream(){
  const state=flightState(target);
  if(state==='SCHEDULED'){
    S.watchLive=null;
+   refreshHomeDisplay();
    renderHomeWatch();
    return null;
  }
@@ -2860,6 +2868,7 @@ async function refreshWatchStream(){
  const key=watchKey(target),now=Date.now();
  const interval=S.watchLive&&S.watchLive.watchKey===key?45000:60000;
  if(S.watchLive&&S.watchLive.watchKey===key&&now-S.watchSearchAt<interval){
+   refreshHomeDisplay();
    renderHomeWatch();
    return S.watchLive;
  }
@@ -2882,6 +2891,10 @@ async function refreshWatchStream(){
      S.watchLive=null;
      S.watchSearchAt=Date.now();
    }
+   // The watched ADS-B stream is independent of the local-radius stream.
+   // Re-render Featured immediately so a watched flight cannot remain on a
+   // stale READY/PENDING card after its live position has been found.
+   refreshHomeDisplay();
    renderHomeWatch();
    return S.watchLive;
  })();
