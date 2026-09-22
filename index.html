@@ -1641,6 +1641,13 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 }
 </style>
 
+
+<style id="v633-smart-watched-cards">
+/* V63.3 — the two cards have different jobs:
+   1) nearest aircraft + next watched flight
+   2) watched flight in hero + the NEXT different watched flight below. */
+</style>
+
 </head>
 <body>
 
@@ -2414,9 +2421,9 @@ function renderQuietScheduledHero(next){
  }
  const hero=$('hero');
  if(hero)hero.classList.add('hero-is-quiet');
- setTextSafe('homeEyebrow','NO AIRCRAFT');
+ setTextSafe('homeEyebrow','SKIES ARE QUIET');
  setTextSafe('homeTitle','NO AIRCRAFT NEARBY');
- setTextSafe('homeStatus','AIRSPACE');
+ setTextSafe('homeStatus','QUIET AIRSPACE');
  $('airlineBadge').textContent='QUIET';
  $('operator').textContent='AIRSPACE · '+S.locationName.toUpperCase();
  $('callsignNote').textContent='NO LIVE TRAFFIC';
@@ -2964,11 +2971,44 @@ function watchedCompletion(f,live){
  return Math.round(routeProgress(f,live)*100);
 }
 function formatWatchTimeZoneLabel(code){return code?`${String(code).toUpperCase()} LOCAL`:''}
+
+/* V63.3 — choose the bottom watched-flight card independently from the
+   primary watched flight. If the watched flight has taken over the hero
+   because there is no nearby aircraft, never duplicate that same flight
+   in the bottom card. */
+function getNextWatchedFlightExcluding(excludeKey){
+ const today=scheduledTodayFlights().filter(f=>!excludeKey||watchKey(f)!==excludeKey);
+ const liveToday=today.find(f=>watchHasLive(f));
+ if(liveToday)return liveToday;
+ const searchingToday=today.find(f=>flightState(f)==='SEARCHING');
+ if(searchingToday)return searchingToday;
+ const pendingToday=today.find(f=>flightState(f)==='TRACKING PENDING');
+ if(pendingToday)return pendingToday;
+ const upcomingToday=today.find(f=>{
+   const d=parseDeparture(f);
+   return !d||d.getTime()>=Date.now();
+ });
+ if(upcomingToday)return upcomingToday;
+ const future=nextFutureWatchedFlight();
+ return future&&(!excludeKey||watchKey(future)!==excludeKey)?future:null;
+}
+function getHomeBottomWatchedFlight(items){
+ const hasNearest=Array.isArray(items)&&items.length>0;
+ const primary=getNextWatchedFlight();
+ const primaryLive=primary&&watchHasLive(primary);
+ /* When no local aircraft exists and the watched flight is live in the
+    hero, the bottom card must move on to the next watched flight. */
+ if(!hasNearest&&primaryLive){
+   return getNextWatchedFlightExcluding(watchKey(primary));
+ }
+ return primary;
+}
+
 function renderHomeWatch(items){
  const watchEyebrow=$('homeWatchEyebrow');
  const wb=$('homeWatch');if(wb)wb.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
  const today=scheduledTodayFlights();
- const next=today.find(f=>watchHasLive(f))||today.find(f=>flightState(f)==='SEARCHING')||today.find(f=>flightState(f)==='TRACKING PENDING')||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
+ const next=getHomeBottomWatchedFlight(items);
  const progressRow=$('homeWatchProgressRow');
  const progressBar=$('homeWatchProgressBar');
  const progressPlane=$('homeWatchProgressPlane');
