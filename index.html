@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Sky Around Me V63.2 — watched-flight arrival-time persistence + device-local dual-time display -->
+<!-- Sky Around Me V61.9 — watched-flight dual-time display + TRN/EDI airport names -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- Sky Around Me V61.3: watched-live state sync + full-journey fallback.
@@ -1908,10 +1908,9 @@ function formatDepartureDisplay(f){
   if(originTime)return {primary:originTime,secondary:deviceTime||'—'};
   return {primary:deviceTime||'—',secondary:'—'};
  }
- if(f.departureTime||f.scheduledDeparture){
-  const localTime=String(f.departureTime||f.scheduledDeparture).match(/^(\d{1,2}:\d{2})/)?.[1]||String(f.departureTime||f.scheduledDeparture);
-  const deviceTime=localScheduledTimeToDevice(f.date,localTime,tz);
-  return {primary:localTime,secondary:deviceTime||'—'};
+ if(f.departureTime){
+  const deviceTime=localScheduledTimeToDevice(f.date,f.departureTime,tz);
+  return {primary:String(f.departureTime).match(/^(\d{1,2}:\d{2})/)?.[1]||String(f.departureTime),secondary:deviceTime||'—'};
  }
  return {primary:'—',secondary:'—'};
 }
@@ -2500,7 +2499,7 @@ function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
  const from=routeAirport(raw.fromCode,raw.from),to=routeAirport(raw.toCode,raw.to);
  if(Number.isFinite(Number(raw.fromLat)))from.lat=Number(raw.fromLat);if(Number.isFinite(Number(raw.fromLon)))from.lon=Number(raw.fromLon);
  if(Number.isFinite(Number(raw.toLat)))to.lat=Number(raw.toLat);if(Number.isFinite(Number(raw.toLon)))to.lon=Number(raw.toLon);
- return {status:'FOUND',flight,date,flightNumber:normalFlightCode(raw.flightNumber||''),airlineCode:normalFlightCode(raw.airlineCode||''),airlineName:raw.airlineName||'',from:from.name,to:to.name,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:raw.departureUtc||'',arrivalUtc:raw.arrivalUtc||'',departureTime:raw.departureTime||'',arrivalTime:raw.arrivalTime||raw.arrTime||'',source,resolvedAt:new Date().toISOString()};
+ return {status:'FOUND',flight,date,flightNumber:normalFlightCode(raw.flightNumber||''),airlineCode:normalFlightCode(raw.airlineCode||''),airlineName:raw.airlineName||'',from:from.name,to:to.name,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:raw.departureUtc||'',arrivalUtc:raw.arrivalUtc||'',departureTime:raw.departureTime||'',arrivalTime:raw.arrivalTime||raw.arrTime||raw.arrival||raw.scheduledArrival||'',source,resolvedAt:new Date().toISOString()};
 }
 function hydrateCachedLiveRoute(x,previousItems){
  const cs=normalFlightCode(x?.callsign);if(!cs)return x;
