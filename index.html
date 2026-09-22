@@ -2506,7 +2506,7 @@ function renderQuietScheduledHero(next){
  $('aircraftRegNote').textContent='REGISTRATION';
  $('aircraftCallsign').textContent='—';
  $('flightName').className='flight-name watched-flight-title quiet-flight-title';
- $('flightName').textContent='NO AIRCRAFT NEARBY';
+ $('flightName').textContent='NO AIRCRAFTS';
  $('aircraftType').textContent='Within the selected airspace';
  requestAnimationFrame(fitQuietHeroTitle);
  $('route').textContent=next&&next.fromCode&&next.toCode?`NEXT WATCHED · ${next.fromCode} → ${next.toCode}`:'NO LIVE TRAFFIC';
