@@ -2249,11 +2249,17 @@ function renderHeroFlightMap(live,watch){
    L.polyline(completed,{color:WATCH_ROUTE_COLOR,weight:4,opacity:.94,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
    if(remaining.length>1)L.polyline(remaining,{color:WATCH_ROUTE_COLOR,weight:2,dashArray:'5 8',opacity:.55,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
 
+   // Airport endpoints/labels belong to the route, not to a particular camera mode.
+   // Keep them rendered in BOTH FULL JOURNEY and LOCAL AIRSPACE. In LOCAL AIRSPACE
+   // they will naturally be off-screen when the airport is outside the selected
+   // radius, but they are still part of the map layer and become visible whenever
+   // that endpoint enters the viewport.
+   L.circleMarker(a,{radius:6,color:WATCH_ROUTE_COLOR,weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
+   L.circleMarker(b,{radius:6,color:WATCH_ROUTE_COLOR,weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
+   L.marker(a,{icon:heroMapAirportIcon(watch.fromCode,watch.from,'from'),interactive:false}).addTo(heroFlightLayer);
+   L.marker(b,{icon:heroMapAirportIcon(watch.toCode,watch.to,'to'),interactive:false}).addTo(heroFlightLayer);
+
    if(heroMapMode==='journey'){
-    L.circleMarker(a,{radius:6,color:WATCH_ROUTE_COLOR,weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
-    L.circleMarker(b,{radius:6,color:WATCH_ROUTE_COLOR,weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
-    L.marker(a,{icon:heroMapAirportIcon(watch.fromCode,watch.from,'from'),interactive:false}).addTo(heroFlightLayer);
-    L.marker(b,{icon:heroMapAirportIcon(watch.toCode,watch.to,'to'),interactive:false}).addTo(heroFlightLayer);
     const nextPoint=greatCirclePoint(a,b,Math.min(1,progress+.015));
     const angle=Number.isFinite(live?.heading)?live.heading:heroBearing(pos,progress<.99?nextPoint:b);
     L.marker(pos,{icon:heroAircraftIcon(angle),interactive:false}).addTo(heroFlightLayer);
