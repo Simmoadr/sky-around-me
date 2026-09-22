@@ -2557,11 +2557,15 @@ async function refreshMissingFlightData(){
 async function lookupWatchedSchedule(flight,date){
  const clean=normalFlightCode(flight);
  if(!clean||!date)return null;
- const url=`${SKY_AROUND_ME_NETLIFY}?lookup=schedule&flight=${encodeURIComponent(clean)}&date=${encodeURIComponent(date)}`;
+ const debugParam=SKY_DEBUG_ENABLED?'&debug=1':'';
+ const url=`${SKY_AROUND_ME_NETLIFY}?lookup=schedule&flight=${encodeURIComponent(clean)}&date=${encodeURIComponent(date)}${debugParam}`;
  try{
-  const j=await fetchJson(url,'AirLabs schedule lookup');
+  if(SKY_DEBUG_ENABLED)skyDebug('OK','AIRLABS SCHEDULE REQUEST',{flight:clean,date,mode:'schedule lookup'});
+  const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+  const j=await r.json();
+  if(SKY_DEBUG_ENABLED)skyDebug(j?._skyAirLabsDebug?.calls?'OK':'WARN','AIRLABS RESULT',{flight:clean,date,status:j?.status||'',source:j?.source||'',cache:r.headers.get('X-SkyAroundMe-Lookup-Cache')||'MISS',airLabsCalls:j?._skyAirLabsDebug?.calls??Number(r.headers.get('X-SkyAroundMe-AirLabs-Calls')||0),events:j?._skyAirLabsDebug?.events||[]});
   if(j&&(j.status==='FOUND'||j.status==='ROUTE_FOUND'))return j;
- }catch(e){}
+ }catch(e){if(SKY_DEBUG_ENABLED)skyDebug('ERROR','AIRLABS SCHEDULE ERROR',{flight:clean,date,error:String(e?.message||e)})}
  return null;
 }
 
@@ -2775,7 +2779,12 @@ async function searchGlobalWatchedFlight(f){
  for(const callsign of callsigns){
    try{
      const params=new URLSearchParams({...baseParams,callsign});
-     const j=await fetchJson(`${SKY_AROUND_ME_NETLIFY}?${params.toString()}`,'Watched flight ADS-B lookup');
+     if(SKY_DEBUG_ENABLED)params.set('debug','1');
+     const url=`${SKY_AROUND_ME_NETLIFY}?${params.toString()}`;
+     if(SKY_DEBUG_ENABLED)skyDebug('OK','WATCHED ADS-B REQUEST',{flight:baseParams.flight,date:baseParams.date,callsign,mode:'ADS-B only'});
+     const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+     const j=await r.json();
+     if(SKY_DEBUG_ENABLED)skyDebug(j?.status==='FOUND'?'OK':'WARN','WATCHED ADS-B RESULT',{flight:baseParams.flight,date:baseParams.date,callsign,status:j?.status||'',source:j?.source||'',airLabsCalls:j?._skyAirLabsDebug?.calls??Number(r.headers.get('X-SkyAroundMe-AirLabs-Calls')||0),airLabsEvents:j?._skyAirLabsDebug?.events||[]});
      if(j?.status==='FOUND'&&Array.isArray(j.ac)&&j.ac.length){
        const a=j.ac[0];
        return {icao:String(a.hex||'').toLowerCase(),callsign:String(a.flight||'').trim(),registration:String(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt==='number'?a.alt:null,speed:typeof a.speed==='number'?a.speed:null,heading:typeof a.heading==='number'?a.heading:null,vs:typeof a.vs==='number'?a.vs:null,type:a.type||'',desc:a.desc||a.type||'',operator:a.operator||'',source:j.source||'ADS-B',category:a.category||'',flightNumber:f.flightNumber||f.flight,airlineCode:f.airlineCode||normalFlightCode(f.flightNumber||f.flight).match(/^[A-Z]{1,3}/)?.[0]||'',airlineName:f.airlineName||airlineFromCallsign(a.flight||'')||'',watchRef:f,watchGlobal:true,adsbAttempts:j.attempts||[]};
