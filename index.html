@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- Sky Around Me V61.3: watched-live state sync + full-journey fallback.
-<!-- Sky Around Me V61.5: Featured camera centre + status wording — footer credits, two-column watchlist, and Maximum Distance directly under SKY SETTINGS. -->
+<!-- Sky Around Me V61.7: Featured camera centre + status wording — footer credits, two-column watchlist, and Maximum Distance directly under SKY SETTINGS. -->
 <!-- Sky Around Me V61.4: watched-flight live tracking grace period + live watched-flight fallback Featured state. -->
 <!-- Sky Around Me V61.5: frontend colour restoration from V60.48; backend unchanged. -->
 <title>Sky Around Me</title>
@@ -1271,6 +1271,19 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .hero .journey-end b,.hero .journey-end strong,.hero .journey-end .airport-code{color:var(--watch-route-color,#176f8b)!important;}
 .watch-bottom-compact .watch-bottom-title{color:var(--watch-route-color,#176f8b)!important;}
 </style>
+
+<style id="v617-readability">
+/* V61.7 — readable secondary labels on iPad */
+@media (min-width:701px) and (orientation:landscape){
+  .hero .journey-end small{font-size:8.5px!important;line-height:1.15!important;}
+  .hero .metric small{font-size:8.5px!important;line-height:1.15!important;}
+  .hero .aircraft-registration span{font-size:8px!important;}
+  .hero .aircraft-registration small{font-size:8.5px!important;}
+  .hero .callsign-note.flight-callsign-note{font-size:8.5px!important;}
+  .watch-bottom .watch-progress-end span{font-size:8px!important;}
+  .watch-bottom .watch-bottom-name{font-size:8px!important;}
+}
+</style>
 </head>
 <body>
 
@@ -1556,9 +1569,25 @@ let heroFlightLayer=null;
 let heroMapMode='journey';
 let heroMapCycleTimer=null;
 let heroMapCycleKey='';
+const AIRPORT_DISPLAY_NAMES={
+ LHR:'London Heathrow',LGW:'London Gatwick',STN:'London Stansted',MAN:'Manchester',BHX:'Birmingham',BRS:'Bristol',
+ DUB:'Dublin',SNN:'Shannon',CDG:'Paris Charles de Gaulle',AMS:'Amsterdam Schiphol',FRA:'Frankfurt',MUC:'Munich',ZRH:'Zurich',
+ JFK:'New York JFK',EWR:'Newark',LGA:'LaGuardia',CLT:'Charlotte Douglas',RDU:'Raleigh-Durham',MIA:'Miami',BOS:'Boston Logan',
+ SIN:'Singapore Changi',BKK:'Bangkok Suvarnabhumi',HKG:'Hong Kong',NRT:'Tokyo Narita',HND:'Tokyo Haneda',ICN:'Seoul Incheon',
+ DXB:'Dubai',DOH:'Doha Hamad',SYD:'Sydney',MEL:'Melbourne',LAX:'Los Angeles',SFO:'San Francisco',ORD:'Chicago O’Hare',
+ DFW:'Dallas Fort Worth',DEN:'Denver',SEA:'Seattle',LAS:'Las Vegas',YYZ:'Toronto Pearson',YVR:'Vancouver',MEX:'Mexico City',
+ FCO:'Rome Fiumicino',VIE:'Vienna',CPH:'Copenhagen',OSL:'Oslo',ARN:'Stockholm Arlanda',HEL:'Helsinki',BCN:'Barcelona',MAD:'Madrid',LIS:'Lisbon',
+ PMI:'Palma de Mallorca',BZR:'Béziers Cap d’Agde',CGK:'Jakarta Soekarno-Hatta',FCO:'Rome Fiumicino'
+};
+function airportDisplayName(code,name){
+ const c=String(code||'').trim().toUpperCase();
+ const n=String(name||'').trim();
+ if(n && n.toUpperCase()!==c) return n;
+ return AIRPORT_DISPLAY_NAMES[c]||n||c||'—';
+}
 function heroMapAirportIcon(code,name,side){
  const c=escapeHtml(code||'');
- const n=escapeHtml(name||'');
+ const n=escapeHtml(airportDisplayName(code,name));
  return L.divIcon({className:'hero-airport-icon',iconSize:[0,0],iconAnchor:[0,0],html:`<div class="hero-airport-label ${side||''}"><span>${c}</span><small>${n}</small></div><div class="hero-airport-dot"></div>`});
 }
 function miniAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"/></svg>'}
@@ -1774,26 +1803,22 @@ function renderHeroFlightMap(live,watch){
         }
         const visibleHeight=Math.max(220,(Number(size?.y)||350)-coveredHeight-bottomMargin);
 
-        // Size the local-airspace camera against the map area that is
-        // actually visible above the floating flight-information glass.
-        // This keeps the selected-radius circle from disappearing underneath it.
-        // Size the radius against the usable map area, not the full map
-        // container. Keep a little more breathing room so the full selected
-        // radius remains visible above the floating flight-information bar.
-        const targetMPerPx=(radiusM*2)/(visibleHeight*0.86);
+        // Size the radius against the part of the map that is genuinely visible
+        // above the floating flight-information bar.
+        const targetMPerPx=(radiusM*2)/(visibleHeight*0.84);
         const mercatorMPerPx=156543.03392*Math.max(0.15,Math.cos(lat*Math.PI/180));
         let zoom=Math.log2(mercatorMPerPx/targetMPerPx);
         zoom=Math.max(2,Math.min(18,Math.round(zoom)));
 
+        // Put the DEVICE/RADIUS centre in the centre of the usable map area,
+        // not the centre of the full map container. This is more reliable on
+        // iPad Safari than a fixed panBy offset because the flight card can
+        // change height between states.
         heroFlightMap.setView([lat,lon],zoom,{animate:false});
-        // The glass flight-information panel covers the lower part of the map.
-        // Move the camera by HALF of that covered height so the device/radius
-        // centre lands in the middle of the unobscured map area. The previous
-        // full-height shift was pushing the radius too far upward on iPad.
-        if(coveredHeight>0){
-         const shiftY=Math.round(coveredHeight/2);
-         heroFlightMap.panBy([0,-shiftY],{animate:false});
-        }
+        const mapWidth=Number(size?.x)||600;
+        const desiredY=Math.max(90,Math.min((Number(size?.y)||350)-90,visibleHeight/2));
+        const targetCentre=heroFlightMap.containerPointToLatLng(L.point(mapWidth/2,desiredY));
+        heroFlightMap.setView(targetCentre,zoom,{animate:false});
 
         // The radius circle is already drawn by the local-airspace layer above.
         // Do not add a second circle here; this function only controls the camera.
@@ -2278,7 +2303,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  $('route').innerHTML=journey&&journey.fromCode&&journey.toCode?`<span class="route-live-code">${journey.fromCode} → ${journey.toCode}</span>`:'LIVE AIRCRAFT';$('schedule').textContent=journey&&journey.fromCode&&journey.toCode?airline.toUpperCase()+' · '+model.toUpperCase():S.locationName.toUpperCase()+' · '+x.d.toFixed(1)+' KM AWAY';
  const journeyDistance=journey&&journey.toLat!=null&&journey.toLon!=null&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),Number(journey.toLat),Number(journey.toLon)):null;
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
- const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=journey.from||journey.fromName||'—';$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=journey.to||journey.toName||'—';$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
+ const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
 }
 const ROUTE_CACHE_TTL=30*60*1000;
 const ROUTE_FAILURE_TTL=5*60*1000;
@@ -2518,7 +2543,7 @@ function renderHomeWatch(items){
 
  if(progressFrom)progressFrom.textContent=next.fromCode||'—';
  if(progressTo)progressTo.textContent=next.toCode||'—';
- setTextSafe('homeWatchFromName',next.from||next.fromCode||'');setTextSafe('homeWatchToName',next.to||next.toCode||'');
+ setTextSafe('homeWatchFromName',airportDisplayName(next.fromCode,next.from));setTextSafe('homeWatchToName',airportDisplayName(next.toCode,next.to));
  if(progressLabel)progressLabel.textContent=routeReady?`${pct}% COMPLETE`:'—% COMPLETE';
  if(progressBar)progressBar.style.width=routeReady?`${pct}%`:'0%';
  if(progressPlane)progressPlane.style.left=routeReady?`${pct}%`:'0%';
@@ -3462,7 +3487,7 @@ updateSkySettingsUI();if(S.extendedAirspace&&S.rangeKm<100)setTimeout(fitLiveSky
 
 
 <style id="v616-ipad-fit">
-/* V61.6 — FINAL iPAD LANDSCAPE FIT
+/* V61.7 — FINAL iPAD LANDSCAPE FIT
    The 8th-gen iPad viewport is tight. Keep the Featured hero + Next Watched
    Flight inside the viewport instead of letting the hero consume the whole
    screen. The local-airspace camera then reserves the glass flight bar area. */
@@ -3474,9 +3499,9 @@ updateSkySettingsUI();if(S.extendedAirspace&&S.rangeKm<100)setTimeout(fitLiveSky
     padding-top:6px!important;
   }
   .hero{
-    height:clamp(430px,calc(100vh - 330px),500px)!important;
-    min-height:430px!important;
-    max-height:500px!important;
+    height:clamp(480px,calc(100vh - 225px),525px)!important;
+    min-height:480px!important;
+    max-height:525px!important;
   }
   .watch-bottom-compact{
     height:95px!important;
