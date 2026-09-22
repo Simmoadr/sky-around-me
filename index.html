@@ -2115,6 +2115,39 @@ let heroFlightLayer=null;
 let heroMapMode='journey';
 let heroMapCycleTimer=null;
 let heroMapCycleKey='';
+
+// V64.5 — Featured journey progress must reset when the featured aircraft
+// changes. If Plane A is at 85% and Plane B becomes nearest at 23%, never
+// animate 85% -> 23% (which looks like the aircraft flying backwards).
+// A new aircraft always starts at 0% and then animates forward to its actual
+// route progress. Same aircraft continues to update normally.
+let heroProgressAircraftKey='';
+let heroProgressResetToken=0;
+function updateHeroJourneyProgress(pct,aircraft){
+ const bar=$('flightProgress'),plane=$('progressPlane');
+ if(!bar&&!plane)return;
+ const value=Math.max(0,Math.min(100,Number(pct)||0));
+ const key=String(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||aircraft?.callsign||'').toLowerCase();
+ const changed=!!key&&!!heroProgressAircraftKey&&key!==heroProgressAircraftKey;
+ heroProgressAircraftKey=key;
+ if(changed){
+  const token=++heroProgressResetToken;
+  // Disable the CSS transition for the reset itself so the old aircraft
+  // cannot visibly travel backwards to zero.
+  if(bar){bar.style.transition='none';bar.style.width='0%';}
+  if(plane){plane.style.transition='none';plane.style.left='0%';}
+  // Force the browser to commit the 0% state before starting the new flight.
+  void (bar?.offsetWidth||plane?.offsetWidth||0);
+  requestAnimationFrame(()=>{
+   if(token!==heroProgressResetToken)return;
+   if(bar){bar.style.transition='';bar.style.width=value+'%';}
+   if(plane){plane.style.transition='';plane.style.left=value+'%';}
+  });
+  return;
+ }
+ if(bar)bar.style.width=value+'%';
+ if(plane)plane.style.left=value+'%';
+}
 const AIRPORT_DISPLAY_NAMES={
  LHR:'London Heathrow',LGW:'London Gatwick',STN:'London Stansted',MAN:'Manchester',BHX:'Birmingham',BRS:'Bristol',
  DUB:'Dublin',SNN:'Shannon',CDG:'Paris Charles de Gaulle',AMS:'Amsterdam Schiphol',FRA:'Frankfurt',MUC:'Munich',ZRH:'Zurich',
@@ -3015,7 +3048,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  const journeyDestLon=journey?.toLon!=null?Number(journey.toLon):routePoint(journey?.toCode)?.[1];
  const journeyDistance=journey&&Number.isFinite(journeyDestLat)&&Number.isFinite(journeyDestLon)&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),journeyDestLat,journeyDestLon):null;
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
- const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
+ const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=pct+'% COMPLETE';updateHeroJourneyProgress(pct,x)}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);updateHeroJourneyProgress(0,x)}}
 }
 const ROUTE_CACHE_TTL=30*60*1000;
 const ROUTE_FAILURE_TTL=5*60*1000;
