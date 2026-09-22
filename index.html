@@ -3579,39 +3579,38 @@ function watchedRouteCandidateLooksRelevant(f,x,route){
  return true;
 }
 async function findWatchedFlightByLiveRoute(f){
- if(!f||!f.fromCode||!f.toCode||!Array.isArray(S.lastAllItems)||!S.lastAllItems.length)return null;
- const now=Date.now(),dep=parseDeparture(f);
- if(dep&&now<dep.getTime()-45*60*1000)return null;
- if(dep&&now>dep.getTime()+6*60*60*1000)return null;
+ if(!f||!f.fromCode||!f.toCode)return null;
+ const fromPoint=routePoint(f.fromCode),toPoint=routePoint(f.toCode);
+ if(!fromPoint||!toPoint)return null;
+ const dep=parseDeparture(f),arr=f.arrivalUtc?new Date(f.arrivalUtc):null;
+ if(dep&&Date.now()<dep.getTime()-45*60*1000)return null;
+ if(dep&&Date.now()>dep.getTime()+8*60*60*1000)return null;
  const expectedPrefix=watchedRouteAirlinePrefix(f);
- const originLat=f.fromLat!=null?Number(f.fromLat):routePoint(f.fromCode)?.[0];
- const originLon=f.fromLon!=null?Number(f.fromLon):routePoint(f.fromCode)?.[1];
- const candidates=S.lastAllItems.filter(x=>{
-   if(!x||!x.icao||x.lat==null||x.lon==null)return false;
-   const c=normalFlightCode(x.callsign||'');
-   if(expectedPrefix&&!c.startsWith(expectedPrefix))return false;
-   if(Number.isFinite(originLat)&&Number.isFinite(originLon)&&hav(Number(x.lat),Number(x.lon),originLat,originLon)>180)return false;
-   return true;
- }).sort((a,b)=>{
-   const da=(Number.isFinite(originLat)&&Number.isFinite(originLon))?hav(Number(a.lat),Number(a.lon),originLat,originLon):0;
-   const db=(Number.isFinite(originLat)&&Number.isFinite(originLon))?hav(Number(b.lat),Number(b.lon),originLat,originLon):0;
-   return da-db;
- }).slice(0,4);
- if(!candidates.length)return null;
- if(SKY_DEBUG_ENABLED)skyDebug('OK','WATCHED ROUTE FALLBACK CANDIDATES',{flight:normalFlightCode(f.flightNumber||f.flight),route:`${f.fromCode}-${f.toCode}`,expectedPrefix,candidates:candidates.map(x=>({callsign:x.callsign,registration:x.registration,icao:x.icao,distanceFromOrigin:(Number.isFinite(originLat)&&Number.isFinite(originLon))?Math.round(hav(Number(x.lat),Number(x.lon),originLat,originLon)):null}))});
- for(const x of candidates){
-   try{
-     const route=await lookupFlightRoute(x.callsign,utcDateKey(),x.registration||'');
-     if(SKY_DEBUG_ENABLED)skyDebug(route?.status==='FOUND'?'OK':'WARN','WATCHED ROUTE CANDIDATE RESULT',{candidate:x.callsign,registration:x.registration||'',route:route?.status==='FOUND'?`${route.fromCode}-${route.toCode}`:'NOT_FOUND',departureUtc:route?.departureUtc||'',source:route?.source||''});
-     if(!watchedRouteCandidateLooksRelevant(f,x,route))continue;
-     x.liveRoute=route;
-     return {icao:x.icao,callsign:x.callsign,registration:x.registration||'',lon:x.lon,lat:x.lat,alt:x.alt,speed:x.speed,heading:x.heading,vs:x.vs,type:x.type,desc:x.desc,operator:x.operator,source:'ADS-B route fallback',category:x.category||'',flightNumber:f.flightNumber||f.flight,airlineCode:f.airlineCode||normalFlightCode(f.flightNumber||f.flight).match(/^[A-Z]{1,3}/)?.[0]||'',airlineName:f.airlineName||airlineFromCallsign(x.callsign||'')||'',watchRef:f,watchGlobal:true,adsbAttempts:['route-fallback']};
-   }catch(e){
-     if(SKY_DEBUG_ENABLED)skyDebug('WARN','WATCHED ROUTE CANDIDATE ERROR',{candidate:x.callsign,registration:x.registration||'',error:String(e?.message||e)});
+ if(!expectedPrefix)return null;
+ const params=new URLSearchParams({
+   lookup:'watched-discovery',
+   flight:normalFlightCode(f.flightNumber||f.flight||''),
+   date:String(f.date||''),
+   from:String(f.fromCode||''),to:String(f.toCode||''),
+   fromLat:String(f.fromLat!=null?f.fromLat:fromPoint[0]),fromLon:String(f.fromLon!=null?f.fromLon:fromPoint[1]),
+   toLat:String(f.toLat!=null?f.toLat:toPoint[0]),toLon:String(f.toLon!=null?f.toLon:toPoint[1]),
+   departureUtc:String(f.departureUtc||''),arrivalUtc:String(f.arrivalUtc||''),airlinePrefix:expectedPrefix
+ });
+ if(SKY_DEBUG_ENABLED)params.set('debug','1');
+ try{
+   if(SKY_DEBUG_ENABLED)skyDebug('OK','WATCHED ROUTE CORRIDOR DISCOVERY REQUEST',{flight:normalFlightCode(f.flightNumber||f.flight),route:`${f.fromCode}-${f.toCode}`,airlinePrefix:expectedPrefix,mode:'ADS-B only'});
+   const r=await fetch(`${SKY_AROUND_ME_NETLIFY}?${params.toString()}`,{cache:'no-store',headers:{Accept:'application/json'}});
+   airLabsArchitectureCheck(r,'watched-discovery');airLabsUsageRecord(r,'other');
+   const j=await r.json();
+   if(SKY_DEBUG_ENABLED)skyDebug(j?.status==='FOUND'?'OK':'WARN','WATCHED ROUTE CORRIDOR DISCOVERY RESULT',{flight:normalFlightCode(f.flightNumber||f.flight),status:j?.status||'',source:j?.source||'',resolver:j?.resolver||'',expectedPoint:j?.expectedPoint||null,airLabsCalls:j?._skyAirLabsDebug?.calls??Number(r.headers.get('X-SkyAroundMe-AirLabs-Calls')||0),airLabsEvents:j?._skyAirLabsDebug?.events||[],attempts:j?.attempts||[]});
+   if(j?.status==='FOUND'&&Array.isArray(j.ac)&&j.ac.length){
+     const a=j.ac[0];
+     return {icao:String(a.hex||'').toLowerCase(),callsign:String(a.flight||a.callsign||'').trim(),registration:String(a.r||a.registration||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt==='number'?a.alt:null,speed:typeof a.speed==='number'?a.speed:null,heading:typeof a.heading==='number'?a.heading:null,vs:typeof a.vs==='number'?a.vs:null,type:a.type||'',desc:a.desc||a.type||'',operator:a.operator||'',source:j.source||'ADS-B route discovery',category:a.category||'',flightNumber:f.flightNumber||f.flight,airlineCode:f.airlineCode||normalFlightCode(f.flightNumber||f.flight).match(/^[A-Z]{1,3}/)?.[0]||'',airlineName:f.airlineName||airlineFromCallsign(a.flight||'')||'',watchRef:f,watchGlobal:true,adsbAttempts:j.attempts||['route-corridor']};
    }
- }
+ }catch(e){if(SKY_DEBUG_ENABLED)skyDebug('WARN','WATCHED ROUTE CORRIDOR DISCOVERY ERROR',{flight:normalFlightCode(f.flightNumber||f.flight),error:String(e?.message||e)});}
  return null;
 }
+
 async function searchGlobalWatchedFlight(f){
  if(!f)return null;
  const callsigns=watchedLookupCallsigns(f);
