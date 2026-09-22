@@ -1802,7 +1802,51 @@ async function useDeviceLocation(){if(!navigator.geolocation){$('locationMessage
 async function searchPlace(){const q=$('placeSearch').value.trim();if(!q){$('locationMessage').textContent='Enter a place name first.';return}$('locationMessage').textContent='Searching…';try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(q),{headers:{Accept:'application/json'}});if(!r.ok)throw new Error('Place search failed');const a=await r.json();if(!a.length)throw new Error('Place not found');const label=a[0].display_name.split(',').slice(0,3).join(', ');applyLocation(a[0].lat,a[0].lon,label,'custom');$('locationMessage').textContent='Location set to '+label+'.'}catch(e){$('locationMessage').textContent=e.message||'Could not find that place.'}}
 
 const pages=[...document.querySelectorAll('.page')];
-document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');pages.forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='mapPage'){setTimeout(()=>{map.invalidateSize();if(S.extendedAirspace&&S.rangeKm<100)fitLiveSkyExtended()},60);poll()}else if(b.dataset.page==='home'){setTimeout(()=>{refreshHomeDisplay();if(heroFlightMap){heroFlightMap.invalidateSize(true);setTimeout(()=>{heroFlightMap&&heroFlightMap.invalidateSize(true);recenterHeroMap()},180);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),600)}},40)}}));
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',async()=>{
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  pages.forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));
+
+  if(b.dataset.page==='mapPage'){
+    setTimeout(()=>{
+      map.invalidateSize();
+      if(S.extendedAirspace&&S.rangeKm<100)fitLiveSkyExtended();
+    },60);
+
+    // V64.1 — LIVE SKY always gets a fresh ADS-B position when opened.
+    poll();
+
+  }else if(b.dataset.page==='home'){
+
+    // V64.1 — FEATURED must use the same fresh ADS-B position as LIVE SKY.
+    // Previously FEATURED reused S.lastItems, which could be up to 45 seconds
+    // old. At 400+ kt that can put the aircraft several kilometres behind
+    // its actual position.
+    setTimeout(async()=>{
+      await poll();
+
+      // poll() has refreshed S.lastItems and rendered the current Featured
+      // aircraft. Refresh the display once more so watched-flight state is
+      // also applied without changing the aircraft position source.
+      refreshHomeDisplay();
+
+      if(heroFlightMap){
+        heroFlightMap.invalidateSize(true);
+
+        setTimeout(()=>{
+          if(heroFlightMap){
+            heroFlightMap.invalidateSize(true);
+            recenterHeroMap();
+          }
+        },180);
+
+        setTimeout(()=>{
+          if(heroFlightMap)heroFlightMap.invalidateSize(true);
+        },600);
+      }
+    },40);
+  }
+}));
 function setRange(v){const n=Math.min(250,Math.max(1,Math.round(Number(v)||100)));S.rangeKm=n;saveSkySettings();updateSkySettingsUI();if(typeof rangeCircle!=='undefined')rangeCircle.setRadius(n*1000);if(typeof extendedCircle!=='undefined'&&extendedCircle)extendedCircle.setStyle({opacity:S.extendedAirspace&&n<100?1:0,fillOpacity:0}).setRadius(100000);
  // A range change invalidates the current Featured aircraft immediately. Do not
  // let the previous aircraft survive while the new airspace scan is in flight.
