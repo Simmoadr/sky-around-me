@@ -2944,6 +2944,32 @@ async function lookupFlightRoute(callsign,date,registration){
  const cs=normalFlightCode(callsign);
  const reg=String(registration||'').trim().toUpperCase();
  if(!cs&&!reg)return {status:'NOT_FOUND',flight:cs,date,source:'FlightRouteLookup'};
+
+ // V63.12 — for a live airline callsign, resolve the exact dated schedule first.
+ // The callsign/flightroute endpoint can return a generic or stale sector for
+ // an aircraft/flight number. The dated schedule is the authoritative sector
+ // for the flight being operated today. Example: ETD47 on 22-Sep-2026 is
+ // AUH → DUB, not AUH → AGP.
+ if(cs&&date&&typeof lookupWatchedSchedule==='function'){
+  try{
+   const scheduled=await lookupWatchedSchedule(cs,date);
+   if(scheduled&&(scheduled.status==='FOUND'||scheduled.status==='ROUTE_FOUND')&&scheduled.fromCode&&scheduled.toCode){
+    return normaliseRoute({
+     fromCode:scheduled.fromCode,toCode:scheduled.toCode,
+     from:scheduled.from||scheduled.fromCode,to:scheduled.to||scheduled.toCode,
+     fromLat:scheduled.fromLat,fromLon:scheduled.fromLon,
+     toLat:scheduled.toLat,toLon:scheduled.toLon,
+     flightNumber:scheduled.flightNumber||cs,
+     airlineCode:scheduled.airlineCode||'',airlineName:scheduled.airlineName||'',
+     departureUtc:scheduled.departureUtc||'',arrivalUtc:scheduled.arrivalUtc||'',
+     departureTime:scheduled.departureTime||'',arrivalTime:scheduled.arrivalTime||scheduled.arrTime||scheduled.arrival||scheduled.scheduledArrival||''
+    },cs,date,'DatedScheduleLookup');
+   }
+  }catch(e){
+   if(SKY_DEBUG_ENABLED)skyDebug('WARN','DATED SCHEDULE ROUTE FALLBACK',{flight:cs,date,error:String(e?.message||e)});
+  }
+ }
+
  const params=`lookup=callsign&value=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&debug=1`;
  const controller=new AbortController();
  const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
@@ -3825,6 +3851,30 @@ body .hero .hero-bottom .journey-percent {
 }
 </style>
 
+
+<style id="v6312-final-viewport-fit">
+/* V63.12 — FINAL iPad landscape viewport fit. This MUST come after all legacy
+   viewport rules because the file contains several older max-height overrides. */
+@media (min-width:701px) and (orientation:landscape){
+  .app{padding-bottom:0!important;}
+  .home{
+    height:calc(100dvh - 59px)!important;
+    min-height:0!important;
+    padding-top:6px!important;
+    padding-bottom:0!important;
+    overflow:visible!important;
+  }
+  .hero{
+    height:calc(100dvh - 175px)!important;
+    min-height:0!important;
+    max-height:none!important;
+  }
+  .watch-bottom-compact{
+    margin-top:7px!important;
+    margin-bottom:0!important;
+  }
+}
+</style>
 </body></html>
 
 
