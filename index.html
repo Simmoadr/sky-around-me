@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Sky Around Me V61.9 — watched-flight dual-time display + TRN/EDI airport names -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- Sky Around Me V61.3: watched-live state sync + full-journey fallback.
@@ -1212,7 +1213,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .watch-compact-metric{min-width:0;overflow:hidden;}
 .watch-compact-metric label{display:block;font-size:7px;line-height:1;color:#778080;letter-spacing:.15em;font-weight:900;white-space:nowrap;}
 .watch-compact-metric b{display:block;font-size:16px;line-height:1.05;margin-top:5px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#172124;}
-.watch-compact-metric small{display:block;font-size:7px;line-height:1.05;color:#8a9494;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.watch-compact-metric small{display:block;font-size:10px;line-height:1;margin-top:3px;color:#7b8585;font-weight:750;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .watch-compact-route{
   grid-column:2!important;grid-row:2!important;
   display:grid!important;grid-template-columns:82px minmax(0,1fr) 82px;align-items:center;gap:0;
@@ -1231,7 +1232,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .watch-legacy-state{display:none!important;}
 @media (min-width:701px) and (orientation:landscape) and (max-height:760px){
   .watch-bottom-compact{height:95px!important;min-height:95px!important;max-height:95px!important;grid-template-columns:minmax(250px,1.12fr) minmax(0,2.55fr)!important;grid-template-rows:48px 34px!important;padding:7px 20px 7px!important;column-gap:20px!important;margin-top:7px!important;}
-  .watch-compact-airline{font-size:7px}.watch-compact-airline-code{min-width:31px;height:21px;font-size:8px}.watch-bottom-compact .watch-bottom-title{font-size:23px!important;margin-top:4px!important}.watch-compact-sub{font-size:7px}.watch-compact-metrics{height:48px;gap:12px;padding:4px 7px 3px}.watch-compact-metric label{font-size:6px}.watch-compact-metric b{font-size:14px;margin-top:4px}.watch-compact-metric small{font-size:6px;margin-top:2px}.watch-compact-route{height:34px;grid-template-columns:72px minmax(0,1fr) 72px;padding:0 5px}.watch-compact-end{height:34px}.watch-compact-end b{font-size:13px}.watch-compact-end small{font-size:5.5px}.watch-compact-progress{height:34px;padding:0 6px}.watch-compact-progress .watch-progress-track span{width:16px;height:16px;font-size:8px}
+  .watch-compact-airline{font-size:7px}.watch-compact-airline-code{min-width:31px;height:21px;font-size:8px}.watch-bottom-compact .watch-bottom-title{font-size:23px!important;margin-top:4px!important}.watch-compact-sub{font-size:7px}.watch-compact-metrics{height:48px;gap:12px;padding:4px 7px 3px}.watch-compact-metric label{font-size:6px}.watch-compact-metric b{font-size:14px;margin-top:4px}.watch-compact-metric small{font-size:8px;margin-top:2px}.watch-compact-route{height:34px;grid-template-columns:72px minmax(0,1fr) 72px;padding:0 5px}.watch-compact-end{height:34px}.watch-compact-end b{font-size:13px}.watch-compact-end small{font-size:5.5px}.watch-compact-progress{height:34px;padding:0 6px}.watch-compact-progress .watch-progress-track span{width:16px;height:16px;font-size:8px}
 }
 @media(max-width:700px){
   .watch-bottom-compact{display:block!important;height:auto!important;min-height:0!important;max-height:none!important;padding:14px 16px!important;overflow:visible!important;}
@@ -1558,22 +1559,54 @@ function countdownText(f){
 }
 function airportTimeZone(code){return airportTimeZones[String(code||'').toUpperCase()]||null}
 function formatTimeInZone(iso,tz){if(!iso||!tz)return null;try{return new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(iso))}catch(e){return null}}
+function formatDeviceTimeFromUtc(iso){
+ if(!iso)return null;
+ try{
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(iso));
+ }catch(e){return null}
+}
+function localScheduledTimeToDevice(date,time,tz){
+ if(!date||!time||!tz)return null;
+ const d=parseLocalDateTimeInZone(date,time,tz);
+ return d?formatDeviceTimeFromUtc(d.toISOString()):null;
+}
 function formatDepartureDisplay(f){
- if(!f)return {primary:'—',secondary:'Departure time pending'};
+ if(!f)return {primary:'—',secondary:'—'};
  const origin=f.fromCode||'';
  const tz=airportTimeZone(origin);
  if(f.departureUtc){
   const originTime=formatTimeInZone(f.departureUtc,tz);
-  const userTime=new Intl.DateTimeFormat('en-GB',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,hour:'2-digit',minute:'2-digit',hour12:false,timeZoneName:'short'}).format(new Date(f.departureUtc));
-  if(originTime){
-   const label=origin?`${origin} LOCAL`:'ORIGIN LOCAL';
-   return {primary:`${originTime} · ${label}`,secondary:`YOUR TIME: ${userTime}`};
-  }
-  return {primary:userTime,secondary:'YOUR LOCAL TIME'};
+  const deviceTime=formatDeviceTimeFromUtc(f.departureUtc);
+  if(originTime)return {primary:originTime,secondary:deviceTime||'—'};
+  return {primary:deviceTime||'—',secondary:'—'};
  }
- if(f.departureTime){return {primary:`${f.departureTime}${origin?' · '+origin+' LOCAL':''}`,secondary:'Scheduled departure time'};}
- return {primary:'—',secondary:'Departure time pending'};
+ if(f.departureTime){
+  const deviceTime=localScheduledTimeToDevice(f.date,f.departureTime,tz);
+  return {primary:String(f.departureTime).match(/^(\d{1,2}:\d{2})/)?.[1]||String(f.departureTime),secondary:deviceTime||'—'};
+ }
+ return {primary:'—',secondary:'—'};
 }
+function formatWatchArrival(f){
+ const utc=f?.arrivalUtc;
+ const dest=String(f?.toCode||'').toUpperCase();
+ const tz=airportTimeZone(dest);
+ if(utc){
+  const localTime=formatTimeInZone(utc,tz);
+  const deviceTime=formatDeviceTimeFromUtc(utc);
+  if(localTime)return {primary:localTime,secondary:deviceTime||'—'};
+  return {primary:deviceTime||'—',secondary:'—'};
+ }
+ const raw=f?.arrivalTime||f?.arrTime||'';
+ if(raw){
+  const m=String(raw).match(/(\d{1,2}:\d{2})/);
+  const primary=m?m[1]:String(raw);
+  const deviceTime=localScheduledTimeToDevice(f?.date,primary,tz);
+  return {primary,secondary:deviceTime||'—'};
+ }
+ return {primary:'—',secondary:'—'};
+}
+
 function aircraftHeroSvg(x){
  const body=`<g class="airframe-fixed">
  <path class="airframe" d="M78 126 C145 111 216 99 316 96 C407 93 497 99 582 114 L664 126 L734 139 L745 148 L725 154 L645 154 L576 151 C535 158 488 162 426 162 H284 C202 161 130 151 78 139 Z"/>
@@ -1600,7 +1633,7 @@ const AIRPORT_DISPLAY_NAMES={
  DXB:'Dubai',DOH:'Doha Hamad',SYD:'Sydney',MEL:'Melbourne',LAX:'Los Angeles',SFO:'San Francisco',ORD:'Chicago O’Hare',
  DFW:'Dallas Fort Worth',DEN:'Denver',SEA:'Seattle',LAS:'Las Vegas',YYZ:'Toronto Pearson',YVR:'Vancouver',MEX:'Mexico City',
  FCO:'Rome Fiumicino',VIE:'Vienna',CPH:'Copenhagen',OSL:'Oslo',ARN:'Stockholm Arlanda',HEL:'Helsinki',BCN:'Barcelona',MAD:'Madrid',LIS:'Lisbon',
- PMI:'Palma de Mallorca',BZR:'Béziers Cap d’Agde',CGK:'Jakarta Soekarno-Hatta',FCO:'Rome Fiumicino'
+ PMI:'Palma de Mallorca',BZR:'Béziers Cap d’Agde',TRN:'Turin',EDI:'Edinburgh',CGK:'Jakarta Soekarno-Hatta',FCO:'Rome Fiumicino'
 };
 function airportDisplayName(code,name){
  const c=String(code||'').trim().toUpperCase();
@@ -2487,23 +2520,6 @@ function watchedCompletion(f,live){
  if(!a||!b||!a.every(Number.isFinite)||!b.every(Number.isFinite))return null;
  return Math.round(routeProgress(f,live)*100);
 }
-function formatWatchArrival(f){
- const raw=f?.arrivalTime||f?.arrTime||'';
- if(raw){
-  const m=String(raw).match(/(\d{1,2}:\d{2})/);
-  if(m)return m[1];
- }
- const utc=f?.arrivalUtc;
- if(!utc)return '—';
- const d=new Date(utc);
- if(Number.isNaN(d.getTime()))return '—';
- const tzByAirport={
-  JFK:'America/New_York',EWR:'America/New_York',LGA:'America/New_York',CLT:'America/New_York',RDU:'America/New_York',MIA:'America/New_York',BOS:'America/New_York',ATL:'America/New_York',ORD:'America/Chicago',DFW:'America/Chicago',IAH:'America/Chicago',DEN:'America/Denver',LAX:'America/Los_Angeles',SFO:'America/Los_Angeles',SEA:'America/Los_Angeles',LAS:'America/Los_Angeles',YYZ:'America/Toronto',YVR:'America/Vancouver',MEX:'America/Mexico_City',SIN:'Asia/Singapore',HKG:'Asia/Hong_Kong',NRT:'Asia/Tokyo',HND:'Asia/Tokyo',ICN:'Asia/Seoul',DXB:'Asia/Dubai',DOH:'Asia/Qatar',SYD:'Australia/Sydney',MEL:'Australia/Melbourne',BKK:'Asia/Bangkok',DEL:'Asia/Kolkata',BOM:'Asia/Kolkata',LHR:'Europe/London',LGW:'Europe/London',STN:'Europe/London',MAN:'Europe/London',BHX:'Europe/London',BRS:'Europe/London',CGK:'Asia/Jakarta',DPS:'Asia/Makassar',BKK:'Asia/Bangkok',HKG:'Asia/Hong_Kong',ICN:'Asia/Seoul',SYD:'Australia/Sydney',MEL:'Australia/Melbourne',DUB:'Europe/Dublin',CDG:'Europe/Paris',AMS:'Europe/Amsterdam',FRA:'Europe/Berlin',MUC:'Europe/Berlin',ZRH:'Europe/Zurich',MAD:'Europe/Madrid',BCN:'Europe/Madrid',LIS:'Europe/Lisbon',FCO:'Europe/Rome',VIE:'Europe/Vienna',CPH:'Europe/Copenhagen',OSL:'Europe/Oslo',ARN:'Europe/Stockholm',HEL:'Europe/Helsinki'
- };
- const tz=tzByAirport[String(f?.toCode||'').toUpperCase()];
- const opts={hour:'2-digit',minute:'2-digit',hour12:false};
- try{return tz?new Intl.DateTimeFormat('en-GB',{...opts,timeZone:tz}).format(d):new Intl.DateTimeFormat('en-GB',opts).format(d)}catch(e){return '—'}
-}
 function formatWatchTimeZoneLabel(code){return code?`${String(code).toUpperCase()} LOCAL`:''}
 function renderHomeWatch(items){
  const wb=$('homeWatch');if(wb)wb.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
@@ -2550,11 +2566,11 @@ function renderHomeWatch(items){
  setTextSafe('homeWatchStatus',live?(phase==='LANDED'?'COMPLETED':'LIVE'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY')));
  setTextSafe('homeWatchStatusSub',live?(phase==='LANDED'?'FLIGHT ENDED':'LIVE TRACKING · '+pct+'% COMPLETE'):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING FOR LIVE POSITION':state==='SCHEDULED'?countdownText(next):'flight day complete'));
  const dep=formatDepartureDisplay(next);
- setTextSafe('homeWatchDeparture',dep.primary?.split(' · ')[0]||next.departureTime||'—');
- setTextSafe('homeWatchDepartureSub',formatWatchTimeZoneLabel(next.fromCode)||dep.secondary||'DEPARTURE LOCAL');
+ setTextSafe('homeWatchDeparture',dep.primary||next.departureTime||'—');
+ setTextSafe('homeWatchDepartureSub',dep.secondary||'—');
  const arr=formatWatchArrival(next);
- setTextSafe('homeWatchArrival',arr);
- setTextSafe('homeWatchArrivalSub',formatWatchTimeZoneLabel(next.toCode)||'ARRIVAL LOCAL');
+ setTextSafe('homeWatchArrival',arr.primary||'—');
+ setTextSafe('homeWatchArrivalSub',arr.secondary||'—');
  setTextSafe('homeWatchFlight',(next.flightNumber||next.flight||'—').toUpperCase());
  setTextSafe('homeWatchFlightSub',next.airlineName||'WATCHED FLIGHT');
 
