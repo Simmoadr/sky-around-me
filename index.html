@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- Sky Around Me V61.3: watched-live state sync + full-journey fallback.
-<!-- Sky Around Me V60.42: Featured camera centre + status wording — footer credits, two-column watchlist, and Maximum Distance directly under SKY SETTINGS. -->
+<!-- Sky Around Me V61.5: Featured camera centre + status wording — footer credits, two-column watchlist, and Maximum Distance directly under SKY SETTINGS. -->
 <!-- Sky Around Me V61.4: watched-flight live tracking grace period + live watched-flight fallback Featured state. -->
-<!-- Sky Around Me V61.2: frontend colour restoration from V60.48; backend unchanged. -->
+<!-- Sky Around Me V61.5: frontend colour restoration from V60.48; backend unchanged. -->
 <title>Sky Around Me</title>
 <!-- Sky Around Me v60.19: V60.18 regression fix — restore route enrichment, map cycle, and centered telemetry. V60.18 map/API logic otherwise retained.
 <!-- Sky Around Me v52: destination route/progress restore + exact flight/date watched-route correction; v46 AirLabs resolver retained
@@ -287,7 +287,7 @@
 .hero-quiet-state small{display:block;font-size:10px;line-height:1.5;margin-top:12px;color:#5f7276;letter-spacing:.03em}
 .hero-quiet-state .quiet-quote-wrap{display:inline-block;margin-top:18px;text-align:left}
 .hero-quiet-state .quiet-rule{width:100%;height:2px;background:#3bb5a3;margin:0 0 9px;border-radius:2px}
-.hero-quiet-state .quiet-quote{display:inline-block;font-family:Georgia,"Times New Roman",serif;font-size:15px;color:#216a77;font-weight:600;line-height:1.25}
+.hero-quiet-state .quiet-quote{display:inline-block;font-family:Georgia,"Times New Roman",serif;font-size:15px;color:#216a77;font-weight:600;line-height:1.25}.hero-quiet-state .quiet-next{margin-top:18px;padding:13px 18px;border:1px solid rgba(23,111,139,.14);background:rgba(255,255,255,.52);border-radius:12px;text-align:center}.hero-quiet-state .quiet-next span{display:block;font-size:7px;letter-spacing:.18em;font-weight:900;color:#657779}.hero-quiet-state .quiet-next strong{display:block;margin-top:5px;font-size:17px;letter-spacing:-.02em;color:#176f8b}.hero-quiet-state .quiet-next small{margin-top:5px;font-size:8px;color:#778586;letter-spacing:.04em}.hero-quiet-state .quiet-quote-wrap{margin-top:16px}
 .hero-quiet-state.is-hidden{display:none}
 @media(max-width:700px){.hero-quiet-state{width:calc(100% - 28px);padding:22px 20px}.hero-quiet-state h2{font-size:34px}.hero-quiet-state p{font-size:13px}.hero-quiet-state .quiet-quote{font-size:14px}}
 .hero-route-active{--watch-route-color:#176f8b}
@@ -1905,6 +1905,38 @@ async function loadAirportDatabase(){
 function greatCirclePoint(a,b,t){const r=Math.PI/180,A=[a[0]*r,a[1]*r],B=[b[0]*r,b[1]*r];const va=[Math.cos(A[0])*Math.cos(A[1]),Math.cos(A[0])*Math.sin(A[1]),Math.sin(A[0])],vb=[Math.cos(B[0])*Math.cos(B[1]),Math.cos(B[0])*Math.sin(B[1]),Math.sin(B[0])];const dot=Math.max(-1,Math.min(1,va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2])),d=Math.acos(dot);if(d<1e-8)return a.slice();const sd=Math.sin(d);const x=[(Math.sin((1-t)*d)/sd)*va[0]+(Math.sin(t*d)/sd)*vb[0],(Math.sin((1-t)*d)/sd)*va[1]+(Math.sin(t*d)/sd)*vb[1],(Math.sin((1-t)*d)/sd)*va[2]+(Math.sin(t*d)/sd)*vb[2]];return [Math.atan2(x[2],Math.hypot(x[0],x[1]))/r,Math.atan2(x[1],x[0])/r]}
 function routeProgress(f,live){if(!f||!live||live.lat==null||live.lon==null)return 0;const a=f.fromLat!=null?[f.fromLat,f.fromLon]:routePoint(f.fromCode),b=f.toLat!=null?[f.toLat,f.toLon]:routePoint(f.toCode);if(!a||!b)return 0;const done=hav(a[0],a[1],live.lat,live.lon),remaining=hav(live.lat,live.lon,b[0],b[1]);const total=done+remaining;return total?Math.max(0,Math.min(1,done/total)):0}
 function planeSvg(){return '<div class="route-plane"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="#111" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></svg></div>'}
+function renderQuietScheduledHero(next){
+ const q=$('heroQuietState');
+ if(q){
+   const flight=(next?.flightNumber||next?.flight||'WATCHED FLIGHT').toUpperCase();
+   const route=(next?.fromCode&&next?.toCode)?`${next.fromCode} → ${next.toCode}`:'NEXT WATCHED FLIGHT';
+   const airline=(next?.airlineName||'WATCHED FLIGHT').toUpperCase();
+   const dep=next?.departureTime||'—';
+   q.innerHTML=`<div class="quiet-kicker">SKY AROUND ME</div><h2>Skies are quiet</h2><p>No aircraft nearby right now.</p><div class="quiet-next"><span>NEXT WATCHED FLIGHT</span><strong>${escapeHtml(flight)} · ${escapeHtml(route)}</strong><small>${escapeHtml(airline)} · DEP ${escapeHtml(dep)}</small></div><div class="quiet-quote-wrap"><div class="quiet-rule"></div><div class="quiet-quote">“Same sky. Different stories.”</div></div>`;
+ }
+ const hero=$('hero');
+ if(hero)hero.classList.add('hero-is-quiet');
+ setTextSafe('homeEyebrow','SKIES ARE QUIET');
+ setTextSafe('homeTitle','NO AIRCRAFT NEARBY');
+ setTextSafe('homeStatus','QUIET AIRSPACE');
+ $('airlineBadge').textContent='QUIET';
+ $('operator').textContent='AIRSPACE · '+S.locationName.toUpperCase();
+ $('callsignNote').textContent='NO LIVE TRAFFIC';
+ $('aircraftReg').textContent='—';
+ $('aircraftRegNote').textContent='REGISTRATION';
+ $('aircraftCallsign').textContent='—';
+ $('flightName').className='flight-name watched-flight-title';
+ $('flightName').textContent='SKIES ARE QUIET';
+ $('aircraftType').textContent=next?
+   `No aircraft within ${S.rangeKm} km · next watched flight ${(next.flightNumber||next.flight||'WATCHED FLIGHT').toUpperCase()}`:
+   `No commercial aircraft within the selected range.`;
+ $('route').textContent=next&&next.fromCode&&next.toCode?`NEXT WATCHED · ${next.fromCode} → ${next.toCode}`:'NO LIVE TRAFFIC';
+ $('schedule').textContent=next?.departureTime?`DEP ${next.departureTime} · ${String(next.fromCode||'').toUpperCase()} LOCAL`:(S.locationName.toUpperCase()+' · '+S.rangeKm+' KM WATCH');
+ $('mLabel1').textContent='STATUS';$('m1').textContent='QUIET';$('m1s').textContent='no nearby aircraft';
+ $('mLabel2').textContent='RANGE';$('m2').textContent=S.rangeKm+' km';$('m2s').textContent='selected airspace';
+ $('mLabel3').textContent='NEXT WATCHED';$('m3').textContent=(next?.flightNumber||next?.flight||'NONE').toUpperCase();$('m3s').textContent=next?.airlineName||'no watched flight';
+ $('mLabel4').textContent='DEPARTURE';$('m4').textContent=next?.departureTime||'—';$('m4s').textContent=next?.fromCode?`${next.fromCode} LOCAL`:'scheduled';
+}
 function renderScheduledHome(){
  const hero=$('hero');if(hero){hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);hero.classList.remove('hero-is-quiet');}
  const next=getNextWatchedFlight();
@@ -1917,31 +1949,10 @@ function renderScheduledHome(){
  }
  setHeroAircraft(null,null);
  if(next){
-   const state=flightState(next);
-   const future=dateKeyFromValue(next.date)>todayKeyLocal();
-   setTextSafe('homeEyebrow',future?'NEXT WATCHED FLIGHT':'NEXT WATCHED FLIGHT');
-   setTextSafe('homeTitle',(next.flightNumber||next.flight||'WATCHED FLIGHT').toUpperCase());
-   setTextSafe('homeStatus',future?'SCHEDULED':state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY');
-   $('airlineBadge').textContent=(next.airlineCode||((next.flight||'').match(/^[A-Z]{1,3}/)?.[0])||'WATCH').toUpperCase();
-   $('operator').textContent=(next.airlineName||'WATCHED FLIGHT').toUpperCase();
-   $('callsignNote').textContent='SAVED FLIGHT';
-   $('aircraftReg').textContent=next.registration||next.reg||'—';
-   $('aircraftRegNote').textContent='REGISTRATION';$('aircraftCallsign').textContent=next.callsign||'—';
-   $('flightName').className='flight-name watched-flight-title';$('flightName').textContent=(next.fromCode&&next.toCode)?next.fromCode+' → '+next.toCode:(next.flightNumber||next.flight||'WATCHED FLIGHT');
-   $('aircraftType').textContent=next.aircraftDesc||'Scheduled flight · live position will appear when airborne';
-   $('route').textContent=(next.from||next.fromCode||'DEPARTURE')+'  →  '+(next.to||next.toCode||'ARRIVAL');
-   $('schedule').textContent=next.date?new Date(next.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}).toUpperCase()+(next.departureTime?' · DEP '+next.departureTime:''):'SCHEDULED';
-   $('mLabel1').textContent='STATUS';$('m1').textContent=live?'READY':(future?'SCHEDULED':state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY');$('m1s').textContent=future?countdownText(next):state==='SCHEDULED'?countdownText(next):'flight day complete';
-   $('mLabel2').textContent='DEPARTURE';$('m2').textContent=next.fromCode||'—';$('m2s').textContent=next.from||'—';
-   $('mLabel3').textContent='ARRIVAL';$('m3').textContent=next.toCode||'—';$('m3s').textContent=next.to||'—';
-   $('mLabel4').textContent='FLIGHT';$('m4').textContent=(next.flightNumber||next.flight||'—').toUpperCase();$('m4s').textContent=next.airlineName||'WATCHED FLIGHT';
+   renderQuietScheduledHero(next);
  }else{
-   const heroQuiet=$('hero');if(heroQuiet)heroQuiet.classList.add('hero-is-quiet');
    setQuietHeroState(true);
-   setTextSafe('homeEyebrow','SKIES ARE QUIET');setTextSafe('homeTitle','NO AIRCRAFT NEARBY');setTextSafe('homeStatus','QUIET AIRSPACE');
-   $('airlineBadge').textContent='QUIET';$('operator').textContent='AIRSPACE · '+S.locationName.toUpperCase();$('callsignNote').textContent='NO LIVE TRAFFIC';$('aircraftReg').textContent='—';$('aircraftRegNote').textContent='REGISTRATION';$('aircraftCallsign').textContent='—';$('flightName').textContent='SKIES ARE QUIET';$('aircraftType').textContent='No commercial aircraft within the selected range.';
-   $('route').textContent='NO LIVE TRAFFIC';$('schedule').textContent=S.locationName.toUpperCase()+' · '+S.rangeKm+' KM WATCH';
-   $('mLabel1').textContent='STATUS';$('m1').textContent='QUIET';$('m1s').textContent='no live traffic';$('mLabel2').textContent='RANGE';$('m2').textContent=S.rangeKm+' km';$('m2s').textContent='selected airspace';$('mLabel3').textContent='WATCH';$('m3').textContent='READY';$('m3s').textContent='My Flights stream';$('mLabel4').textContent='STATUS';$('m4').textContent='NONE';$('m4s').textContent='no live watched flight';
+   renderQuietScheduledHero(null);
  }
  $('flightProgress').style.width='0%';if($('journeyInfo'))$('journeyInfo').hidden=true;
 }
