@@ -1552,6 +1552,95 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 }
 </style>
 
+
+<style id="v632-watched-progress-arrival-fix">
+/* V63.2 — Watched Flight arrival timezone + visible animated journey bar */
+
+@media (min-width:701px) and (orientation:landscape){
+
+  /* Make the watched-flight journey line unmistakable against the card */
+  .watch-compact-progress{
+    position:relative!important;
+    min-width:0!important;
+    overflow:visible!important;
+    padding:0 10px!important;
+  }
+
+  .watch-compact-progress .watch-progress-track{
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    height:4px!important;
+    min-height:4px!important;
+    background:#d9ddda!important;
+    border:0!important;
+    border-radius:99px!important;
+    opacity:1!important;
+    overflow:visible!important;
+  }
+
+  .watch-compact-progress .watch-progress-track i{
+    display:block!important;
+    height:4px!important;
+    min-height:4px!important;
+    width:0;
+    background:#176f8b!important;
+    border:0!important;
+    border-radius:99px!important;
+    opacity:1!important;
+    transition:width 40s linear!important;
+  }
+
+  .watch-compact-progress .watch-progress-track span{
+    position:absolute!important;
+    top:50%!important;
+    left:0%;
+    transform:translate(-50%,-50%)!important;
+    display:grid!important;
+    place-items:center!important;
+    width:18px!important;
+    height:18px!important;
+    margin:0!important;
+    background:#f8f8f4!important;
+    border:1.5px solid #176f8b!important;
+    border-radius:50%!important;
+    color:#176f8b!important;
+    font-size:9px!important;
+    line-height:1!important;
+    z-index:3!important;
+    opacity:1!important;
+    transition:left 40s linear!important;
+    box-shadow:0 2px 6px rgba(23,30,30,.14)!important;
+  }
+
+  .watch-compact-progress .watch-progress-label{
+    position:relative!important;
+    z-index:4!important;
+    text-align:center!important;
+    margin-bottom:5px!important;
+  }
+
+  /* Same behaviour for the Nearest Aircraft journey bar */
+  .hero .journey-center .progress{
+    position:relative!important;
+    overflow:visible!important;
+    background:#d9ddda!important;
+    border:0!important;
+    opacity:1!important;
+  }
+
+  .hero .journey-center .progress i{
+    background:#176f8b!important;
+    opacity:1!important;
+    transition:width 40s linear!important;
+  }
+
+  .hero .journey-progress .progress-plane{
+    transition:left 40s linear!important;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -1738,7 +1827,7 @@ function localDateOnly(f){
  return Number.isNaN(d.getTime())?null:d;
 }
 const airportTimeZones={
- LHR:'Europe/London',LGW:'Europe/London',BRS:'Europe/London',SNN:'Europe/Dublin',CDG:'Europe/Paris',AMS:'Europe/Amsterdam',FRA:'Europe/Berlin',MUC:'Europe/Berlin',JFK:'America/New_York',EWR:'America/New_York',LGA:'America/New_York',CLT:'America/New_York',RDU:'America/New_York',SIN:'Asia/Singapore',MEX:'America/Mexico_City',SFO:'America/Los_Angeles',LAX:'America/Los_Angeles',ORD:'America/Chicago',DFW:'America/Chicago',DXB:'Asia/Dubai',DOH:'Asia/Qatar',HND:'Asia/Tokyo',NRT:'Asia/Tokyo',SYD:'Australia/Sydney',MEL:'Australia/Melbourne',CGK:'Asia/Jakarta',KHH:'Asia/Taipei',DPS:'Asia/Makassar',BKK:'Asia/Bangkok',HKG:'Asia/Hong_Kong',ICN:'Asia/Seoul',STN:'Europe/London',MAN:'Europe/London',BHX:'Europe/London',PMI:'Europe/Madrid',BZR:'Europe/Paris'};
+ LHR:'Europe/London',LGW:'Europe/London',BRS:'Europe/London',SNN:'Europe/Dublin',CDG:'Europe/Paris',AMS:'Europe/Amsterdam',FRA:'Europe/Berlin',MUC:'Europe/Berlin',JFK:'America/New_York',EWR:'America/New_York',LGA:'America/New_York',CLT:'America/New_York',RDU:'America/New_York',SIN:'Asia/Singapore',MEX:'America/Mexico_City',SFO:'America/Los_Angeles',LAX:'America/Los_Angeles',ORD:'America/Chicago',DFW:'America/Chicago',DXB:'Asia/Dubai',DOH:'Asia/Qatar',HND:'Asia/Tokyo',NRT:'Asia/Tokyo',SYD:'Australia/Sydney',MEL:'Australia/Melbourne',CGK:'Asia/Jakarta',KHH:'Asia/Taipei',DPS:'Asia/Makassar',BKK:'Asia/Bangkok',HKG:'Asia/Hong_Kong',ICN:'Asia/Seoul',STN:'Europe/London',MAN:'Europe/London',BHX:'Europe/London',PMI:'Europe/Madrid',BZR:'Europe/Paris',SSH:'Africa/Cairo'};
 function parseLocalDateTimeInZone(date,time,tz){
  const dm=String(date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
  const tm=String(time||'').trim().match(/^(\d{1,2}):(\d{2})$/);
