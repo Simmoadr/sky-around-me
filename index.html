@@ -3056,12 +3056,14 @@ const ROUTE_TIMEOUT=5000;
 const liveRouteCache=new Map();
 const liveRoutePending=new Map();
 function utcDateKey(){return new Date().toISOString().slice(0,10)}
-function routeCacheKey(flight,date,registration,hex){return 'route-v10|'+normalFlightCode(flight)+'|'+normalFlightCode(registration||'')+'|'+normalFlightCode(hex||'')+'|'+date}
+function routeCacheKey(flight,date,registration,hex){return 'route-v11|'+normalFlightCode(flight)+'|'+normalFlightCode(registration||'')+'|'+normalFlightCode(hex||'')+'|'+date}
 async function lookupFlightRoute(callsign,date,registration,hex){
  const cs=normalFlightCode(callsign);
  const reg=String(registration||'').trim().toUpperCase();
  const hx=String(hex||'').trim().toUpperCase();
- if(!cs&&!reg)return {status:'NOT_FOUND',flight:cs,date,source:'ADSBdb'};
+ if(!cs&&!reg&&!hx)return {status:'NOT_FOUND',flight:cs,date,source:'ADS-B'};
+ // V64.6 — nearest/live aircraft route resolution is callsign + exact aircraft identity only.
+ // We deliberately do NOT resolve a passenger flight number here.
  const params=`lookup=callsign&value=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&hex=${encodeURIComponent(hx)}&debug=1`;
  const controller=new AbortController();
  const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
@@ -3078,7 +3080,7 @@ async function lookupFlightRoute(callsign,date,registration,hex){
   const destination=fr?.destination||{};
   const fromCode=rr.fromCode||origin.iata_code||'';
   const toCode=rr.toCode||destination.iata_code||'';
-  if(!fromCode||!toCode)return {status:'NOT_FOUND',flight:cs,date,source:'ADSBdb'};
+  if(!fromCode||!toCode)return {status:'NOT_FOUND',flight:cs,date,source:'ADS-B'};
   return normaliseRoute({
    fromCode,toCode,
    from:rr.from||origin.name||fromCode,
@@ -3088,14 +3090,14 @@ async function lookupFlightRoute(callsign,date,registration,hex){
    flightNumber:j?.flightNumber||rr.flightNumber||'',
    airlineCode:j?.airlineCode||fr?.airline?.iata||'',
    airlineName:j?.airlineName||fr?.airline?.name||''
-  },cs,date,'ADSBdb');
+  },cs,date,'ADS-B');
  }catch(e){
   const status=e?.name==='AbortError'?'TIMEOUT':'ERROR';
-  return {status,flight:cs,date,source:'ADSBdb',error:e?.message||String(e)};
+  return {status,flight:cs,date,source:'ADS-B',error:e?.message||String(e)};
  }finally{clearTimeout(timer)}
 }
 function loadRouteCache(){
- try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');const now=Date.now();Object.entries(raw).forEach(([k,v])=>{if(k.startsWith('route-v10|')&&v&&v.cachedAt&&now-v.cachedAt<ROUTE_CACHE_TTL){liveRouteCache.set(k,v.route||null)}})}catch(e){console.debug('Route cache load failed',e)}
+ try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');const now=Date.now();Object.entries(raw).forEach(([k,v])=>{if(k.startsWith('route-v11|')&&v&&v.cachedAt&&now-v.cachedAt<ROUTE_CACHE_TTL){liveRouteCache.set(k,v.route||null)}})}catch(e){console.debug('Route cache load failed',e)}
 }
 function persistRouteCache(){
  try{const out={};liveRouteCache.forEach((route,key)=>{out[key]={route,cachedAt:Date.now()}});localStorage.setItem('skyAroundMeRouteCache',JSON.stringify(out))}catch(e){/* cache is optional */}
