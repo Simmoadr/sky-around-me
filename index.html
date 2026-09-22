@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Sky Around Me V61.9 — watched-flight dual-time display + TRN/EDI airport names -->
+<!-- Sky Around Me V63.2 — watched-flight arrival-time persistence + device-local dual-time display -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- Sky Around Me V61.3: watched-live state sync + full-journey fallback.
@@ -1552,102 +1552,6 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 }
 </style>
 
-
-<style id="v632-watched-progress-arrival-fix">
-/* V63.2 — Watched Flight arrival timezone + visible animated journey bar */
-
-@media (min-width:701px) and (orientation:landscape){
-
-  /* Make the watched-flight journey line unmistakable against the card */
-  .watch-compact-progress{
-    position:relative!important;
-    min-width:0!important;
-    overflow:visible!important;
-    padding:0 10px!important;
-  }
-
-  .watch-compact-progress .watch-progress-track{
-    position:relative!important;
-    display:block!important;
-    width:100%!important;
-    height:4px!important;
-    min-height:4px!important;
-    background:#d9ddda!important;
-    border:0!important;
-    border-radius:99px!important;
-    opacity:1!important;
-    overflow:visible!important;
-  }
-
-  .watch-compact-progress .watch-progress-track i{
-    display:block!important;
-    height:4px!important;
-    min-height:4px!important;
-    width:0;
-    background:#176f8b!important;
-    border:0!important;
-    border-radius:99px!important;
-    opacity:1!important;
-    transition:width 12s linear!important;
-  }
-
-  .watch-compact-progress .watch-progress-track span{
-    position:absolute!important;
-    top:50%!important;
-    left:0%;
-    transform:translate(-50%,-50%)!important;
-    display:grid!important;
-    place-items:center!important;
-    width:18px!important;
-    height:18px!important;
-    margin:0!important;
-    background:#f8f8f4!important;
-    border:1.5px solid #176f8b!important;
-    border-radius:50%!important;
-    color:#176f8b!important;
-    font-size:9px!important;
-    line-height:1!important;
-    z-index:3!important;
-    opacity:1!important;
-    transition:left 12s linear!important;
-    box-shadow:0 2px 6px rgba(23,30,30,.14)!important;
-  }
-
-  .watch-compact-progress .watch-progress-label{
-    position:relative!important;
-    z-index:4!important;
-    text-align:center!important;
-    margin-bottom:5px!important;
-  }
-
-  /* Same behaviour for the Nearest Aircraft journey bar */
-  .hero .journey-center .progress{
-    position:relative!important;
-    overflow:visible!important;
-    background:#d9ddda!important;
-    border:0!important;
-    opacity:1!important;
-  }
-
-  .hero .journey-center .progress i{
-    background:#176f8b!important;
-    opacity:1!important;
-    transition:width 12s linear!important;
-  }
-
-  .hero .journey-progress .progress-plane{
-    transition:left 12s linear!important;
-  }
-}
-</style>
-
-
-<style id="v633-smart-watched-cards">
-/* V63.3 — the two cards have different jobs:
-   1) nearest aircraft + next watched flight
-   2) watched flight in hero + the NEXT different watched flight below. */
-</style>
-
 </head>
 <body>
 
@@ -1834,7 +1738,7 @@ function localDateOnly(f){
  return Number.isNaN(d.getTime())?null:d;
 }
 const airportTimeZones={
- LHR:'Europe/London',LGW:'Europe/London',BRS:'Europe/London',SNN:'Europe/Dublin',CDG:'Europe/Paris',AMS:'Europe/Amsterdam',FRA:'Europe/Berlin',MUC:'Europe/Berlin',JFK:'America/New_York',EWR:'America/New_York',LGA:'America/New_York',CLT:'America/New_York',RDU:'America/New_York',SIN:'Asia/Singapore',MEX:'America/Mexico_City',SFO:'America/Los_Angeles',LAX:'America/Los_Angeles',ORD:'America/Chicago',DFW:'America/Chicago',DXB:'Asia/Dubai',DOH:'Asia/Qatar',HND:'Asia/Tokyo',NRT:'Asia/Tokyo',SYD:'Australia/Sydney',MEL:'Australia/Melbourne',CGK:'Asia/Jakarta',KHH:'Asia/Taipei',DPS:'Asia/Makassar',BKK:'Asia/Bangkok',HKG:'Asia/Hong_Kong',ICN:'Asia/Seoul',STN:'Europe/London',MAN:'Europe/London',BHX:'Europe/London',PMI:'Europe/Madrid',BZR:'Europe/Paris',SSH:'Africa/Cairo'};
+ LHR:'Europe/London',LGW:'Europe/London',BRS:'Europe/London',SNN:'Europe/Dublin',CDG:'Europe/Paris',AMS:'Europe/Amsterdam',FRA:'Europe/Berlin',MUC:'Europe/Berlin',JFK:'America/New_York',EWR:'America/New_York',LGA:'America/New_York',CLT:'America/New_York',RDU:'America/New_York',SIN:'Asia/Singapore',MEX:'America/Mexico_City',SFO:'America/Los_Angeles',LAX:'America/Los_Angeles',ORD:'America/Chicago',DFW:'America/Chicago',DXB:'Asia/Dubai',DOH:'Asia/Qatar',HND:'Asia/Tokyo',NRT:'Asia/Tokyo',SYD:'Australia/Sydney',MEL:'Australia/Melbourne',CGK:'Asia/Jakarta',KHH:'Asia/Taipei',DPS:'Asia/Makassar',BKK:'Asia/Bangkok',HKG:'Asia/Hong_Kong',ICN:'Asia/Seoul',STN:'Europe/London',MAN:'Europe/London',BHX:'Europe/London',PMI:'Europe/Madrid',BZR:'Europe/Paris'};
 function parseLocalDateTimeInZone(date,time,tz){
  const dm=String(date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
  const tm=String(time||'').trim().match(/^(\d{1,2}):(\d{2})$/);
@@ -1878,7 +1782,7 @@ function dateKeyFromValue(v){
 }
 function parseArrival(f){
  if(f?.arrivalUtc){const d=new Date(f.arrivalUtc);if(!Number.isNaN(d.getTime()))return d}
- const raw=f?.arrivalTime||f?.arrTime||'';
+ const raw=f?.arrivalTime||f?.arrTime||f?.arrival||f?.scheduledArrival||'';
  const m=String(raw).match(/(\d{1,2}:\d{2})/);
  if(m&&f?.date&&f?.toCode){
   const tz=airportTimeZone(f.toCode);
@@ -2004,9 +1908,10 @@ function formatDepartureDisplay(f){
   if(originTime)return {primary:originTime,secondary:deviceTime||'—'};
   return {primary:deviceTime||'—',secondary:'—'};
  }
- if(f.departureTime){
-  const deviceTime=localScheduledTimeToDevice(f.date,f.departureTime,tz);
-  return {primary:String(f.departureTime).match(/^(\d{1,2}:\d{2})/)?.[1]||String(f.departureTime),secondary:deviceTime||'—'};
+ if(f.departureTime||f.scheduledDeparture){
+  const localTime=String(f.departureTime||f.scheduledDeparture).match(/^(\d{1,2}:\d{2})/)?.[1]||String(f.departureTime||f.scheduledDeparture);
+  const deviceTime=localScheduledTimeToDevice(f.date,localTime,tz);
+  return {primary:localTime,secondary:deviceTime||'—'};
  }
  return {primary:'—',secondary:'—'};
 }
@@ -2019,7 +1924,7 @@ function formatWatchArrival(f){
   const deviceTime=formatDeviceTimeFromUtc(utc);
   return {primary:localTime||deviceTime||'—',secondary:deviceTime||'—'};
  }
- const raw=f?.arrivalTime||f?.arrTime||'';
+ const raw=f?.arrivalTime||f?.arrTime||f?.arrival||f?.scheduledArrival||'';
  const m=String(raw).match(/(\d{1,2}:\d{2})/);
  if(m){
   const primary=m[1];
@@ -2265,13 +2170,9 @@ function renderHeroFlightMap(live,watch){
         const size=heroFlightMap.getSize();
         const deviceLat=Number(S.lat);
         const deviceLon=Number(S.lon);
-                // V63.8 — LOCAL AIRSPACE camera: preserve zoom and reproduce the manual upward drag
-        // the genuinely visible part of the map. The flight-information bar is
-        // an overlay, so a normal fitBounds() would let the circle disappear
-        // underneath it. We therefore give Leaflet asymmetric padding: the
-        // top accounts for the map HUD/caption and the bottom accounts for the
-        // floating flight card. This keeps the circle fully visible while
-        // making it as large as the available space allows.
+                // V62.2 — LOCAL AIRSPACE camera is centred on the device/radius, not the
+        // featured aircraft. This keeps the selected radius visually centred
+        // in the usable map area on iPad, with the flight card floating below.
         const lat=deviceLat;
         const lon=deviceLon;
         const radiusM=Math.max(1000,Number(S.rangeKm||100)*1000);
@@ -2279,78 +2180,29 @@ function renderHeroFlightMap(live,watch){
         const mapEl=document.getElementById('heroFlightMap');
         const mapRect=mapEl?.getBoundingClientRect();
         const infoRect=infoBox?.getBoundingClientRect();
-
-        let topPad=64;
-        let bottomPad=28;
-        let sidePad=24;
-
-        if(mapRect){
-         // Keep the radius below the top HUD/caption area.
-         topPad=Math.max(56,Math.min(96,Math.round(mapRect.height*0.10)));
-
-         // Reserve exactly the portion occupied by the floating flight bar.
-         // Add a small safety gap so the dashed circle never touches the card.
-         if(infoRect&&infoRect.top>mapRect.top){
-          bottomPad=Math.max(18,Math.ceil(mapRect.bottom-infoRect.top+14));
-         }
-
-         // Keep a modest horizontal breathing room without making the circle
-         // unnecessarily small on the wide iPad landscape display.
-         sidePad=Math.max(18,Math.min(40,Math.round(mapRect.width*0.018)));
+        const bottomMargin=20;
+        let coveredHeight=0;
+        if(mapRect&&infoRect&&infoRect.top>mapRect.top){
+         coveredHeight=Math.max(0,mapRect.bottom-infoRect.top);
         }
+        const visibleHeight=Math.max(220,(Number(size?.y)||350)-coveredHeight-bottomMargin);
 
-        // The important point here is that the user's ideal framing is NOT a
-        // different zoom level — it is essentially the same map, simply dragged
-        // upward so the complete radius sits above the information card.
-        // First fit the radius normally, then apply a controlled vertical pan.
-        // This reproduces the Picture-2 framing without changing the scale.
-        const latDelta=radiusM/111320;
-        const lonScale=Math.max(0.15,Math.cos(lat*Math.PI/180));
-        const lonDelta=radiusM/(111320*lonScale);
-        const radiusBounds=L.latLngBounds(
-         [lat-latDelta,lon-lonDelta],
-         [lat+latDelta,lon+lonDelta]
-        );
+        // Size the radius against the part of the map that is genuinely visible
+        // above the floating flight-information bar.
+        const targetMPerPx=(radiusM*2)/(visibleHeight*0.84);
+        const mercatorMPerPx=156543.03392*Math.max(0.15,Math.cos(lat*Math.PI/180));
+        let zoom=Math.log2(mercatorMPerPx/targetMPerPx);
+        zoom=Math.max(2,Math.min(18,Math.round(zoom)));
 
-        heroFlightMap.fitBounds(radiusBounds,{
-         padding:[topPad,sidePad],
-         maxZoom:18,
-         animate:false
-        });
-
-        // After fitBounds settles, work out exactly how much the circle overlaps
-        // the bottom information card and pan the map upward by that amount.
-        // Also keep a small breathing space below the top HUD.
-        const protectRadiusFromCard=()=>{
-         if(!heroFlightMap||heroMapMode!=='airspace')return;
-         heroFlightMap.invalidateSize(true);
-         const mapEl2=document.getElementById('heroFlightMap');
-         const mapRect2=mapEl2?.getBoundingClientRect();
-         const infoRect2=infoBox?.getBoundingClientRect();
-         if(!mapRect2)return;
-
-         const northPt=heroFlightMap.latLngToContainerPoint([lat+latDelta,lon]);
-         const southPt=heroFlightMap.latLngToContainerPoint([lat-latDelta,lon]);
-         const circleTop=northPt.y;
-         const circleBottom=southPt.y;
-         const topLimit=topPad;
-         const bottomLimit=infoRect2&&infoRect2.top>mapRect2.top
-           ? (infoRect2.top-mapRect2.top-14)
-           : (heroFlightMap.getSize().y-bottomPad);
-
-         let panY=0;
-         if(circleBottom>bottomLimit)panY+=circleBottom-bottomLimit;
-         if(circleTop-panY<topLimit)panY-=topLimit-(circleTop-panY);
-         if(Math.abs(panY)>1){
-          // Positive Y moves the map contents upward, matching a manual upward
-          // drag while preserving the current zoom.
-          heroFlightMap.panBy([0,Math.round(panY)],{animate:false});
-         }
-        };
-
-        requestAnimationFrame(protectRadiusFromCard);
-        setTimeout(protectRadiusFromCard,80);
-        setTimeout(protectRadiusFromCard,250);
+        // Put the DEVICE/RADIUS centre in the centre of the usable map area,
+        // not the centre of the full map container. This is more reliable on
+        // iPad Safari than a fixed panBy offset because the flight card can
+        // change height between states.
+        heroFlightMap.setView([lat,lon],zoom,{animate:false});
+        const mapWidth=Number(size?.x)||600;
+        const desiredY=Math.max(90,Math.min((Number(size?.y)||350)-90,visibleHeight/2));
+        const targetCentre=heroFlightMap.containerPointToLatLng(L.point(mapWidth/2,desiredY));
+        heroFlightMap.setView(targetCentre,zoom,{animate:false});
 
         // The radius circle is already drawn by the local-airspace layer above.
         // Do not add a second circle here; this function only controls the camera.
@@ -2463,15 +2315,6 @@ async function loadAirportDatabase(){
 function greatCirclePoint(a,b,t){const r=Math.PI/180,A=[a[0]*r,a[1]*r],B=[b[0]*r,b[1]*r];const va=[Math.cos(A[0])*Math.cos(A[1]),Math.cos(A[0])*Math.sin(A[1]),Math.sin(A[0])],vb=[Math.cos(B[0])*Math.cos(B[1]),Math.cos(B[0])*Math.sin(B[1]),Math.sin(B[0])];const dot=Math.max(-1,Math.min(1,va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2])),d=Math.acos(dot);if(d<1e-8)return a.slice();const sd=Math.sin(d);const x=[(Math.sin((1-t)*d)/sd)*va[0]+(Math.sin(t*d)/sd)*vb[0],(Math.sin((1-t)*d)/sd)*va[1]+(Math.sin(t*d)/sd)*vb[1],(Math.sin((1-t)*d)/sd)*va[2]+(Math.sin(t*d)/sd)*vb[2]];return [Math.atan2(x[2],Math.hypot(x[0],x[1]))/r,Math.atan2(x[1],x[0])/r]}
 function routeProgress(f,live){if(!f||!live||live.lat==null||live.lon==null)return 0;const a=f.fromLat!=null?[f.fromLat,f.fromLon]:routePoint(f.fromCode),b=f.toLat!=null?[f.toLat,f.toLon]:routePoint(f.toCode);if(!a||!b)return 0;const done=hav(a[0],a[1],live.lat,live.lon),remaining=hav(live.lat,live.lon,b[0],b[1]);const total=done+remaining;return total?Math.max(0,Math.min(1,done/total)):0}
 function planeSvg(){return '<div class="route-plane"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="#111" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></svg></div>'}
-function fitQuietHeroTitle(){
- const el=$('flightName');
- if(!el||!el.classList.contains('quiet-flight-title'))return;
- el.style.fontSize='27px';
- el.style.textOverflow='clip';
- const max=27,min=14,step=.5;
- let size=max;
- while(el.scrollWidth>el.clientWidth && size>min){size-=step;el.style.fontSize=size+'px';}
-}
 function renderQuietScheduledHero(next){
  const q=$('heroQuietState');
  if(q){
@@ -2487,15 +2330,16 @@ function renderQuietScheduledHero(next){
  setTextSafe('homeTitle','NO AIRCRAFT NEARBY');
  setTextSafe('homeStatus','QUIET AIRSPACE');
  $('airlineBadge').textContent='QUIET';
- $('operator').textContent='LOCAL SKY · '+S.rangeKm+' KM';
+ $('operator').textContent='AIRSPACE · '+S.locationName.toUpperCase();
  $('callsignNote').textContent='NO LIVE TRAFFIC';
  $('aircraftReg').textContent='—';
  $('aircraftRegNote').textContent='REGISTRATION';
  $('aircraftCallsign').textContent='—';
- $('flightName').className='flight-name watched-flight-title quiet-flight-title';
- $('flightName').textContent='NO AIRCRAFT NEARBY';
- $('aircraftType').textContent='Within the selected airspace';
- requestAnimationFrame(fitQuietHeroTitle);
+ $('flightName').className='flight-name watched-flight-title';
+ $('flightName').textContent='SKIES ARE QUIET';
+ $('aircraftType').textContent=next?
+   `No aircraft within ${S.rangeKm} km · next watched flight ${(next.flightNumber||next.flight||'WATCHED FLIGHT').toUpperCase()}`:
+   `No commercial aircraft within the selected range.`;
  $('route').textContent=next&&next.fromCode&&next.toCode?`NEXT WATCHED · ${next.fromCode} → ${next.toCode}`:'NO LIVE TRAFFIC';
  $('schedule').textContent=next?.departureTime?`DEP ${next.departureTime} · ${String(next.fromCode||'').toUpperCase()} LOCAL`:(S.locationName.toUpperCase()+' · '+S.rangeKm+' KM WATCH');
  $('mLabel1').textContent='STATUS';$('m1').textContent='QUIET';$('m1s').textContent='no nearby aircraft';
@@ -2656,7 +2500,7 @@ function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
  const from=routeAirport(raw.fromCode,raw.from),to=routeAirport(raw.toCode,raw.to);
  if(Number.isFinite(Number(raw.fromLat)))from.lat=Number(raw.fromLat);if(Number.isFinite(Number(raw.fromLon)))from.lon=Number(raw.fromLon);
  if(Number.isFinite(Number(raw.toLat)))to.lat=Number(raw.toLat);if(Number.isFinite(Number(raw.toLon)))to.lon=Number(raw.toLon);
- return {status:'FOUND',flight,date,flightNumber:normalFlightCode(raw.flightNumber||''),airlineCode:normalFlightCode(raw.airlineCode||''),airlineName:raw.airlineName||'',from:from.name,to:to.name,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:raw.departureUtc||'',arrivalUtc:raw.arrivalUtc||'',departureTime:raw.departureTime||'',source,resolvedAt:new Date().toISOString()};
+ return {status:'FOUND',flight,date,flightNumber:normalFlightCode(raw.flightNumber||''),airlineCode:normalFlightCode(raw.airlineCode||''),airlineName:raw.airlineName||'',from:from.name,to:to.name,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:raw.departureUtc||'',arrivalUtc:raw.arrivalUtc||'',departureTime:raw.departureTime||'',arrivalTime:raw.arrivalTime||raw.arrTime||'',source,resolvedAt:new Date().toISOString()};
 }
 function hydrateCachedLiveRoute(x,previousItems){
  const cs=normalFlightCode(x?.callsign);if(!cs)return x;
@@ -2668,65 +2512,27 @@ function hydrateCachedLiveRoute(x,previousItems){
    normalFlightCode(a?.registration||a?.r||'')===reg
  ):null;
  if(previous?.liveRoute?.status==='FOUND'){
-  x.liveRoute=applyKnownMultiLegRoute(x,previous.liveRoute);
+  x.liveRoute=previous.liveRoute;
   return x;
  }
  // Then restore the persistent in-memory/localStorage route cache synchronously
  // before renderLiveHome() runs. A successful route must survive normal 45s polls.
  if(liveRouteCache.has(key)){
   const cached=liveRouteCache.get(key);
-  if(cached?.status==='FOUND'||cached?.status==='STALE')x.liveRoute=applyKnownMultiLegRoute(x,cached);
+  if(cached?.status==='FOUND'||cached?.status==='STALE')x.liveRoute=cached;
   return x;
  }
  const stored=getCachedRoute(key);
  if(stored!==undefined){
   liveRouteCache.set(key,stored);
-  if(stored?.status==='FOUND'||stored?.status==='STALE')x.liveRoute=applyKnownMultiLegRoute(x,stored);
+  if(stored?.status==='FOUND'||stored?.status==='STALE')x.liveRoute=stored;
  }
  return x;
-}
-/* V63.9 — current-leg correction for multi-sector flight numbers.
-   KLM769 is scheduled as AMS→AUA→BON→AMS on Tuesdays in the current
-   September/October 2026 timetable. A static route lookup can return the
-   final BON→AMS sector even while the aircraft is actually operating the
-   first AMS→AUA sector. Use the current scheduled sector when its time window
-   clearly matches the live flight. */
-function knownCurrentMultiLegRoute(flight,date,existing){
- const f=normalFlightCode(flight);
- if(f!=='KLM769')return existing;
- const d=String(date||'');
- const day=new Date(d+'T00:00:00Z');
- if(Number.isNaN(day.getTime())||day.getUTCDay()!==2)return existing;
- if(d<'2026-09-15'||d>'2026-10-20')return existing;
- const segments=[
-  {from:'AMS',to:'AUA',dep:'13:55',arr:'17:55',depTz:'Europe/Amsterdam',arrTz:'America/Aruba'},
-  {from:'AUA',to:'BON',dep:'19:15',arr:'20:05',depTz:'America/Aruba',arrTz:'America/Aruba'},
-  {from:'BON',to:'AMS',dep:'21:20',arr:'12:45',depTz:'America/Kralendijk',arrTz:'Europe/Amsterdam',arrNext:true}
- ];
- const now=Date.now();
- for(const seg of segments){
-  const dep=parseLocalDateTimeInZone(d,seg.dep,seg.depTz);
-  const arr=parseLocalDateTimeInZone(d,seg.arr,seg.arrTz);
-  if(seg.arrNext&&arr)arr.setUTCDate(arr.getUTCDate()+1);
-  if(!dep||!arr)continue;
-  if(now>=dep.getTime()-30*60*1000 && now<=arr.getTime()+60*60*1000){
-   const from=routeAirport(seg.from),to=routeAirport(seg.to);
-   return {status:'FOUND',flight:f,date:d,flightNumber:f,airlineCode:'KL',airlineName:'KLM Royal Dutch Airlines',from:from.name,to:to.name,fromCode:from.code,toCode:to.code,fromName:from.name,toName:to.name,fromLat:from.lat,fromLon:from.lon,toLat:to.lat,toLon:to.lon,departureUtc:dep.toISOString(),arrivalUtc:arr.toISOString(),departureTime:seg.dep,source:'Known multi-leg schedule',resolvedAt:new Date().toISOString()};
-  }
- }
- return existing;
-}
-function applyKnownMultiLegRoute(x,route){
- if(!route||route.status!=='FOUND')return route;
- const corrected=knownCurrentMultiLegRoute(x?.callsign,utcDateKey(),route);
- return corrected||route;
 }
 function liveJourneyFor(x){
  const f=getNextWatchedFlight();
  if(f&&watchedLiveMatch(f,[x])) return f;
- const route=x?.liveRoute?applyKnownMultiLegRoute(x,x.liveRoute):null;
- if(route&&route.status==='FOUND')x.liveRoute=route;
- return x?.watchRef||route||watchedFlightForLiveItem(x)||null;
+ return x?.watchRef||x?.liveRoute||watchedFlightForLiveItem(x)||null;
 }
 function xRouteForIdentity(callsign,registration){ const x=S.lastAllItems?.find(a=>normalFlightCode(a?.callsign)===normalFlightCode(callsign)&&normalFlightCode(a?.registration||a?.r||'')===normalFlightCode(registration)); const r=x?.liveRoute; return r?.status==='FOUND'?r:null; }
 const SKY_DEBUG_ENABLED=new URLSearchParams(window.location.search).get('debug')==='1';
@@ -2880,31 +2686,6 @@ async function lookupFlightIdentity(x,routeOverride=null){
  })();
  S.identityPending.set(requestKey,task);return task;
 }
-function animateJourneyProgress(bar,plane,pct,key){
- const target=Math.max(0,Math.min(100,Number(pct)||0));
- if(!bar&&!plane)return;
- const safeKey=String(key||'');
- const previous=bar?.dataset?.progressKey||plane?.dataset?.progressKey||'';
- const changed=!!safeKey&&safeKey!==previous;
- if(changed){
-   if(bar){bar.style.transition='none';bar.style.width='0%';bar.dataset.progressKey=safeKey;}
-   if(plane){plane.style.transition='none';plane.style.left='0%';plane.dataset.progressKey=safeKey;}
-   // Force the browser to commit the zero position before starting the new animation.
-   void (bar?.offsetWidth||plane?.offsetWidth||0);
-   requestAnimationFrame(()=>{
-     if(bar)bar.style.transition='width 12s linear';
-     if(plane)plane.style.transition='left 12s linear';
-     if(bar)bar.style.width=target+'%';
-     if(plane)plane.style.left=target+'%';
-   });
-   return;
- }
- if(bar){bar.style.transition='width 12s linear';bar.style.width=target+'%';}
- if(plane){plane.style.transition='left 12s linear';plane.style.left=target+'%';}
-}
-function journeyProgressIdentity(x,extra){
- return String(extra||x?.icao||x?.hex||x?.r||x?.registration||x?.callsign||'').trim().toUpperCase();
-}
 function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero)hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
  hydrateCachedIdentity(x);
  const journey=liveJourneyFor(x),watchContext=x?.watchGlobal?(x.watchRef||S.watchTarget||null):null,airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'Live aircraft',model=aircraftFullName(x);
@@ -2933,7 +2714,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  const journeyDestLon=journey?.toLon!=null?Number(journey.toLon):routePoint(journey?.toCode)?.[1];
  const journeyDistance=journey&&Number.isFinite(journeyDestLat)&&Number.isFinite(journeyDestLon)&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),journeyDestLat,journeyDestLon):null;
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
- const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=pct+'% COMPLETE';animateJourneyProgress($('flightProgress'),$('progressPlane'),pct,journeyProgressIdentity(x));}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);animateJourneyProgress($('flightProgress'),$('progressPlane'),0,journeyProgressIdentity(x));}}
+ const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
 }
 const ROUTE_CACHE_TTL=30*60*1000;
 const ROUTE_FAILURE_TTL=5*60*1000;
@@ -2989,16 +2770,15 @@ async function enrichLiveRoute(x){
  const cs=normalFlightCode(x?.callsign);if(!cs)return;
  const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),key=routeCacheKey(cs,date,reg);
  if(liveRouteCache.has(key)){
-  const cached=applyKnownMultiLegRoute(x,liveRouteCache.get(key));x.liveRoute=cached;
+  const cached=liveRouteCache.get(key);x.liveRoute=cached;
   if(cached?.status==='FOUND'){if(cached.airlineCode)x.airlineCode=cached.airlineCode;if(cached.airlineName)x.airlineName=cached.airlineName;}
   if(S.featured===x.icao)renderLiveHome(x);return
  }
- const stored=getCachedRoute(key);if(stored!==undefined){stored=applyKnownMultiLegRoute(x,stored);liveRouteCache.set(key,stored);x.liveRoute=stored;if(stored?.status==='FOUND'){if(stored.airlineCode)x.airlineCode=stored.airlineCode;if(stored.airlineName)x.airlineName=stored.airlineName;}if(S.featured===x.icao)renderLiveHome(x);return}
+ const stored=getCachedRoute(key);if(stored!==undefined){liveRouteCache.set(key,stored);x.liveRoute=stored;if(stored?.status==='FOUND'){if(stored.airlineCode)x.airlineCode=stored.airlineCode;if(stored.airlineName)x.airlineName=stored.airlineName;}if(S.featured===x.icao)renderLiveHome(x);return}
  if(liveRoutePending.has(key))return liveRoutePending.get(key);
  const task=(async()=>{
    try{
-     const rawRoute=await lookupFlightRoute(cs,date,reg);
-     const route=applyKnownMultiLegRoute(x,rawRoute);
+     const route=await lookupFlightRoute(cs,date,reg);
      putCachedRoute(key,route);x.liveRoute=route;
      if(route?.status==='FOUND'){
        if(route.airlineCode)x.airlineCode=route.airlineCode;
@@ -3096,44 +2876,11 @@ function watchedCompletion(f,live){
  return Math.round(routeProgress(f,live)*100);
 }
 function formatWatchTimeZoneLabel(code){return code?`${String(code).toUpperCase()} LOCAL`:''}
-
-/* V63.3 — choose the bottom watched-flight card independently from the
-   primary watched flight. If the watched flight has taken over the hero
-   because there is no nearby aircraft, never duplicate that same flight
-   in the bottom card. */
-function getNextWatchedFlightExcluding(excludeKey){
- const today=scheduledTodayFlights().filter(f=>!excludeKey||watchKey(f)!==excludeKey);
- const liveToday=today.find(f=>watchHasLive(f));
- if(liveToday)return liveToday;
- const searchingToday=today.find(f=>flightState(f)==='SEARCHING');
- if(searchingToday)return searchingToday;
- const pendingToday=today.find(f=>flightState(f)==='TRACKING PENDING');
- if(pendingToday)return pendingToday;
- const upcomingToday=today.find(f=>{
-   const d=parseDeparture(f);
-   return !d||d.getTime()>=Date.now();
- });
- if(upcomingToday)return upcomingToday;
- const future=nextFutureWatchedFlight();
- return future&&(!excludeKey||watchKey(future)!==excludeKey)?future:null;
-}
-function getHomeBottomWatchedFlight(items){
- const hasNearest=Array.isArray(items)&&items.length>0;
- const primary=getNextWatchedFlight();
- const primaryLive=primary&&watchHasLive(primary);
- /* When no local aircraft exists and the watched flight is live in the
-    hero, the bottom card must move on to the next watched flight. */
- if(!hasNearest&&primaryLive){
-   return getNextWatchedFlightExcluding(watchKey(primary));
- }
- return primary;
-}
-
 function renderHomeWatch(items){
  const watchEyebrow=$('homeWatchEyebrow');
  const wb=$('homeWatch');if(wb)wb.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
  const today=scheduledTodayFlights();
- const next=getHomeBottomWatchedFlight(items);
+ const next=today.find(f=>watchHasLive(f))||today.find(f=>flightState(f)==='SEARCHING')||today.find(f=>flightState(f)==='TRACKING PENDING')||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
  const progressRow=$('homeWatchProgressRow');
  const progressBar=$('homeWatchProgressBar');
  const progressPlane=$('homeWatchProgressPlane');
@@ -3146,7 +2893,7 @@ function renderHomeWatch(items){
   ['homeWatchReg','homeWatchCallsign','homeWatchStatus','homeWatchDeparture','homeWatchArrival','homeWatchFlight'].forEach(id=>setTextSafe(id,'—'));
   ['homeWatchStatusSub','homeWatchDepartureSub','homeWatchArrivalSub','homeWatchFlightSub','homeWatchFromName','homeWatchToName'].forEach(id=>setTextSafe(id,''));
   const st=$('homeWatchState');if(st){st.className='state';st.textContent='NONE';}
-  if(progressFrom)progressFrom.textContent='—';if(progressTo)progressTo.textContent='—';if(progressLabel)progressLabel.textContent='—% COMPLETE';if(progressBar){progressBar.style.transition='none';progressBar.style.width='0%';progressBar.dataset.progressKey='';}if(progressPlane){progressPlane.style.transition='none';progressPlane.style.left='0%';progressPlane.dataset.progressKey='';}if(progressRow)progressRow.hidden=true;
+  if(progressFrom)progressFrom.textContent='—';if(progressTo)progressTo.textContent='—';if(progressLabel)progressLabel.textContent='—% COMPLETE';if(progressBar)progressBar.style.width='0%';if(progressPlane)progressPlane.style.left='0%';if(progressRow)progressRow.hidden=true;
   if(box)box.hidden=true;
   return;
  }
@@ -3197,8 +2944,8 @@ function renderHomeWatch(items){
  if(progressTo)progressTo.textContent=next.toCode||'—';
  setTextSafe('homeWatchFromName',airportDisplayName(next.fromCode,next.from));setTextSafe('homeWatchToName',airportDisplayName(next.toCode,next.to));
  if(progressLabel)progressLabel.textContent=routeReady?`${pct}% COMPLETE`:'—% COMPLETE';
- const watchedProgressKey=live?journeyProgressIdentity(live,watchKey(next)):watchKey(next);
- animateJourneyProgress(progressBar,progressPlane,routeReady?pct:0,watchedProgressKey);
+ if(progressBar)progressBar.style.width=routeReady?`${pct}%`:'0%';
+ if(progressPlane)progressPlane.style.left=routeReady?`${pct}%`:'0%';
  if(progressRow)progressRow.hidden=!routeReady;
  const st=$('homeWatchState');if(st){st.className='state '+(live?(watchLiveIsStale(next)?'wait':'live'):(future||state==='SCHEDULED'||state==='TRACKING PENDING'?'wait':'active'));st.textContent=live?(phase==='LANDED'?'COMPLETED':watchLiveIsStale(next)?'SEARCHING':'LIVE'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY'));}
  const stSub=$('homeWatchStateSub');if(stSub)stSub.textContent=live?(phase==='LANDED'?'FLIGHT ENDED':watchLiveIsStale(next)?'SEARCHING…':`LIVE TRACKING · ${pct}% COMPLETE`):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING…':state==='SEARCHING'?'SEARCHING…':'');
@@ -3242,7 +2989,7 @@ async function refreshMissingFlightData(){
   if(!f.flight||!f.date) continue;
   // Do not re-query AirLabs for already-resolved flights on every app start.
   // Only repair genuinely incomplete local records.
-  const needsSchedule=!f.departureTime||!f.fromCode||!f.toCode;
+  const needsSchedule=!f.departureTime||!f.fromCode||!f.toCode||(!f.arrivalTime&&!f.arrivalUtc);
   if(!needsSchedule) continue;
   let changed=false;
   try{
@@ -3251,6 +2998,7 @@ async function refreshMissingFlightData(){
     if(schedule.departureTime&&!f.departureTime)f.departureTime=schedule.departureTime;
     if(schedule.departureUtc&&!f.departureUtc)f.departureUtc=schedule.departureUtc;
     if(schedule.arrivalUtc&&!f.arrivalUtc)f.arrivalUtc=schedule.arrivalUtc;
+    if(schedule.arrivalTime&&!f.arrivalTime)f.arrivalTime=schedule.arrivalTime;
     // The schedule lookup is keyed by exact flight number + date. Treat its
     // route as authoritative and overwrite stale localStorage values. This is
     // critical when an earlier lookup attached a different sector to the same
@@ -3297,7 +3045,7 @@ async function addWatchedFlight(flight,date,name){
  // Replace the existing exact flight/date record completely. Do not carry a
  // stale route from a previous resolver result into the new schedule lookup.
  watchlist=watchlist.filter(x=>!(normalFlightCode(x.flight||x.flightNumber)===normalFlightCode(flight)&&String(x.date||'')===String(date)));
- const base={name,flight,date,flightNumber:normalFlightCode(flight),airlineName:airlineFromCallsign(flight)||'',airlineCode:normalFlightCode(flight).match(/^[A-Z]{1,3}/)?.[0]||'',airlineIcao:normalFlightCode(flight).match(/^([A-Z]{1,3})/)?.[1]?airlineIcao[normalFlightCode(flight).match(/^([A-Z]{1,3})/)[1]]||'':'',flightIcao:watchedIcaoCallsign({flightNumber:normalFlightCode(flight)}),from:'',to:'',fromCode:'',toCode:'',departureTime:'',departureUtc:'',arrivalUtc:'',aircraftDesc:'',registration:'',hex:'',lookupStatus:'LOOKING UP'};
+ const base={name,flight,date,flightNumber:normalFlightCode(flight),airlineName:airlineFromCallsign(flight)||'',airlineCode:normalFlightCode(flight).match(/^[A-Z]{1,3}/)?.[0]||'',airlineIcao:normalFlightCode(flight).match(/^([A-Z]{1,3})/)?.[1]?airlineIcao[normalFlightCode(flight).match(/^([A-Z]{1,3})/)[1]]||'':'',flightIcao:watchedIcaoCallsign({flightNumber:normalFlightCode(flight)}),from:'',to:'',fromCode:'',toCode:'',departureTime:'',departureUtc:'',arrivalTime:'',arrivalUtc:'',aircraftDesc:'',registration:'',hex:'',lookupStatus:'LOOKING UP'};
  watch=base;watchlist=[base,...watchlist.filter(x=>!(x.flight===flight&&x.date===date))];S.watchTarget=null;S.watchLive=null;S.watchSearchAt=0;clearPersistedWatchLive();renderWatchlist();renderHomeWatch();renderScheduledHome();
  try{
   const schedule=await lookupWatchedSchedule(flight,date);
@@ -3305,6 +3053,7 @@ async function addWatchedFlight(flight,date,name){
    if(schedule.departureTime)base.departureTime=schedule.departureTime;
    if(schedule.departureUtc)base.departureUtc=schedule.departureUtc;
    if(schedule.arrivalUtc)base.arrivalUtc=schedule.arrivalUtc;
+   if(schedule.arrivalTime)base.arrivalTime=schedule.arrivalTime;
    if(schedule.fromCode)base.fromCode=schedule.fromCode;
    if(schedule.toCode)base.toCode=schedule.toCode;
    if(schedule.fromLat!=null)base.fromLat=Number(schedule.fromLat);
@@ -4324,18 +4073,3 @@ body .hero .hero-bottom .journey-percent {
   }
 }
 </style>
-
-<style id="v636-auto-fit-quiet-title">
-@media (min-width:701px) and (orientation:landscape){
-  .hero .flight-name.quiet-flight-title{
-    white-space:nowrap!important;
-    overflow:hidden!important;
-    text-overflow:clip!important;
-    max-width:100%!important;
-    letter-spacing:-.045em!important;
-  }
-}
-</style>
-<script>
-window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
-</script>
