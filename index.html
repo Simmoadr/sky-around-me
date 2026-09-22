@@ -348,6 +348,13 @@
 }
 
 
+/* V62.4 — iPad 8th Gen final vertical fit.
+   Keep Featured and Next Watched Flight comfortably inside the landscape
+   viewport without reducing the map unnecessarily on larger screens. */
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero{height:calc(100vh - 235px)!important;min-height:480px!important;max-height:525px!important;}
+}
+
 /* DEBUG CONSOLE — enabled with ?debug=1 */
 #skyDebugPanel{display:none;position:fixed;z-index:99999;right:16px;bottom:16px;width:min(560px,calc(100vw - 32px));max-height:78vh;background:rgba(5,14,18,.97);color:#dffcf5;border:1px solid rgba(99,230,190,.35);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;overflow:hidden}
 #skyDebugPanel.is-visible{display:flex;flex-direction:column}
@@ -1774,7 +1781,10 @@ function renderHeroFlightMap(live,watch){
         // map. Shift the map content upward so the device/radius is centred in
         // the visible portion rather than underneath the overlay.
         if(coveredHeight>0){
-         const shiftY=Math.round(coveredHeight/2+bottomMargin/2);
+         // Put the radius centre in the middle of the unobscured map area.
+         // Half-shifting was leaving too much of the selected radius behind
+         // the floating flight-information panel on iPad Safari.
+         const shiftY=Math.round(coveredHeight+bottomMargin);
          heroFlightMap.panBy([0,-shiftY],{animate:false});
         }
 
