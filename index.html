@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- Sky Around Me V61.3: watched-live state sync + full-journey fallback.
 <!-- Sky Around Me V60.42: Featured camera centre + status wording — footer credits, two-column watchlist, and Maximum Distance directly under SKY SETTINGS. -->
+<!-- Sky Around Me V61.4: watched-flight live tracking grace period + live watched-flight fallback Featured state. -->
 <!-- Sky Around Me V61.2: frontend colour restoration from V60.48; backend unchanged. -->
 <title>Sky Around Me</title>
 <!-- Sky Around Me v60.19: V60.18 regression fix — restore route enrichment, map cycle, and centered telemetry. V60.18 map/API logic otherwise retained.
@@ -1388,6 +1389,7 @@ const places={lusk:{name:'Lusk, Ireland',lat:53.52558,lon:-6.16581},martock:{nam
 const savedPlace=savedSkySettings.location&&places[savedSkySettings.location]?savedSkySettings.location:'lusk';
 const initialPlace=places[savedPlace];
 const initialMode=savedSkySettings.locationMode||'device';
+const WATCH_LIVE_GRACE_MS=3*60*1000;
 const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],mapSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false};
 const $=id=>document.getElementById(id);
 function setTextSafe(id,value){const el=$(id);if(el)el.textContent=value??'';}
@@ -1440,7 +1442,10 @@ function dateKeyFromValue(v){
  const d=new Date(String(v||'')+'T00:00:00');
  return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
-function watchHasLive(f){return !!(f&&S.watchLive&&S.watchTarget&&watchKey(f)===watchKey(S.watchTarget)&&S.watchLive.icao)}
+function watchHasLive(f){
+ const lastSeen=Number(S.watchLive?.lastSeenAt||0);
+ return !!(f&&S.watchLive&&S.watchTarget&&watchKey(f)===watchKey(S.watchTarget)&&S.watchLive.icao&&lastSeen&&Date.now()-lastSeen<=WATCH_LIVE_GRACE_MS);
+}
 function parseArrival(f){
  if(f?.arrivalUtc){const d=new Date(f.arrivalUtc);if(!Number.isNaN(d.getTime()))return d}
  return null;
@@ -2249,7 +2254,8 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  // Passenger flight-number resolution is reserved for My Flights / watched flights.
  setHeroAircraft(x,journey);
  const displayFlight=normalFlightCode(watchContext?.flightNumber||watchContext?.flight||x?.callsign||'LIVE AIRCRAFT').toUpperCase();
- setTextSafe('homeEyebrow','NEAREST AIRCRAFT');setTextSafe('homeTitle',displayFlight);setTextSafe('homeStatus','LIVE');
+ const isWatchedFallback=!!(watchContext&&(!S.lastItems?.length||!choose(S.lastItems||[])));
+ setTextSafe('homeEyebrow',isWatchedFallback?'NEXT WATCHED FLIGHT · LIVE':'NEAREST AIRCRAFT');setTextSafe('homeTitle',displayFlight);setTextSafe('homeStatus','LIVE');
  $('airlineBadge').textContent=(x.airlineCode||displayFlight.match(/^[A-Z]{2,3}/)?.[0]||'LIVE').toUpperCase();$('operator').textContent=airline.toUpperCase();$('aircraftReg').textContent=String(x.r||x.registration||'—').toUpperCase()||'—';$('aircraftRegNote').textContent=x.r?'AIRCRAFT REG':'REGISTRATION';$('aircraftCallsign').textContent=displayFlight||'—';
  const csLabel=x.callsign?('CALLSIGN '+x.callsign.toUpperCase()):'';
  const verified=false;
@@ -2866,8 +2872,9 @@ async function refreshWatchStream(){
  }
 
  const key=watchKey(target),now=Date.now();
- const interval=S.watchLive&&S.watchLive.watchKey===key?45000:60000;
- if(S.watchLive&&S.watchLive.watchKey===key&&now-S.watchSearchAt<interval){
+ const sameLive=!!(S.watchLive&&S.watchLive.watchKey===key&&S.watchLive.icao);
+ const interval=sameLive?45000:60000;
+ if(sameLive&&now-S.watchSearchAt<interval){
    refreshHomeDisplay();
    renderHomeWatch();
    return S.watchLive;
@@ -2875,10 +2882,13 @@ async function refreshWatchStream(){
 
  S.watchSearchPending=(async()=>{
    const live=await searchGlobalWatchedFlight(target);
+   const searchedAt=Date.now();
    if(live){
      live.watchKey=key;
+     live.lastSeenAt=searchedAt;
+     live.staleSince=0;
      S.watchLive=live;
-     S.watchSearchAt=Date.now();
+     S.watchSearchAt=searchedAt;
 
      // Persist the ADS-B identity so future polls can use the aircraft's
      // stable Mode-S hex/registration rather than rediscovering it.
@@ -2888,8 +2898,18 @@ async function refreshWatchStream(){
      localStorage.setItem('skyAroundMeWatch',JSON.stringify(watch));
      localStorage.setItem('skyAroundMeWatchlist',JSON.stringify(watchlist));
    }else{
-     S.watchLive=null;
-     S.watchSearchAt=Date.now();
+     // A single missed ADS-B poll is not proof that the watched aircraft has
+     // stopped being tracked. Keep the last good position for a short grace
+     // period so the UI does not jump from LIVE back to PENDING between polls.
+     const existingSame=!!(S.watchLive&&S.watchLive.watchKey===key&&S.watchLive.icao);
+     const lastSeen=Number(S.watchLive?.lastSeenAt||0);
+     if(existingSame&&lastSeen&&searchedAt-lastSeen<=WATCH_LIVE_GRACE_MS){
+       if(!S.watchLive.staleSince)S.watchLive.staleSince=searchedAt;
+       S.watchSearchAt=searchedAt;
+     }else{
+       S.watchLive=null;
+       S.watchSearchAt=searchedAt;
+     }
    }
    // The watched ADS-B stream is independent of the local-radius stream.
    // Re-render Featured immediately so a watched flight cannot remain on a
@@ -2931,7 +2951,24 @@ async function poll(){
   if((S.lastItems||[]).length){renderHomeWatch(S.lastItems||[])}else{S.featured=null;renderScheduledHome();renderHomeWatch([])}
  }
 }
-function refreshHomeDisplay(){const f=choose(S.lastItems||[]);if(f){S.featured=f.icao;renderLiveHome(f)}else{S.featured=null;renderScheduledHome()}renderHomeWatch(S.lastItems||[])}
+function refreshHomeDisplay(){
+ const f=choose(S.lastItems||[]);
+ if(f){
+   S.featured=f.icao;
+   renderLiveHome(f);
+ }else{
+   const watched= getNextWatchedFlight();
+   const watchedLive=watched&&watchHasLive(watched)?S.watchLive:null;
+   if(watchedLive){
+     S.featured=watchedLive.icao;
+     renderLiveHome(watchedLive);
+   }else{
+     S.featured=null;
+     renderScheduledHome();
+   }
+ }
+ renderHomeWatch(S.lastItems||[]);
+}
 function todayInputDate(){const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
 function enforceFutureDateInputs(){const min=todayInputDate();['listDate','dateInput'].forEach(id=>{const el=$(id);if(el)el.min=min})}
 updateSkySettingsUI();if(S.extendedAirspace&&S.rangeKm<100)setTimeout(fitLiveSkyExtended,180);enforceFutureDateInputs();loadRouteCache();loadIdentityCache();loadAirportDatabase();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();refreshWatchStream();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='LIVE'?'LIVE TRACKING':s.textContent==='LANDED'?'FLIGHT ENDED':'';}},1000);S.timer=setInterval(poll,45000);
