@@ -1285,6 +1285,273 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   .watch-bottom .watch-bottom-name{font-size:8px!important;}
 }
 </style>
+<style id="v626-unified-flight-cards">
+@media (min-width:701px) and (orientation:landscape){
+.hero .hero-bottom,.watch-bottom-compact{background:rgba(248,248,244,.96)!important;border:1px solid rgba(70,95,100,.18)!important;border-radius:16px!important;box-shadow:0 10px 30px rgba(23,30,30,.07)!important;overflow:hidden!important;backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important;}
+.hero .hero-bottom{display:grid!important;grid-template-columns:minmax(250px,1.08fr) minmax(650px,3.25fr)!important;grid-template-rows:48px 42px!important;column-gap:24px!important;row-gap:0!important;height:102px!important;min-height:102px!important;max-height:102px!important;padding:7px 24px 8px!important;margin:0!important;box-sizing:border-box!important;}
+.hero .hero-bottom .divider{display:none!important}.hero .identity{display:contents!important}.hero .identity-primary{grid-column:1!important;grid-row:1 / 3!important;align-self:center!important;min-width:0!important;padding:0!important;margin:0!important}.hero .airline-brand{display:flex!important;align-items:center!important;gap:8px!important;min-height:20px!important}.hero .airline-badge{min-width:34px!important;height:24px!important;border-radius:7px!important;display:grid!important;place-items:center!important;font-size:9px!important;font-weight:950!important}.hero .operator{font-size:8px!important;letter-spacing:.14em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.hero .flight-name{font-size:27px!important;line-height:1!important;margin:5px 0 0!important;letter-spacing:-.035em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.hero .aircraft-type{font-size:8px!important;line-height:1.1!important;margin:4px 0 0!important;color:#788585!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.hero .telemetry{grid-column:2!important;grid-row:1!important;display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:14px!important;width:100%!important;min-width:0!important;height:48px!important;align-items:start!important;padding:5px 8px 3px!important;margin:0!important;border:1px solid rgba(70,95,100,.18)!important;border-radius:8px!important;background:rgba(255,255,255,.40)!important;box-sizing:border-box!important}.hero .telemetry .metric{min-width:0!important;margin:0!important;padding:0!important;overflow:hidden!important}.hero .telemetry .metric label{display:block!important;font-size:6px!important;line-height:1!important;letter-spacing:.15em!important;color:#778080!important;font-weight:900!important;white-space:nowrap!important}.hero .telemetry .metric b{display:block!important;font-size:15px!important;line-height:1.05!important;margin-top:5px!important;letter-spacing:-.02em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.hero .telemetry .metric small{display:block!important;font-size:6px!important;line-height:1!important;margin-top:2px!important;color:#8a9494!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.hero .journey-info{grid-column:2!important;grid-row:2!important;display:grid!important;grid-template-columns:82px minmax(0,1fr) 82px!important;grid-template-rows:42px!important;width:100%!important;height:42px!important;min-width:0!important;margin:0!important;padding:0 8px!important;border:1px solid rgba(70,95,100,.18)!important;border-radius:8px!important;background:rgba(255,255,255,.28)!important;box-sizing:border-box!important;align-items:center!important}.hero .journey-info .journey-end,.hero .journey-info .journey-end-right{grid-row:1!important;width:100%!important;height:42px!important;min-width:0!important;margin:0!important;padding:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;text-align:center!important}.hero .journey-info .journey-end{grid-column:1!important}.hero .journey-info .journey-end-right{grid-column:3!important}.hero .journey-end span{font-size:6px!important;line-height:1!important;letter-spacing:.16em!important;color:#778080!important;margin:0 0 3px!important}.hero .journey-end b{font-size:15px!important;line-height:1!important;margin:0!important;color:var(--watch-route-color,#176f8b)!important}.hero .journey-end small{width:100%!important;font-size:6px!important;line-height:1!important;margin-top:3px!important;color:#8a9494!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.hero .journey-center{grid-column:2!important;grid-row:1!important;width:100%!important;height:42px!important;min-width:0!important;padding:0 8px!important;margin:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:stretch!important}.hero .journey-percent{font-size:6px!important;line-height:1!important;height:7px!important;margin:0 0 3px!important;text-align:center!important;letter-spacing:.15em!important;color:#778080!important;font-weight:900!important;white-space:nowrap!important}.hero .journey-center .progress{width:100%!important;height:4px!important;min-height:4px!important;margin:0!important}.hero .journey-progress .progress-plane{width:17px!important;height:17px!important;margin-top:0!important}
+.watch-bottom-compact{display:grid!important;grid-template-columns:minmax(280px,1.18fr) minmax(650px,2.82fr)!important;grid-template-rows:48px 42px!important;column-gap:24px!important;row-gap:0!important;height:102px!important;min-height:102px!important;max-height:102px!important;margin-top:8px!important;padding:7px 24px 8px!important;box-sizing:border-box!important}.watch-compact-main{grid-column:1!important;grid-row:1 / 3!important;min-width:0!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:10px!important}.watch-compact-brand{min-width:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important}.watch-compact-brand .eyebrow{font-size:7px!important;line-height:1!important;letter-spacing:.18em!important;margin-bottom:5px!important;color:#687778!important;font-weight:900!important}.watch-compact-airline{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;font-size:8px!important;letter-spacing:.14em!important;font-weight:900!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.watch-compact-airline-code{min-width:34px!important;height:23px!important;padding:0 8px!important;border-radius:7px!important;font-size:9px!important;flex:0 0 auto!important}.watch-bottom-compact .watch-bottom-title{font-size:27px!important;line-height:1!important;font-weight:900!important;letter-spacing:-.035em!important;margin:5px 0 0!important;color:var(--watch-route-color,#176f8b)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.watch-compact-sub{font-size:8px!important;line-height:1.1!important;margin-top:4px!important;color:#788585!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.watch-compact-state{display:none!important}
+.watch-compact-metrics{grid-column:2!important;grid-row:1!important;display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:14px!important;min-width:0!important;height:48px!important;align-items:start!important;padding:5px 8px 3px!important;border:1px solid rgba(70,95,100,.18)!important;border-radius:8px!important;background:rgba(255,255,255,.40)!important;box-sizing:border-box!important}.watch-compact-metric{min-width:0!important;overflow:hidden!important}.watch-compact-metric label{display:block!important;font-size:6px!important;line-height:1!important;color:#778080!important;letter-spacing:.15em!important;font-weight:900!important;white-space:nowrap!important}.watch-compact-metric b{display:block!important;font-size:15px!important;line-height:1.05!important;margin-top:5px!important;letter-spacing:-.02em!important;color:#172124!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.watch-compact-metric small{display:block!important;font-size:6px!important;line-height:1!important;color:#8a9494!important;margin-top:2px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.watch-compact-route{grid-column:2!important;grid-row:2!important;display:grid!important;grid-template-columns:82px minmax(0,1fr) 82px!important;height:42px!important;min-width:0!important;padding:0 8px!important;border:1px solid rgba(70,95,100,.18)!important;border-radius:8px!important;background:rgba(255,255,255,.28)!important;box-sizing:border-box!important}.watch-compact-end{height:42px!important;min-width:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;text-align:center!important}.watch-compact-end span{font-size:6px!important;line-height:1!important;letter-spacing:.16em!important;color:#778080!important}.watch-compact-end b{font-size:15px!important;line-height:1!important;margin-top:3px!important;color:var(--watch-route-color,#176f8b)!important}.watch-compact-end small{width:100%!important;font-size:6px!important;line-height:1!important;margin-top:3px!important;color:#8a9494!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.watch-compact-progress{height:42px!important;min-width:0!important;padding:0 9px!important;display:flex!important;flex-direction:column!important;justify-content:center!important}.watch-compact-progress .watch-progress-label{font-size:6px!important;line-height:1!important;height:7px!important;margin:0 0 3px!important;text-align:center!important;letter-spacing:.15em!important;color:#778080!important;font-weight:900!important}.watch-compact-progress .watch-progress-track{height:4px!important;background:#e3e5e1!important;border-radius:99px!important;position:relative!important}.watch-compact-progress .watch-progress-track i{height:100%!important;background:var(--watch-route-color,#176f8b)!important;border-radius:99px!important}.watch-compact-progress .watch-progress-track span{width:17px!important;height:17px!important;font-size:8px!important;background:#f8f8f4!important;border:1px solid var(--watch-route-color,#176f8b)!important}
+}
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){.hero .hero-bottom{height:94px!important;min-height:94px!important;max-height:94px!important;grid-template-rows:43px 39px!important;padding:6px 18px 6px!important;column-gap:18px!important}.hero .telemetry{height:43px!important;gap:10px!important;padding:4px 7px 3px!important}.hero .telemetry .metric label{font-size:5.5px!important}.hero .telemetry .metric b{font-size:13px!important;margin-top:4px!important}.hero .telemetry .metric small{font-size:5.5px!important}.hero .journey-info{height:39px!important;grid-template-rows:39px!important;padding:0 6px!important}.hero .journey-info .journey-end,.hero .journey-center{height:39px!important}.hero .journey-end b{font-size:13px!important}.hero .journey-end small{font-size:5.5px!important}.watch-bottom-compact{height:94px!important;min-height:94px!important;max-height:94px!important;flex-basis:94px!important;grid-template-rows:43px 39px!important;padding:6px 18px 6px!important;column-gap:18px!important}.watch-compact-metrics{height:43px!important;gap:10px!important;padding:4px 7px 3px!important}.watch-compact-metric label{font-size:5.5px!important}.watch-compact-metric b{font-size:13px!important;margin-top:4px!important}.watch-compact-metric small{font-size:5.5px!important}.watch-compact-route{height:39px!important;grid-template-columns:72px minmax(0,1fr) 72px!important;padding:0 5px!important}.watch-compact-end{height:39px!important}.watch-compact-end b{font-size:13px!important}.watch-compact-end small{font-size:5px!important}.watch-compact-progress{height:39px!important;padding:0 6px!important}.watch-compact-progress .watch-progress-track span{width:16px!important;height:16px!important;font-size:7px!important}.watch-bottom-compact .watch-bottom-title{font-size:23px!important}.watch-compact-sub{font-size:6.5px!important}.watch-compact-airline{font-size:7px!important}.watch-compact-airline-code{min-width:31px!important;height:21px!important;font-size:8px!important}.home > div[style*="justify-content:flex-end"]{display:none!important}}
+</style>
+
+<style id="v627-centered-borderless-cards">
+/* V62.7 — CENTRED INFORMATION / BORDERLESS INNER DATA AREAS
+   Keep the outer flight cards, but remove the visual boxes around
+   telemetry and journey information so the card reads as one clean surface.
+*/
+@media (min-width:701px) and (orientation:landscape){
+  /* Remove the inner information-box borders/backgrounds.
+     The outer .hero-bottom and .watch-bottom-compact cards remain. */
+  .hero .telemetry,
+  .hero .journey-info,
+  .watch-compact-metrics,
+  .watch-compact-route{
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+
+  /* Centre every telemetry value and label. */
+  .hero .telemetry .metric,
+  .watch-compact-metric{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  .hero .telemetry .metric label,
+  .hero .telemetry .metric b,
+  .hero .telemetry .metric small,
+  .watch-compact-metric label,
+  .watch-compact-metric b,
+  .watch-compact-metric small{
+    width:100%!important;
+    text-align:center!important;
+  }
+
+  /* Centre FROM / TO and the progress area. */
+  .hero .journey-info .journey-end,
+  .hero .journey-info .journey-end-right,
+  .hero .journey-center,
+  .watch-compact-end,
+  .watch-compact-progress{
+    text-align:center!important;
+    align-items:center!important;
+  }
+
+  .hero .journey-end span,
+  .hero .journey-end b,
+  .hero .journey-end small,
+  .watch-compact-end span,
+  .watch-compact-end b,
+  .watch-compact-end small{
+    width:100%!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-center{
+    align-items:stretch!important;
+  }
+
+  .watch-compact-progress{
+    justify-content:center!important;
+  }
+
+  /* Remove the small inner route-panel outline while retaining the actual
+     progress line and aircraft marker. */
+  .watch-compact-route{
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+
+  /* Keep the main identity visually distinct without adding another box. */
+  .watch-compact-main{
+    align-items:center!important;
+  }
+}
+</style>
+
+<style id="v628-nearest-centered-borderless">
+/* V62.8 — NEAREST AIRCRAFT: centred + borderless information rows */
+@media (min-width:701px) and (orientation:landscape){
+  /* Remove the inner boxes — the outer flight card is the only container. */
+  .hero .telemetry,
+  .hero .journey-info{
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+
+  .hero .telemetry{
+    padding:0!important;
+    text-align:center!important;
+  }
+
+  .hero .telemetry .metric{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  .hero .telemetry .metric label,
+  .hero .telemetry .metric b,
+  .hero .telemetry .metric small{
+    width:100%!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-info{
+    padding-left:0!important;
+    padding-right:0!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-end,
+  .hero .journey-center{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-end span,
+  .hero .journey-end b,
+  .hero .journey-end small,
+  .hero .journey-percent{
+    width:100%!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-end-right{
+    text-align:center!important;
+  }
+
+  .hero .journey-center .progress{
+    width:100%!important;
+  }
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .telemetry{
+    padding:0!important;
+  }
+  .hero .journey-info{
+    padding:0!important;
+  }
+}
+</style>
+
+
+<style id="v629-nearest-fully-borderless">
+/* V62.9 — NEAREST AIRCRAFT: remove ALL inner information containers
+   The outer Nearest Aircraft card is the only visual container.
+   Metrics and journey information float directly on the card. */
+
+@media (min-width:701px) and (orientation:landscape){
+
+  /* Remove the inner telemetry/identity container */
+  .hero .identity{
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+
+  /* Remove the telemetry panel outline/background */
+  .hero .telemetry{
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    outline:none!important;
+  }
+
+  /* Remove the journey panel outline/background/divider */
+  .hero .journey-info{
+    border:0!important;
+    border-top:0!important;
+    border-bottom:0!important;
+    border-left:0!important;
+    border-right:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    outline:none!important;
+  }
+
+  /* Keep the information centred */
+  .hero .telemetry,
+  .hero .metric,
+  .hero .journey-info,
+  .hero .journey-end,
+  .hero .journey-center{
+    text-align:center!important;
+  }
+
+  .hero .metric{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+
+  .hero .metric label,
+  .hero .metric b,
+  .hero .metric small,
+  .hero .journey-end span,
+  .hero .journey-end b,
+  .hero .journey-end small,
+  .hero .journey-percent{
+    width:100%!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-end,
+  .hero .journey-center{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+
+  .hero .journey-end-right{
+    text-align:center!important;
+  }
+
+  /* The route progress line remains — only its containing box disappears */
+  .hero .journey-center .progress{
+    width:100%!important;
+    border:0!important;
+    outline:0!important;
+  }
+
+  /* Remove the old separator above the information section */
+  .hero .divider{
+    display:none!important;
+  }
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .identity,
+  .hero .telemetry,
+  .hero .journey-info{
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -2607,6 +2874,7 @@ function watchedCompletion(f,live){
 }
 function formatWatchTimeZoneLabel(code){return code?`${String(code).toUpperCase()} LOCAL`:''}
 function renderHomeWatch(items){
+ const watchEyebrow=$('homeWatchEyebrow');
  const wb=$('homeWatch');if(wb)wb.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
  const today=scheduledTodayFlights();
  const next=today.find(f=>watchHasLive(f))||today.find(f=>flightState(f)==='SEARCHING')||today.find(f=>flightState(f)==='TRACKING PENDING')||today.find(f=>{const d=parseDeparture(f);return !d||d.getTime()>=Date.now()})||nextFutureWatchedFlight();
@@ -2627,6 +2895,7 @@ function renderHomeWatch(items){
   return;
  }
  let live=watchHasLive(next)?S.watchLive:null;
+ if(watchEyebrow)watchEyebrow.textContent=live?'WATCHED FLIGHT':'NEXT WATCHED FLIGHT';
  const future=dateKeyFromValue(next.date)>todayKeyLocal();
  if(live&&watchedFlightPhase(next,live)==='LANDED'){
    if(!next.landedAt){next.landedAt=Date.now();localStorage.setItem('skyAroundMeWatch',JSON.stringify(watch));localStorage.setItem('skyAroundMeWatchlist',JSON.stringify(watchlist));}
@@ -3159,6 +3428,60 @@ function enforceFutureDateInputs(){const min=todayInputDate();['listDate','dateI
 updateSkySettingsUI();if(S.extendedAirspace&&S.rangeKm<100)setTimeout(fitLiveSkyExtended,180);enforceFutureDateInputs();loadRouteCache();loadIdentityCache();loadAirportDatabase();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);refreshMissingFlightData();refreshWatchStream();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='LIVE'?'LIVE TRACKING':s.textContent==='LANDED'?'FLIGHT ENDED':'';}},1000);S.timer=setInterval(poll,45000);
 </script>
 
+
+
+<style id="v630-hard-borderless-nearest">
+/* V63.0 — HARD OVERRIDE: remove the inner Nearest Aircraft containers.
+   This is intentionally appended at the end so older component styles cannot restore them. */
+
+body .hero .hero-bottom .identity,
+body .hero .hero-bottom .telemetry,
+body .hero .hero-bottom .journey-info {
+  border: 0 !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+body .hero .hero-bottom .journey-info {
+  border-top: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+}
+
+body .hero .hero-bottom .telemetry {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+body .hero .hero-bottom .journey-info {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Keep the content centred after removing the containers. */
+body .hero .hero-bottom .telemetry .metric,
+body .hero .hero-bottom .journey-end,
+body .hero .hero-bottom .journey-center {
+  text-align: center !important;
+  align-items: center !important;
+}
+
+body .hero .hero-bottom .telemetry .metric label,
+body .hero .hero-bottom .telemetry .metric b,
+body .hero .hero-bottom .telemetry .metric small,
+body .hero .hero-bottom .journey-end span,
+body .hero .hero-bottom .journey-end b,
+body .hero .hero-bottom .journey-end small,
+body .hero .hero-bottom .journey-percent {
+  text-align: center !important;
+}
+</style>
 
 </body></html>
 
