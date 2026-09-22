@@ -1330,7 +1330,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
  <section class="watch-bottom watch-bottom-compact" id="homeWatch">
   <div class="watch-compact-main">
    <div class="watch-compact-brand">
-    <div class="eyebrow">NEXT WATCHED FLIGHT</div>
+    <div class="eyebrow" id="homeWatchEyebrow">NEXT WATCHED FLIGHT</div>
     <div class="watch-compact-airline"><span class="watch-compact-airline-code" id="homeWatchAirlineCode">SQ</span><span id="homeWatchAirlineName">SINGAPORE AIRLINES</span></div>
     <div class="watch-bottom-title" id="homeWatchTitle">NO WATCHED FLIGHT</div>
     <div class="watch-compact-sub" id="homeWatchSub">Add a flight in My Flights</div>
@@ -1439,7 +1439,7 @@ function localDateOnly(f){
  return Number.isNaN(d.getTime())?null:d;
 }
 const airportTimeZones={
- LHR:'Europe/London',LGW:'Europe/London',BRS:'Europe/London',SNN:'Europe/Dublin',CDG:'Europe/Paris',AMS:'Europe/Amsterdam',FRA:'Europe/Berlin',MUC:'Europe/Berlin',JFK:'America/New_York',EWR:'America/New_York',LGA:'America/New_York',CLT:'America/New_York',RDU:'America/New_York',SIN:'Asia/Singapore',MEX:'America/Mexico_City',SFO:'America/Los_Angeles',LAX:'America/Los_Angeles',ORD:'America/Chicago',DFW:'America/Chicago',DXB:'Asia/Dubai',DOH:'Asia/Qatar',HND:'Asia/Tokyo',NRT:'Asia/Tokyo',SYD:'Australia/Sydney',MEL:'Australia/Melbourne',CGK:'Asia/Jakarta',DPS:'Asia/Makassar',BKK:'Asia/Bangkok',HKG:'Asia/Hong_Kong',ICN:'Asia/Seoul',STN:'Europe/London',MAN:'Europe/London',BHX:'Europe/London',PMI:'Europe/Madrid',BZR:'Europe/Paris'};
+ LHR:'Europe/London',LGW:'Europe/London',BRS:'Europe/London',SNN:'Europe/Dublin',CDG:'Europe/Paris',AMS:'Europe/Amsterdam',FRA:'Europe/Berlin',MUC:'Europe/Berlin',JFK:'America/New_York',EWR:'America/New_York',LGA:'America/New_York',CLT:'America/New_York',RDU:'America/New_York',SIN:'Asia/Singapore',MEX:'America/Mexico_City',SFO:'America/Los_Angeles',LAX:'America/Los_Angeles',ORD:'America/Chicago',DFW:'America/Chicago',DXB:'Asia/Dubai',DOH:'Asia/Qatar',HND:'Asia/Tokyo',NRT:'Asia/Tokyo',SYD:'Australia/Sydney',MEL:'Australia/Melbourne',CGK:'Asia/Jakarta',KHH:'Asia/Taipei',DPS:'Asia/Makassar',BKK:'Asia/Bangkok',HKG:'Asia/Hong_Kong',ICN:'Asia/Seoul',STN:'Europe/London',MAN:'Europe/London',BHX:'Europe/London',PMI:'Europe/Madrid',BZR:'Europe/Paris'};
 function parseLocalDateTimeInZone(date,time,tz){
  const dm=String(date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
  const tm=String(time||'').trim().match(/^(\d{1,2}):(\d{2})$/);
@@ -1633,7 +1633,7 @@ const AIRPORT_DISPLAY_NAMES={
  DXB:'Dubai',DOH:'Doha Hamad',SYD:'Sydney',MEL:'Melbourne',LAX:'Los Angeles',SFO:'San Francisco',ORD:'Chicago O’Hare',
  DFW:'Dallas Fort Worth',DEN:'Denver',SEA:'Seattle',LAS:'Las Vegas',YYZ:'Toronto Pearson',YVR:'Vancouver',MEX:'Mexico City',
  FCO:'Rome Fiumicino',VIE:'Vienna',CPH:'Copenhagen',OSL:'Oslo',ARN:'Stockholm Arlanda',HEL:'Helsinki',BCN:'Barcelona',MAD:'Madrid',LIS:'Lisbon',
- PMI:'Palma de Mallorca',BZR:'Béziers Cap d’Agde',TRN:'Turin',EDI:'Edinburgh',CGK:'Jakarta Soekarno-Hatta',FCO:'Rome Fiumicino'
+ PMI:'Palma de Mallorca',BZR:'Béziers Cap d’Agde',TRN:'Turin',EDI:'Edinburgh',CGK:'Jakarta Soekarno-Hatta',KHH:'Kaohsiung International',FCO:'Rome Fiumicino'
 };
 function airportDisplayName(code,name){
  const c=String(code||'').trim().toUpperCase();
@@ -2357,7 +2357,9 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  $('flightName').className='flight-name '+(verified?'flight-verified':'flight-callsign');
  $('flightName').textContent=displayFlight.toUpperCase();$('aircraftType').textContent=model;
  $('route').innerHTML=journey&&journey.fromCode&&journey.toCode?`<span class="route-live-code">${journey.fromCode} → ${journey.toCode}</span>`:'LIVE AIRCRAFT';$('schedule').textContent=journey&&journey.fromCode&&journey.toCode?airline.toUpperCase()+' · '+model.toUpperCase():S.locationName.toUpperCase()+' · '+x.d.toFixed(1)+' KM AWAY';
- const journeyDistance=journey&&journey.toLat!=null&&journey.toLon!=null&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),Number(journey.toLat),Number(journey.toLon)):null;
+ const journeyDestLat=journey?.toLat!=null?Number(journey.toLat):routePoint(journey?.toCode)?.[0];
+ const journeyDestLon=journey?.toLon!=null?Number(journey.toLon):routePoint(journey?.toCode)?.[1];
+ const journeyDistance=journey&&Number.isFinite(journeyDestLat)&&Number.isFinite(journeyDestLon)&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),journeyDestLat,journeyDestLon):null;
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
  const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=pct+'% COMPLETE';$('flightProgress').style.width=pct+'%';const pp=$('progressPlane');if(pp)pp.style.left=pct+'%'}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
 }
@@ -2559,10 +2561,13 @@ function renderHomeWatch(items){
  setTextSafe('homeWatchAirlineCode',airlineCode);
  setTextSafe('homeWatchAirlineName',(next.airlineName||airlineNames[airlineCode]||'WATCHED FLIGHT').toUpperCase());
  setTextSafe('homeWatchTitle',next.name||next.flightNumber||next.flight||'WATCHED FLIGHT');
- setTextSafe('homeWatchSub',next.aircraftDesc||'Scheduled flight · live position will appear when airborne');
+ setTextSafe('homeWatchSub',live?(next.aircraftDesc||'Live flight · ADS-B position tracked'):(next.aircraftDesc||'Scheduled flight · live position will appear when airborne'));
+ setTextSafe('homeWatchEyebrow',live?'WATCHED FLIGHT':'NEXT WATCHED FLIGHT');
 
- setTextSafe('homeWatchReg',next.registration||next.reg||'—');
- setTextSafe('homeWatchCallsign',next.callsign||'—');
+ const liveRegistration=live?.registration||live?.r||'';
+ const liveCallsign=live?.callsign||'';
+ setTextSafe('homeWatchReg',liveRegistration||next.registration||next.reg||'—');
+ setTextSafe('homeWatchCallsign',liveCallsign||next.callsign||'—');
  setTextSafe('homeWatchStatus',live?(phase==='LANDED'?'COMPLETED':'LIVE'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY')));
  setTextSafe('homeWatchStatusSub',live?(phase==='LANDED'?'FLIGHT ENDED':'LIVE TRACKING · '+pct+'% COMPLETE'):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING FOR LIVE POSITION':state==='SCHEDULED'?countdownText(next):'flight day complete'));
  const dep=formatDepartureDisplay(next);
