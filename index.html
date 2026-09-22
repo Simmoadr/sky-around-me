@@ -1588,7 +1588,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
     border:0!important;
     border-radius:99px!important;
     opacity:1!important;
-    transition:width 40s linear!important;
+    transition:width 12s linear!important;
   }
 
   .watch-compact-progress .watch-progress-track span{
@@ -1609,7 +1609,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
     line-height:1!important;
     z-index:3!important;
     opacity:1!important;
-    transition:left 40s linear!important;
+    transition:left 12s linear!important;
     box-shadow:0 2px 6px rgba(23,30,30,.14)!important;
   }
 
@@ -1632,11 +1632,11 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   .hero .journey-center .progress i{
     background:#176f8b!important;
     opacity:1!important;
-    transition:width 40s linear!important;
+    transition:width 12s linear!important;
   }
 
   .hero .journey-progress .progress-plane{
-    transition:left 40s linear!important;
+    transition:left 12s linear!important;
   }
 }
 </style>
@@ -1648,16 +1648,6 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
    2) watched flight in hero + the NEXT different watched flight below. */
 </style>
 
-<style id="v641-progress-reset-and-speed">
-/* V64.1 — faster progress animation and reset-to-zero when a different aircraft/watch enters the card. */
-.watch-compact-progress .watch-progress-track i{transition:width 12s linear!important;}
-.watch-compact-progress .watch-progress-track span{transition:left 12s linear!important;}
-.hero .journey-center .progress i{transition:width 12s linear!important;}
-.hero .journey-progress .progress-plane{transition:left 12s linear!important;}
-.quiet-next strong{display:block;}
-.quiet-next small{display:block;margin-top:7px;}
-.quiet-next-empty strong{font-size:22px;letter-spacing:-.02em;}
-</style>
 </head>
 <body>
 
@@ -2485,19 +2475,16 @@ function fitQuietHeroTitle(){
 function renderQuietScheduledHero(next){
  const q=$('heroQuietState');
  if(q){
-   const flightName=next?.name||next?.flightNumber||next?.flight||'';
-   const deviceDep=next?formatDepartureDisplay(next).secondary:'';
-   const route=(next?.fromCode&&next?.toCode)?`${next.fromCode} → ${next.toCode}`:'';
-   if(next){
-     q.innerHTML=`<div class="quiet-kicker">SKY AROUND ME</div><h2>Skies are quiet</h2><p>No aircraft nearby right now.</p><div class="quiet-next"><span>NEXT WATCHED FLIGHT</span><strong>${escapeHtml(flightName)}</strong><small>${escapeHtml(deviceDep?'DEP '+deviceDep:'DEP —')}${route?` · ${escapeHtml(route)}`:''}</small></div><div class="quiet-quote-wrap"><div class="quiet-rule"></div><div class="quiet-quote">“Same sky. Different stories.”</div></div>`;
-   }else{
-     q.innerHTML=`<div class="quiet-kicker">SKY AROUND ME</div><h2>Skies are quiet</h2><p>No aircraft nearby right now.</p><div class="quiet-next quiet-next-empty"><span>NEXT WATCHED FLIGHT</span><strong>NO FLIGHT WATCHED</strong><small>Add a flight in My Flights</small></div><div class="quiet-quote-wrap"><div class="quiet-rule"></div><div class="quiet-quote">“Same sky. Different stories.”</div></div>`;
-   }
+   const flight=(next?.flightNumber||next?.flight||'WATCHED FLIGHT').toUpperCase();
+   const route=(next?.fromCode&&next?.toCode)?`${next.fromCode} → ${next.toCode}`:'NEXT WATCHED FLIGHT';
+   const airline=(next?.airlineName||'WATCHED FLIGHT').toUpperCase();
+   const dep=next?.departureTime||'—';
+   q.innerHTML=`<div class="quiet-kicker">SKY AROUND ME</div><h2>Skies are quiet</h2><p>No aircraft nearby right now.</p><div class="quiet-next"><span>NEXT WATCHED FLIGHT</span><strong>${escapeHtml(flight)} · ${escapeHtml(route)}</strong><small>${escapeHtml(airline)} · DEP ${escapeHtml(dep)}</small></div><div class="quiet-quote-wrap"><div class="quiet-rule"></div><div class="quiet-quote">“Same sky. Different stories.”</div></div>`;
  }
  const hero=$('hero');
  if(hero)hero.classList.add('hero-is-quiet');
  setTextSafe('homeEyebrow','SKIES ARE QUIET');
- setTextSafe('homeTitle','NO AIRCRAFTS');
+ setTextSafe('homeTitle','NO AIRCRAFT NEARBY');
  setTextSafe('homeStatus','QUIET AIRSPACE');
  $('airlineBadge').textContent='QUIET';
  $('operator').textContent='LOCAL SKY · '+S.rangeKm+' KM';
@@ -2506,14 +2493,14 @@ function renderQuietScheduledHero(next){
  $('aircraftRegNote').textContent='REGISTRATION';
  $('aircraftCallsign').textContent='—';
  $('flightName').className='flight-name watched-flight-title quiet-flight-title';
- $('flightName').textContent='NO AIRCRAFTS';
+ $('flightName').textContent='NO AIRCRAFT NEARBY';
  $('aircraftType').textContent='Within the selected airspace';
  requestAnimationFrame(fitQuietHeroTitle);
  $('route').textContent=next&&next.fromCode&&next.toCode?`NEXT WATCHED · ${next.fromCode} → ${next.toCode}`:'NO LIVE TRAFFIC';
  $('schedule').textContent=next?.departureTime?`DEP ${next.departureTime} · ${String(next.fromCode||'').toUpperCase()} LOCAL`:(S.locationName.toUpperCase()+' · '+S.rangeKm+' KM WATCH');
  $('mLabel1').textContent='STATUS';$('m1').textContent='QUIET';$('m1s').textContent='no nearby aircraft';
  $('mLabel2').textContent='RANGE';$('m2').textContent=S.rangeKm+' km';$('m2s').textContent='selected airspace';
- $('mLabel3').textContent='NEXT WATCHED';$('m3').textContent=next?(next.name||next.flightNumber||next.flight||'—'):'NONE';$('m3s').textContent=next?.airlineName||'no watched flight';
+ $('mLabel3').textContent='NEXT WATCHED';$('m3').textContent=(next?.flightNumber||next?.flight||'NONE').toUpperCase();$('m3s').textContent=next?.airlineName||'no watched flight';
  $('mLabel4').textContent='DEPARTURE';$('m4').textContent=next?.departureTime||'—';$('m4s').textContent=next?.fromCode?`${next.fromCode} LOCAL`:'scheduled';
 }
 function renderScheduledHome(){
@@ -2893,27 +2880,30 @@ async function lookupFlightIdentity(x,routeOverride=null){
  })();
  S.identityPending.set(requestKey,task);return task;
 }
-let homeHeroProgressKey='';
-let homeWatchProgressKey='';
-function animateProgressTo(bar,plane,pct,key){
- if(!bar)return;
+function animateJourneyProgress(bar,plane,pct,key){
  const target=Math.max(0,Math.min(100,Number(pct)||0));
- const changed=key!==homeHeroProgressKey;
+ if(!bar&&!plane)return;
+ const safeKey=String(key||'');
+ const previous=bar?.dataset?.progressKey||plane?.dataset?.progressKey||'';
+ const changed=!!safeKey&&safeKey!==previous;
  if(changed){
-   homeHeroProgressKey=key; bar.style.transition='none'; if(plane)plane.style.transition='none';
-   bar.style.width='0%'; if(plane)plane.style.left='0%';
-   requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.transition='width 12s linear';if(plane)plane.style.transition='left 12s linear';bar.style.width=target+'%';if(plane)plane.style.left=target+'%';}));
- }else{bar.style.transition='width 12s linear';if(plane)plane.style.transition='left 12s linear';bar.style.width=target+'%';if(plane)plane.style.left=target+'%';}
+   if(bar){bar.style.transition='none';bar.style.width='0%';bar.dataset.progressKey=safeKey;}
+   if(plane){plane.style.transition='none';plane.style.left='0%';plane.dataset.progressKey=safeKey;}
+   // Force the browser to commit the zero position before starting the new animation.
+   void (bar?.offsetWidth||plane?.offsetWidth||0);
+   requestAnimationFrame(()=>{
+     if(bar)bar.style.transition='width 12s linear';
+     if(plane)plane.style.transition='left 12s linear';
+     if(bar)bar.style.width=target+'%';
+     if(plane)plane.style.left=target+'%';
+   });
+   return;
+ }
+ if(bar){bar.style.transition='width 12s linear';bar.style.width=target+'%';}
+ if(plane){plane.style.transition='left 12s linear';plane.style.left=target+'%';}
 }
-function animateWatchedProgressTo(bar,plane,pct,key){
- if(!bar)return;
- const target=Math.max(0,Math.min(100,Number(pct)||0));
- const changed=key!==homeWatchProgressKey;
- if(changed){
-   homeWatchProgressKey=key; bar.style.transition='none'; if(plane)plane.style.transition='none';
-   bar.style.width='0%'; if(plane)plane.style.left='0%';
-   requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.transition='width 12s linear';if(plane)plane.style.transition='left 12s linear';bar.style.width=target+'%';if(plane)plane.style.left=target+'%';}));
- }else{bar.style.transition='width 12s linear';if(plane)plane.style.transition='left 12s linear';bar.style.width=target+'%';if(plane)plane.style.left=target+'%';}
+function journeyProgressIdentity(x,extra){
+ return String(extra||x?.icao||x?.hex||x?.r||x?.registration||x?.callsign||'').trim().toUpperCase();
 }
 function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero)hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
  hydrateCachedIdentity(x);
@@ -2943,7 +2933,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  const journeyDestLon=journey?.toLon!=null?Number(journey.toLon):routePoint(journey?.toCode)?.[1];
  const journeyDistance=journey&&Number.isFinite(journeyDestLat)&&Number.isFinite(journeyDestLon)&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),journeyDestLat,journeyDestLon):null;
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
- const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=pct+'% COMPLETE';animateProgressTo($('flightProgress'),$('progressPlane'),pct,'hero|'+(x?.icao||x?.hex||x?.registration||x?.callsign||x?.flight||'aircraft')+'|'+(journey.fromCode||'')+'|'+(journey.toCode||''))}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%'}}
+ const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=pct+'% COMPLETE';animateJourneyProgress($('flightProgress'),$('progressPlane'),pct,journeyProgressIdentity(x));}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);animateJourneyProgress($('flightProgress'),$('progressPlane'),0,journeyProgressIdentity(x));}}
 }
 const ROUTE_CACHE_TTL=30*60*1000;
 const ROUTE_FAILURE_TTL=5*60*1000;
@@ -3156,7 +3146,7 @@ function renderHomeWatch(items){
   ['homeWatchReg','homeWatchCallsign','homeWatchStatus','homeWatchDeparture','homeWatchArrival','homeWatchFlight'].forEach(id=>setTextSafe(id,'—'));
   ['homeWatchStatusSub','homeWatchDepartureSub','homeWatchArrivalSub','homeWatchFlightSub','homeWatchFromName','homeWatchToName'].forEach(id=>setTextSafe(id,''));
   const st=$('homeWatchState');if(st){st.className='state';st.textContent='NONE';}
-  if(progressFrom)progressFrom.textContent='—';if(progressTo)progressTo.textContent='—';if(progressLabel)progressLabel.textContent='—% COMPLETE';if(progressBar)progressBar.style.width='0%';if(progressPlane)progressPlane.style.left='0%';if(progressRow)progressRow.hidden=true;
+  if(progressFrom)progressFrom.textContent='—';if(progressTo)progressTo.textContent='—';if(progressLabel)progressLabel.textContent='—% COMPLETE';if(progressBar){progressBar.style.transition='none';progressBar.style.width='0%';progressBar.dataset.progressKey='';}if(progressPlane){progressPlane.style.transition='none';progressPlane.style.left='0%';progressPlane.dataset.progressKey='';}if(progressRow)progressRow.hidden=true;
   if(box)box.hidden=true;
   return;
  }
@@ -3206,7 +3196,10 @@ function renderHomeWatch(items){
  if(progressFrom)progressFrom.textContent=next.fromCode||'—';
  if(progressTo)progressTo.textContent=next.toCode||'—';
  setTextSafe('homeWatchFromName',airportDisplayName(next.fromCode,next.from));setTextSafe('homeWatchToName',airportDisplayName(next.toCode,next.to));
- if(progressLabel)progressLabel.textContent=routeReady?`${pct}% COMPLETE`:'—% COMPLETE'; if(routeReady){const watchProgressKey='watch|'+watchKey(next)+'|'+(live?.icao||live?.hex||live?.registration||live?.callsign||'scheduled');animateWatchedProgressTo(progressBar,progressPlane,pct,watchProgressKey);}else{homeWatchProgressKey='';if(progressBar){progressBar.style.transition='none';progressBar.style.width='0%';}if(progressPlane){progressPlane.style.transition='none';progressPlane.style.left='0%';}} if(progressRow)progressRow.hidden=!routeReady;
+ if(progressLabel)progressLabel.textContent=routeReady?`${pct}% COMPLETE`:'—% COMPLETE';
+ const watchedProgressKey=live?journeyProgressIdentity(live,watchKey(next)):watchKey(next);
+ animateJourneyProgress(progressBar,progressPlane,routeReady?pct:0,watchedProgressKey);
+ if(progressRow)progressRow.hidden=!routeReady;
  const st=$('homeWatchState');if(st){st.className='state '+(live?(watchLiveIsStale(next)?'wait':'live'):(future||state==='SCHEDULED'||state==='TRACKING PENDING'?'wait':'active'));st.textContent=live?(phase==='LANDED'?'COMPLETED':watchLiveIsStale(next)?'SEARCHING':'LIVE'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY'));}
  const stSub=$('homeWatchStateSub');if(stSub)stSub.textContent=live?(phase==='LANDED'?'FLIGHT ENDED':watchLiveIsStale(next)?'SEARCHING…':`LIVE TRACKING · ${pct}% COMPLETE`):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING…':state==='SEARCHING'?'SEARCHING…':'');
 
