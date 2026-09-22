@@ -1777,20 +1777,21 @@ function renderHeroFlightMap(live,watch){
         // Size the local-airspace camera against the map area that is
         // actually visible above the floating flight-information glass.
         // This keeps the selected-radius circle from disappearing underneath it.
-        const targetMPerPx=(radiusM*2)/(visibleHeight*0.78);
+        // Size the radius against the usable map area, not the full map
+        // container. Keep a little more breathing room so the full selected
+        // radius remains visible above the floating flight-information bar.
+        const targetMPerPx=(radiusM*2)/(visibleHeight*0.86);
         const mercatorMPerPx=156543.03392*Math.max(0.15,Math.cos(lat*Math.PI/180));
         let zoom=Math.log2(mercatorMPerPx/targetMPerPx);
         zoom=Math.max(2,Math.min(18,Math.round(zoom)));
 
         heroFlightMap.setView([lat,lon],zoom,{animate:false});
-        // The glass flight-information panel occupies the lower part of the
-        // map. Shift the map content upward so the device/radius is centred in
-        // the visible portion rather than underneath the overlay.
+        // The glass flight-information panel covers the lower part of the map.
+        // Move the camera by HALF of that covered height so the device/radius
+        // centre lands in the middle of the unobscured map area. The previous
+        // full-height shift was pushing the radius too far upward on iPad.
         if(coveredHeight>0){
-         // Put the radius centre in the middle of the unobscured map area.
-         // Half-shifting was leaving too much of the selected radius behind
-         // the floating flight-information panel on iPad Safari.
-         const shiftY=Math.round(coveredHeight+bottomMargin);
+         const shiftY=Math.round(coveredHeight/2);
          heroFlightMap.panBy([0,-shiftY],{animate:false});
         }
 
@@ -3458,3 +3459,30 @@ updateSkySettingsUI();if(S.extendedAirspace&&S.rangeKm<100)setTimeout(fitLiveSky
 }
 </style>
 \n\n
+
+
+<style id="v616-ipad-fit">
+/* V61.6 — FINAL iPAD LANDSCAPE FIT
+   The 8th-gen iPad viewport is tight. Keep the Featured hero + Next Watched
+   Flight inside the viewport instead of letting the hero consume the whole
+   screen. The local-airspace camera then reserves the glass flight bar area. */
+@media (min-width:701px) and (orientation:landscape) and (max-height:800px){
+  .home{
+    height:auto!important;
+    min-height:0!important;
+    overflow:visible!important;
+    padding-top:6px!important;
+  }
+  .hero{
+    height:clamp(430px,calc(100vh - 330px),500px)!important;
+    min-height:430px!important;
+    max-height:500px!important;
+  }
+  .watch-bottom-compact{
+    height:95px!important;
+    min-height:95px!important;
+    max-height:95px!important;
+    margin-top:7px!important;
+  }
+}
+</style>
