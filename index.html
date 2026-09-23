@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Sky Around Me V66.7 — progress/aircraft animation reset on identity change -->
 <!-- Sky Around Me V66.5 — navigation regression fix: restore the proven V64.8 nav event path; no map/aircraft/backend logic changed. -->
 <!-- SKY AROUND ME V66.4 — NAVIGATION / VIEW REGRESSION FIX -->
 <!-- Sky Around Me V66.2 — live-route confidence architecture -->
@@ -2139,31 +2140,46 @@ let heroMapCycleKey='';
 // A new aircraft always starts at 0% and then animates forward to its actual
 // route progress. Same aircraft continues to update normally.
 let heroProgressAircraftKey='';
+let heroProgressDisplayed=0;
 let heroProgressResetToken=0;
 function updateHeroJourneyProgress(pct,aircraft){
  const bar=$('flightProgress'),plane=$('progressPlane');
  if(!bar&&!plane)return;
  const value=Math.max(0,Math.min(100,Number(pct)||0));
- const key=String(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||aircraft?.callsign||'').toLowerCase();
- const changed=!!key&&!!heroProgressAircraftKey&&key!==heroProgressAircraftKey;
+ const key=String(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||aircraft?.callsign||'').trim().toLowerCase();
+ const previousKey=heroProgressAircraftKey;
+ const changed=!!key&&!!previousKey&&key!==previousKey;
+ const first=!!key&&!previousKey;
  heroProgressAircraftKey=key;
  if(changed){
   const token=++heroProgressResetToken;
-  // Disable the CSS transition for the reset itself so the old aircraft
-  // cannot visibly travel backwards to zero.
+  heroProgressDisplayed=0;
+  // A different aircraft is a completely new journey. Hard-reset both the
+  // bar and aircraft to 0% before allowing the new value to animate forward.
   if(bar){bar.style.transition='none';bar.style.width='0%';}
   if(plane){plane.style.transition='none';plane.style.left='0%';}
-  // Force the browser to commit the 0% state before starting the new flight.
   void (bar?.offsetWidth||plane?.offsetWidth||0);
   requestAnimationFrame(()=>{
    if(token!==heroProgressResetToken)return;
+   heroProgressDisplayed=value;
    if(bar){bar.style.transition='';bar.style.width=value+'%';}
    if(plane){plane.style.transition='';plane.style.left=value+'%';}
   });
   return;
  }
- if(bar)bar.style.width=value+'%';
- if(plane)plane.style.left=value+'%';
+ if(first){
+  heroProgressDisplayed=value;
+  if(bar)bar.style.width=value+'%';
+  if(plane)plane.style.left=value+'%';
+  return;
+ }
+ // A single aircraft must never visually travel backwards because of a small
+ // ADS-B position/route-progress fluctuation. Keep the displayed journey
+ // monotonic until the aircraft itself changes.
+ const next=Math.max(heroProgressDisplayed,value);
+ heroProgressDisplayed=next;
+ if(bar)bar.style.width=next+'%';
+ if(plane)plane.style.left=next+'%';
 }
 const AIRPORT_DISPLAY_NAMES={
  LHR:'London Heathrow',LGW:'London Gatwick',STN:'London Stansted',MAN:'Manchester',BHX:'Birmingham',BRS:'Bristol',
@@ -3267,6 +3283,55 @@ function getHomeBottomWatchedFlight(items){
  return primary;
 }
 
+let homeWatchProgressKey='';
+let homeWatchProgressDisplayed=0;
+let homeWatchProgressResetToken=0;
+function updateHomeWatchProgress(pct,flightKey,enabled=true){
+ const bar=$('homeWatchProgressBar'),plane=$('homeWatchProgressPlane');
+ if(!bar&&!plane)return;
+ if(!enabled){
+  homeWatchProgressKey='';homeWatchProgressDisplayed=0;++homeWatchProgressResetToken;
+  if(bar){bar.style.transition='none';bar.style.width='0%';}
+  if(plane){plane.style.transition='none';plane.style.left='0%';}
+  void (bar?.offsetWidth||plane?.offsetWidth||0);
+  if(bar)bar.style.transition='';if(plane)plane.style.transition='';
+  return;
+ }
+ const value=Math.max(0,Math.min(100,Number(pct)||0));
+ const key=String(flightKey||'').trim().toLowerCase();
+ const previousKey=homeWatchProgressKey;
+ const changed=!!key&&!!previousKey&&key!==previousKey;
+ const first=!!key&&!previousKey;
+ homeWatchProgressKey=key;
+ if(changed){
+  const token=++homeWatchProgressResetToken;
+  homeWatchProgressDisplayed=0;
+  // The Next Watched Flight card may switch from one watched flight to another.
+  // Never animate the new flight backwards from the previous flight's percent.
+  if(bar){bar.style.transition='none';bar.style.width='0%';}
+  if(plane){plane.style.transition='none';plane.style.left='0%';}
+  void (bar?.offsetWidth||plane?.offsetWidth||0);
+  requestAnimationFrame(()=>{
+   if(token!==homeWatchProgressResetToken)return;
+   homeWatchProgressDisplayed=value;
+   if(bar){bar.style.transition='';bar.style.width=value+'%';}
+   if(plane){plane.style.transition='';plane.style.left=value+'%';}
+  });
+  return;
+ }
+ if(first){
+  homeWatchProgressDisplayed=value;
+  if(bar)bar.style.width=value+'%';
+  if(plane)plane.style.left=value+'%';
+  return;
+ }
+ // Keep the same watched flight monotonic as ADS-B position updates arrive.
+ const next=Math.max(homeWatchProgressDisplayed,value);
+ homeWatchProgressDisplayed=next;
+ if(bar)bar.style.width=next+'%';
+ if(plane)plane.style.left=next+'%';
+}
+
 function renderHomeWatch(items){
  const watchEyebrow=$('homeWatchEyebrow');
  const wb=$('homeWatch');if(wb)wb.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
@@ -3284,7 +3349,7 @@ function renderHomeWatch(items){
   ['homeWatchReg','homeWatchCallsign','homeWatchStatus','homeWatchDeparture','homeWatchArrival','homeWatchFlight'].forEach(id=>setTextSafe(id,'—'));
   ['homeWatchStatusSub','homeWatchDepartureSub','homeWatchArrivalSub','homeWatchFlightSub','homeWatchFromName','homeWatchToName'].forEach(id=>setTextSafe(id,''));
   const st=$('homeWatchState');if(st){st.className='state';st.textContent='NONE';}
-  if(progressFrom)progressFrom.textContent='—';if(progressTo)progressTo.textContent='—';if(progressLabel)progressLabel.textContent='—% COMPLETE';if(progressBar)progressBar.style.width='0%';if(progressPlane)progressPlane.style.left='0%';if(progressRow)progressRow.hidden=true;
+  if(progressFrom)progressFrom.textContent='—';if(progressTo)progressTo.textContent='—';if(progressLabel)progressLabel.textContent='—% COMPLETE';updateHomeWatchProgress(0,'',false);if(progressRow)progressRow.hidden=true;
   if(box)box.hidden=true;
   return;
  }
@@ -3335,8 +3400,8 @@ function renderHomeWatch(items){
  if(progressTo)progressTo.textContent=next.toCode||'—';
  setTextSafe('homeWatchFromName',airportDisplayName(next.fromCode,next.from));setTextSafe('homeWatchToName',airportDisplayName(next.toCode,next.to));
  if(progressLabel)progressLabel.textContent=routeReady?`${pct}% COMPLETE`:'—% COMPLETE';
- if(progressBar)progressBar.style.width=routeReady?`${pct}%`:'0%';
- if(progressPlane)progressPlane.style.left=routeReady?`${pct}%`:'0%';
+ const watchProgressKey=watchKey(next);
+ updateHomeWatchProgress(pct,watchProgressKey,routeReady);
  if(progressRow)progressRow.hidden=!routeReady;
  const st=$('homeWatchState');if(st){st.className='state '+(live?(watchLiveIsStale(next)?'wait':'live'):(future||state==='SCHEDULED'||state==='TRACKING PENDING'?'wait':'active'));st.textContent=live?(phase==='LANDED'?'COMPLETED':watchLiveIsStale(next)?'SEARCHING':'LIVE'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY'));}
  const stSub=$('homeWatchStateSub');if(stSub)stSub.textContent=live?(phase==='LANDED'?'FLIGHT ENDED':watchLiveIsStale(next)?'SEARCHING…':`LIVE TRACKING · ${pct}% COMPLETE`):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING…':state==='SEARCHING'?'SEARCHING…':'');
