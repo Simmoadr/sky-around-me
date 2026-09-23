@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- Sky Around Me V66.19 — Special Squawk bubbles + cleaner Featured status card + recenter layout fix -->
+<!-- Sky Around Me V66.20 — progress reset fix + compact completion aircraft + special squawk visibility -->
 <head>
 <!-- Sky Around Me V66.10 — hard-reset progress animations on aircraft/flight identity change -->
 <!-- Sky Around Me V66.5 — navigation regression fix: restore the proven V64.8 nav event path; no map/aircraft/backend logic changed. -->
@@ -1834,7 +1834,7 @@ const initialMode=savedSkySettings.locationMode||'device';
 const WATCH_LIVE_GRACE_MS=3*60*1000;
 const WATCH_LIVE_RETENTION_AFTER_ARRIVAL_MS=45*60*1000;
 const WATCH_LIVE_FALLBACK_RETENTION_MS=90*60*1000;
-const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],mapSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawks:!!savedSkySettings.specialSquawks,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
+const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],mapSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawks:savedSkySettings.specialSquawks===undefined?true:!!savedSkySettings.specialSquawks,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
 const $=id=>document.getElementById(id);
 function setTextSafe(id,value){const el=$(id);if(el)el.textContent=value??'';}
 function updateRefreshUsage(){const perHour=Math.round(3600/S.refreshSec);const el=$('refreshUsage');if(el)el.textContent=`SESSION REQUESTS: ${S.livePollCount.toLocaleString()} · ~${perHour.toLocaleString()} / HOUR AT ${S.refreshSec} SEC`;}
@@ -2190,62 +2190,71 @@ let heroProgressRouteKey='';
 let heroProgressDisplayed=0;
 let heroProgressResetToken=0;
 let heroProgressResetPendingKey='';
-function resetHeroJourneyProgress(){
+function normalProgressKey(value){return String(value||'').trim().toLowerCase();}
+function resetHeroJourneyProgress(nextKey=''){
  const bar=$('flightProgress'),plane=$('progressPlane');
  ++heroProgressResetToken;
- heroProgressAircraftKey='';
+ const key=normalProgressKey(nextKey);
+ heroProgressAircraftKey=key;
  heroProgressRouteKey='';
  heroProgressDisplayed=0;
- heroProgressResetPendingKey='';
+ heroProgressResetPendingKey=key;
  if(bar){bar.style.transition='none';bar.style.width='0%';}
  if(plane){plane.style.transition='none';plane.style.left='0%';}
  void (bar?.offsetWidth||plane?.offsetWidth||0);
- requestAnimationFrame(()=>{if(bar)bar.style.transition='width .6s ease';if(plane)plane.style.transition='left .7s ease, transform .7s ease';});
+ if(!key){
+  heroProgressResetPendingKey='';
+  requestAnimationFrame(()=>{if(bar)bar.style.transition='width .6s ease';if(plane)plane.style.transition='left .7s ease, transform .7s ease';});
+ }
 }
 function updateHeroJourneyProgress(pct,aircraft){
  const bar=$('flightProgress'),plane=$('progressPlane');
  if(!bar&&!plane)return;
  const value=Math.max(0,Math.min(100,Number(pct)||0));
- // The live ADS-B object always has an ICAO hex. Use that as the aircraft
- // identity so a new nearest aircraft can never inherit the previous journey.
- const key=String(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||'').trim().toLowerCase();
+ const key=normalProgressKey(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||'');
  const routeSource=aircraft?.watchRef||aircraft||{};
  const routeKey=String(routeSource?.fromCode||routeSource?.from||routeSource?.routeFrom||'')+'>'+String(routeSource?.toCode||routeSource?.to||routeSource?.routeTo||'');
  const previousKey=heroProgressAircraftKey;
  const changedAircraft=!!key&&!!previousKey&&key!==previousKey;
  const changedRoute=!!routeKey&&!!heroProgressRouteKey&&routeKey!==heroProgressRouteKey;
  const changed=changedAircraft||changedRoute;
- const first=!!key&&!previousKey;
 
- if(changed){
-  const token=++heroProgressResetToken;
-  heroProgressAircraftKey=key;
+ // poll()/refreshHomeDisplay() requests a reset before rendering the new
+ // aircraft. Hold the new journey at 0% for two animation frames, then move
+ // to the real percentage. This makes the reset visible rather than letting
+ // the browser batch 0% and the new value into one paint.
+ if(key&&heroProgressResetPendingKey===key){
+  const token=heroProgressResetToken;
+  heroProgressResetPendingKey='';
   heroProgressRouteKey=routeKey;
-  heroProgressDisplayed=0;
-  heroProgressResetPendingKey=key;
-
-  // HARD RESET: first put both the bar and the aircraft at exactly 0% with
-  // transitions disabled, then force layout so the browser commits the reset.
-  // Only after that do we enable the transition to the new aircraft's value.
-  if(bar){bar.style.transition='none';bar.style.width='0%';}
-  if(plane){plane.style.transition='none';plane.style.left='0%';}
-  void (bar?.offsetWidth||plane?.offsetWidth||0);
-
-  requestAnimationFrame(()=>{
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
    if(token!==heroProgressResetToken||heroProgressAircraftKey!==key)return;
-   heroProgressResetPendingKey='';
    heroProgressDisplayed=value;
    if(bar){bar.style.transition='width .6s ease';bar.style.width=value+'%';}
    if(plane){plane.style.transition='left .7s ease, transform .7s ease';plane.style.left=value+'%';}
-  });
+  }));
   return;
  }
 
- // While the reset frame is pending, do not let another render immediately
- // write 23% (or any other value) before the browser has painted the 0% state.
- if(key&&heroProgressResetPendingKey===key)return;
-
- if(first){
+ if(changed){
+  resetHeroJourneyProgress(key);
+  heroProgressRouteKey=routeKey;
+  const token=heroProgressResetToken;
+  heroProgressResetPendingKey='';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+   if(token!==heroProgressResetToken||heroProgressAircraftKey!==key)return;
+   heroProgressDisplayed=value;
+   if(bar){bar.style.transition='width .6s ease';bar.style.width=value+'%';}
+   if(plane){plane.style.transition='left .7s ease, transform .7s ease';plane.style.left=value+'%';}
+  }));
+  return;
+ }
+ if(!key){
+  if(bar)bar.style.width='0%';
+  if(plane)plane.style.left='0%';
+  return;
+ }
+ if(!previousKey){
   heroProgressAircraftKey=key;
   heroProgressRouteKey=routeKey;
   heroProgressDisplayed=value;
@@ -2253,9 +2262,7 @@ function updateHeroJourneyProgress(pct,aircraft){
   if(plane)plane.style.left=value+'%';
   return;
  }
-
- // Same aircraft: small ADS-B route-progress fluctuations must not make the
- // displayed journey move backwards.
+ heroProgressRouteKey=routeKey;
  const next=Math.max(heroProgressDisplayed,value);
  heroProgressDisplayed=next;
  if(bar)bar.style.width=next+'%';
@@ -2291,7 +2298,7 @@ function specialSquawkCounts(){
 }
 function updateSpecialSquawkCounter(){
  const c=specialSquawkCounts();
- const visible=!!S.specialSquawks&&c.total>0;
+ const visible=!!S.specialSquawks;
  const text=c.total?`SPECIAL ${c.total}`:'SPECIAL 0';
  const mapPill=$('specialCountPill');
  const mapText=$('specialCountText');
@@ -2416,7 +2423,7 @@ function renderHeroFlightMap(live,watch){
    const remaining=hasRoute&&pos?hav(pos[0],pos[1],b[0],b[1]):null;
    const fromDevice=pos?hav(S.lat,S.lon,pos[0],pos[1]):null;
    const sc=specialSquawkCounts();
-   const specialRow=(S.specialSquawks&&sc.total>0)?`<div class="hero-status-special ${sc.emergency>0?'has-emergency':''}"><span class="special-dot"></span><b>SPECIAL ${sc.total}</b></div>`:'';
+   const specialRow=S.specialSquawks?`<div class="hero-status-special ${sc.emergency>0?'has-emergency':''}"><span class="special-dot"></span><b>SPECIAL ${sc.total}</b></div>`:'';
    status.innerHTML=`${fromDevice!=null?`<div class="hero-status-detail"><span>DISTANCE FROM DEVICE</span><strong>${fromDevice.toFixed(1)} km</strong></div>`:''}${specialRow}`;
    positionHeroRecenterButton();
    requestAnimationFrame(positionHeroRecenterButton);
@@ -3445,16 +3452,20 @@ let homeWatchProgressKey='';
 let homeWatchProgressDisplayed=0;
 let homeWatchProgressResetToken=0;
 let homeWatchProgressResetPendingKey='';
-function resetHomeWatchProgress(){
+function resetHomeWatchProgress(nextKey=''){
  const bar=$('homeWatchProgressBar'),plane=$('homeWatchProgressPlane');
  ++homeWatchProgressResetToken;
- homeWatchProgressKey='';
+ const key=normalProgressKey(nextKey);
+ homeWatchProgressKey=key;
  homeWatchProgressDisplayed=0;
- homeWatchProgressResetPendingKey='';
+ homeWatchProgressResetPendingKey=key;
  if(bar){bar.style.transition='none';bar.style.width='0%';}
  if(plane){plane.style.transition='none';plane.style.left='0%';}
  void (bar?.offsetWidth||plane?.offsetWidth||0);
- requestAnimationFrame(()=>{if(bar)bar.style.transition='width .5s ease';if(plane)plane.style.transition='left .5s ease';});
+ if(!key){
+  homeWatchProgressResetPendingKey='';
+  requestAnimationFrame(()=>{if(bar)bar.style.transition='width .5s ease';if(plane)plane.style.transition='left .5s ease';});
+ }
 }
 function updateHomeWatchProgress(pct,flightKey,enabled=true){
  const bar=$('homeWatchProgressBar'),plane=$('homeWatchProgressPlane');
@@ -3468,47 +3479,35 @@ function updateHomeWatchProgress(pct,flightKey,enabled=true){
   return;
  }
  const value=Math.max(0,Math.min(100,Number(pct)||0));
- const key=String(flightKey||'').trim().toLowerCase();
+ const key=normalProgressKey(flightKey);
  const previousKey=homeWatchProgressKey;
- const changed=!!key&&!!previousKey&&key!==previousKey;
- const first=!!key&&!previousKey;
-
- if(changed){
-  const token=++homeWatchProgressResetToken;
-  homeWatchProgressKey=key;
-  homeWatchProgressDisplayed=0;
-  homeWatchProgressResetPendingKey=key;
-
-  // HARD RESET the Next Watched Flight animation. The new flight must be
-  // painted at 0% before its actual completion percentage is animated in.
-  if(bar){bar.style.transition='none';bar.style.width='0%';}
-  if(plane){plane.style.transition='none';plane.style.left='0%';}
-  void (bar?.offsetWidth||plane?.offsetWidth||0);
-
-  requestAnimationFrame(()=>{
+ if(key&&homeWatchProgressResetPendingKey===key){
+  const token=homeWatchProgressResetToken;
+  homeWatchProgressResetPendingKey='';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
    if(token!==homeWatchProgressResetToken||homeWatchProgressKey!==key)return;
-   homeWatchProgressResetPendingKey='';
    homeWatchProgressDisplayed=value;
    if(bar){bar.style.transition='width .5s ease';bar.style.width=value+'%';}
    if(plane){plane.style.transition='left .5s ease';plane.style.left=value+'%';}
-  });
+  }));
   return;
  }
-
- // Do not allow the normal render pass to overwrite the freshly reset 0%
- // state before the browser has painted it.
- if(key&&homeWatchProgressResetPendingKey===key)return;
-
- if(first){
+ if(key&&previousKey&&key!==previousKey){
+  resetHomeWatchProgress(key);
+  return;
+ }
+ if(!key){
+  if(bar)bar.style.width='0%';
+  if(plane)plane.style.left='0%';
+  return;
+ }
+ if(!previousKey){
   homeWatchProgressKey=key;
   homeWatchProgressDisplayed=value;
   if(bar)bar.style.width=value+'%';
   if(plane)plane.style.left=value+'%';
   return;
  }
-
- // Same watched flight: keep progress monotonic against small live-data
- // fluctuations. A new watched flight is handled by the hard reset above.
  const next=Math.max(homeWatchProgressDisplayed,value);
  homeWatchProgressDisplayed=next;
  if(bar)bar.style.width=next+'%';
@@ -3584,7 +3583,6 @@ function renderHomeWatch(items){
  setTextSafe('homeWatchFromName',airportDisplayName(next.fromCode,next.from));setTextSafe('homeWatchToName',airportDisplayName(next.toCode,next.to));
  if(progressLabel)progressLabel.textContent=routeReady?formatProgressPercent(pct):'—% COMPLETE';
  const watchProgressKey=watchKey(next);
- if(watchProgressKey && homeWatchProgressKey && watchProgressKey!==homeWatchProgressKey) resetHomeWatchProgress();
  updateHomeWatchProgress(pct,watchProgressKey,routeReady);
  if(progressRow)progressRow.hidden=!routeReady;
  const st=$('homeWatchState');if(st){st.className='state '+(live?(watchLiveIsStale(next)?'wait':'live'):(future||state==='SCHEDULED'||state==='TRACKING PENDING'?'wait':'active'));st.textContent=live?(phase==='LANDED'?'COMPLETED':watchLiveIsStale(next)?'SEARCHING':'LIVE'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY'));}
@@ -4138,7 +4136,7 @@ async function poll(){
   const f=choose(items);
   const previousFeatured=S.featured;
   S.featured=f?.icao||null;
-  if(previousFeatured!==S.featured){ resetHeroJourneyProgress(); }
+  if(previousFeatured!==S.featured){ resetHeroJourneyProgress(S.featured||''); }
   render(items);
   if(f){renderLiveHome(f);if(!S.mapSelected)updateMapCard(f);else{const selected=S.lastItems.find(a=>a.icao===S.mapSelected);if(selected)updateMapCard(selected);else updateMapCard(f);}}
   else{S.featured=null;S.mapSelected=null;renderScheduledHome();updateMapCard(null);}
@@ -4154,7 +4152,9 @@ async function poll(){
 function refreshHomeDisplay(){
  const f=choose(S.lastItems||[]);
  if(f){
+   const previousFeatured=S.featured;
    S.featured=f.icao;
+   if(previousFeatured!==S.featured) resetHeroJourneyProgress(S.featured||'');
    renderLiveHome(f);
  }else{
    const watched= getNextWatchedFlight();
@@ -4917,7 +4917,7 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 </style>
 
 
-<style id="v66.18-final-ui-fixes">
+<style id="v66.20-final-ui-fixes">
 /* Live Sky: the compass owns the top-left corner. Remove the old LIVE · LOCATION pill beneath it. */
 #mapPage .top-hud > .pill:first-child{display:none!important;}
 #mapPage .top-hud{left:16px!important;right:16px!important;justify-content:flex-end!important;pointer-events:none!important;}
@@ -4934,8 +4934,10 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 @media (min-width:701px) and (orientation:landscape){
   .hero .journey-percent{font-size:15px!important;line-height:1!important;height:auto!important;margin:0 0 7px!important;letter-spacing:.08em!important;}
   .hero .journey-center .progress{height:5px!important;min-height:5px!important;}
-  .hero .journey-progress .progress-plane{width:25px!important;height:25px!important;}
-  .watch-progress-label{font-size:13px!important;letter-spacing:.08em!important;margin-bottom:7px!important;}
+  .hero .journey-progress .progress-plane{width:23px!important;height:23px!important;}
+  .hero .journey-progress .progress-plane:before{width:24px!important;height:24px!important;}
+  .watch-compact-progress .watch-progress-label{font-size:15px!important;line-height:1!important;height:auto!important;letter-spacing:.08em!important;margin:0 0 8px!important;}
+  .watch-compact-progress .watch-progress-track span.progress-plane:before{width:24px!important;height:24px!important;}
   .watch-progress-track{height:5px!important;}
   .watch-progress-track span.progress-plane{width:23px!important;height:23px!important;}
   .map-card-progress-label{font-size:12px!important;letter-spacing:.08em!important;}
@@ -4956,17 +4958,19 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
   transform:translateX(-50%) rotate(var(--bubble-counter-rotate,0deg));
   transform-origin:center bottom;display:flex;flex-direction:column;align-items:center;
   min-width:92px;max-width:150px;padding:5px 8px 6px;border-radius:9px;
-  background:rgba(255,255,255,.94);border:1px solid color-mix(in srgb,var(--bubble-colour) 28%,#ffffff);
+  background:rgba(255,255,255,.94);border:1px solid rgba(110,125,126,.28);
   box-shadow:0 7px 18px rgba(23,30,30,.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   color:var(--bubble-colour);pointer-events:none;white-space:nowrap;
 }
-.special-squawk-map-bubble:after{content:'';position:absolute;left:50%;bottom:-5px;width:9px;height:9px;background:rgba(255,255,255,.94);border-right:1px solid color-mix(in srgb,var(--bubble-colour) 28%,#ffffff);border-bottom:1px solid color-mix(in srgb,var(--bubble-colour) 28%,#ffffff);transform:translateX(-50%) rotate(45deg);}
+.special-squawk-map-bubble:after{content:'';position:absolute;left:50%;bottom:-5px;width:9px;height:9px;background:rgba(255,255,255,.94);border-right:1px solid rgba(110,125,126,.28);border-bottom:1px solid rgba(110,125,126,.28);transform:translateX(-50%) rotate(45deg);}
 .special-squawk-map-bubble b{font-size:10px;line-height:1;font-weight:950;letter-spacing:.08em;}
 .special-squawk-map-bubble span{margin-top:3px;font-size:6.5px;line-height:1.15;font-weight:900;letter-spacing:.08em;text-align:center;color:#4f5b5d;}
 .special-squawk-map-bubble.emergency b{color:#d62f2f}.special-squawk-map-bubble.vfr b{color:#d97706}
 .hero-aircraft-marker .special-squawk-map-bubble{bottom:calc(100% + 8px);}
-.outer-aircraft-marker,.live-aircraft-marker{overflow:visible!important;}
+.outer-aircraft-marker,.live-aircraft-marker,.hero-aircraft-marker{overflow:visible!important;}
+.special-squawk-map-bubble{z-index:9999!important;}
 .outer-aircraft-marker .special-squawk-map-bubble,.live-aircraft-marker .special-squawk-map-bubble{bottom:calc(100% + 7px);}
+.hero-aircraft-marker .special-squawk-map-bubble{bottom:calc(100% + 9px);}
 /* The standalone Featured counter is now redundant; keep the DOM for compatibility but don't render it. */
 #heroSpecialCountPill{display:none!important;}
 </style>
