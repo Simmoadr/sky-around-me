@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- SKY AROUND ME V66.2 — LIVE ROUTE CONFIDENCE ARCHITECTURE + RESTORED HEADER -->
+<!-- Sky Around Me V66.5 — navigation regression fix: restore the proven V64.8 nav event path; no map/aircraft/backend logic changed. -->
+<!-- SKY AROUND ME V66.4 — NAVIGATION / VIEW REGRESSION FIX -->
 <!-- Sky Around Me V66.2 — live-route confidence architecture -->
 <!-- Sky Around Me V63.9 — watched-flight dual-time display + quiet-state / airport fixes -->
 <meta charset="utf-8">
@@ -1804,10 +1805,25 @@ async function useDeviceLocation(){if(!navigator.geolocation){$('locationMessage
 async function searchPlace(){const q=$('placeSearch').value.trim();if(!q){$('locationMessage').textContent='Enter a place name first.';return}$('locationMessage').textContent='Searching…';try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(q),{headers:{Accept:'application/json'}});if(!r.ok)throw new Error('Place search failed');const a=await r.json();if(!a.length)throw new Error('Place not found');const label=a[0].display_name.split(',').slice(0,3).join(', ');applyLocation(a[0].lat,a[0].lon,label,'custom');$('locationMessage').textContent='Location set to '+label+'.'}catch(e){$('locationMessage').textContent=e.message||'Could not find that place.'}}
 
 const pages=[...document.querySelectorAll('.page')];
+function showSkyPage(pageId){
+  const target=['home','mapPage','flights'].includes(pageId)?pageId:'home';
+  pages.forEach(p=>{
+    const active=p.id===target;
+    p.classList.toggle('active',active);
+    // IMPORTANT: the legacy compact-landscape CSS contains a .home{display:block!important}
+    // presentation rule. Force the actual page visibility here so navigation cannot be
+    // visually overridden by that old presentation rule.
+    p.style.setProperty('display',active?'block':'none','important');
+  });
+  document.querySelectorAll('.nav button').forEach(x=>{
+    const active=x.dataset.page===target;
+    x.classList.toggle('active',active);
+    x.setAttribute('aria-current',active?'page':'false');
+  });
+  try{window.scrollTo(0,0)}catch(e){}
+}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',async()=>{
-  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  pages.forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));
+  showSkyPage(b.dataset.page);
 
   if(b.dataset.page==='mapPage'){
     setTimeout(()=>{
@@ -3939,6 +3955,12 @@ body .hero .hero-bottom .journey-percent {
   }
 }
 </style>
+<style id="v666-navigation-visibility-fix">
+/* V66.6 — navigation visibility hard fix. Legacy compact-landscape rules contain
+   a .home{display:block!important} presentation rule; active-page state must win. */
+.page:not(.active){display:none!important;}
+.page.active{display:block!important;}
+</style>
 </body></html>
 
 
@@ -4532,3 +4554,12 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
   .watch-bottom-compact{height:94px!important;min-height:94px!important;max-height:94px!important;margin-top:6px!important;}
 }
 </style>
+
+<style id="v665-navigation-layer-fix">
+/* V66.5 — keep the header/navigation above the full-screen Featured map layer. */
+.topbar{position:relative!important;z-index:100000!important;pointer-events:auto!important;}
+.nav{position:relative!important;z-index:100001!important;pointer-events:auto!important;}
+.nav button{position:relative!important;z-index:100002!important;pointer-events:auto!important;touch-action:manipulation!important;}
+</style>
+
+
