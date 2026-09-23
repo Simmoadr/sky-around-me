@@ -1746,6 +1746,394 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 @media(max-width:1100px){.special-code-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}}
 @media(max-width:700px){.special-code-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;}.special-code-option{min-height:88px!important;}}
 </style>
+<style id="v66-26-special-toggle-bottom">
+/* V66.26 — keep the Special Squawk code toggles at the bottom-right of each card. */
+.special-code-option{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:space-between!important;
+  min-height:94px!important;
+}
+.special-code-option>span:first-child{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  min-width:0!important;
+  flex:0 0 auto!important;
+}
+.special-code-option>.toggle{
+  align-self:flex-end!important;
+  margin-top:10px!important;
+  margin-left:0!important;
+  flex:0 0 auto!important;
+}
+@media(max-width:700px){
+  .special-code-option{min-height:88px!important;}
+}
+</style>
+
+<style id="v66-27-special-regions">
+/* V66.27 — each Special Squawk has independent America / Europe / Asia filters. */
+.special-code-option{position:relative!important;min-height:146px!important;padding-bottom:10px!important;}
+.special-code-option>.toggle{position:absolute!important;right:12px!important;bottom:50px!important;margin:0!important;}
+.special-region-row{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px!important;width:100%!important;margin-top:auto!important;padding-top:10px!important;}
+.special-region-pill{appearance:none!important;border:1px solid #d3d8d5!important;background:#e9ece9!important;color:#6d7776!important;border-radius:7px!important;min-width:0!important;padding:6px 3px!important;font:900 6px/1 Arial,sans-serif!important;letter-spacing:.06em!important;cursor:pointer!important;white-space:nowrap!important;}
+.special-region-pill.active{background:#171b1b!important;border-color:#171b1b!important;color:#fff!important;box-shadow:0 2px 5px rgba(0,0,0,.12)!important;}
+@media(max-width:1100px){.special-code-option{min-height:146px!important;}}
+@media(max-width:700px){.special-code-option{min-height:140px!important;}.special-region-pill{font-size:5.5px!important;padding:6px 2px!important;}}
+</style>
+
+<style id="v66-28-special-layout">
+/* V66.28 — horizontal Squawk rows: clearer region controls and a single enable switch. */
+.special-code-grid{display:flex!important;flex-direction:column!important;gap:9px!important;margin-top:14px!important;}
+.special-code-row{display:grid!important;grid-template-columns:minmax(180px,1.25fr) minmax(285px,2fr) minmax(125px,.75fr) auto!important;align-items:center!important;gap:16px!important;min-height:76px!important;padding:12px 15px!important;border:1px solid #dde1de!important;border-radius:15px!important;background:#f7f8f5!important;box-sizing:border-box!important;}
+.special-code-row.emergency .special-code-identity b{color:#d62f2f!important;}
+.special-code-row.vfr .special-code-identity b{color:#d97706!important;}
+.special-code-identity{display:flex!important;align-items:baseline!important;gap:12px!important;min-width:0!important;}
+.special-code-identity b{font-size:22px!important;line-height:1!important;letter-spacing:.04em!important;font-weight:950!important;flex:0 0 auto!important;}
+.special-code-identity small{font-size:8px!important;line-height:1.25!important;letter-spacing:.10em!important;font-weight:900!important;color:#707978!important;text-transform:uppercase!important;}
+.special-region-control{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;min-width:0!important;}
+.special-region-pill{appearance:none!important;border:1px solid #d2d7d4!important;background:#e8ebe9!important;color:#6d7675!important;border-radius:9px!important;min-width:0!important;min-height:42px!important;padding:8px 7px!important;font:900 8px/1 Arial,sans-serif!important;letter-spacing:.07em!important;cursor:pointer!important;white-space:nowrap!important;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .08s ease!important;}
+.special-region-pill.active{background:#171b1b!important;border-color:#171b1b!important;color:#fff!important;box-shadow:0 2px 5px rgba(0,0,0,.12)!important;}
+.special-region-pill:active{transform:translateY(1px)!important;}
+.special-region-pill:focus-visible{outline:2px solid #16819b!important;outline-offset:2px!important;}
+.special-code-summary{justify-self:start!important;font-size:8px!important;font-weight:950!important;letter-spacing:.09em!important;color:#707978!important;white-space:nowrap!important;text-transform:uppercase!important;}
+.special-code-summary.worldwide{color:#171b1b!important;}
+.special-code-summary.none{color:#a0a6a4!important;}
+.special-code-toggle{justify-self:end!important;margin:0!important;}
+.special-code-toggle input{cursor:pointer!important;}
+.special-code-row .special-code-toggle{width:46px!important;height:27px!important;}
+.special-code-row .special-code-toggle .toggle-track::after{width:21px!important;height:21px!important;}
+.special-code-row .special-code-toggle input:checked + .toggle-track::after{transform:translateX(19px)!important;}
+.special-label-option{margin-top:12px!important;}
+@media(max-width:900px){
+ .special-code-row{grid-template-columns:minmax(150px,1fr) minmax(240px,1.6fr) auto!important;grid-template-areas:"identity regions toggle" "summary regions toggle";gap:7px 12px!important;min-height:88px!important;}
+ .special-code-identity{grid-area:identity;}
+ .special-region-control{grid-area:regions;}
+ .special-code-summary{grid-area:summary;}
+ .special-code-toggle{grid-area:toggle;}
+}
+@media(max-width:650px){
+ .special-code-row{grid-template-columns:1fr auto!important;grid-template-areas:"identity toggle" "regions regions" "summary summary";padding:12px 13px!important;gap:10px!important;}
+ .special-code-identity{align-items:center!important;}
+ .special-code-identity small{font-size:7px!important;}
+ .special-region-control{gap:6px!important;}
+ .special-region-pill{min-height:40px!important;font-size:7px!important;}
+ .special-code-summary{font-size:7px!important;}
+}
+</style>
+<style id="v66-29-special-polish">
+/* V66.29 — polish the Special Squawk matrix: aligned columns, smaller region pills, clearer hierarchy. */
+.special-code-header{display:grid!important;grid-template-columns:minmax(220px,1fr) 270px 115px 58px!important;align-items:center!important;gap:16px!important;padding:0 15px 7px!important;color:#8a9290!important;font-size:7px!important;font-weight:950!important;letter-spacing:.13em!important;text-transform:uppercase!important;}
+.special-code-header span:nth-child(2){text-align:center!important;}
+.special-code-header span:nth-child(3){text-align:left!important;}
+.special-code-header span:nth-child(4){text-align:center!important;}
+.special-code-grid{gap:8px!important;margin-top:0!important;}
+.special-code-row{grid-template-columns:minmax(220px,1fr) 270px 115px 58px!important;gap:16px!important;min-height:72px!important;padding:10px 15px!important;background:#fbfcfa!important;}
+.special-code-identity{gap:14px!important;}
+.special-code-identity b{font-size:24px!important;min-width:72px!important;}
+.special-code-identity small{font-size:8px!important;letter-spacing:.09em!important;}
+.special-region-control{width:270px!important;grid-template-columns:repeat(3,84px)!important;gap:7px!important;justify-content:start!important;}
+.special-region-pill{width:84px!important;min-width:84px!important;height:40px!important;min-height:40px!important;padding:7px 5px!important;border-radius:10px!important;font-size:8px!important;letter-spacing:.07em!important;}
+.special-code-summary{font-size:8px!important;letter-spacing:.08em!important;line-height:1.2!important;white-space:normal!important;}
+.special-code-summary.worldwide{font-size:8px!important;}
+.special-code-show-label{justify-self:center!important;color:#8a9290!important;font-size:7px!important;font-weight:950!important;letter-spacing:.11em!important;text-transform:uppercase!important;}
+.special-code-toggle{justify-self:center!important;}
+.special-code-row .special-code-toggle{width:46px!important;height:27px!important;}
+@media(max-width:900px){
+ .special-code-header{grid-template-columns:minmax(180px,1fr) 250px 95px 52px!important;gap:10px!important;}
+ .special-code-row{grid-template-columns:minmax(180px,1fr) 250px 95px 52px!important;gap:10px!important;}
+ .special-region-control{width:250px!important;grid-template-columns:repeat(3,78px)!important;gap:6px!important;}
+ .special-region-pill{width:78px!important;min-width:78px!important;}
+}
+@media(max-width:650px){
+ .special-code-header{display:none!important;}
+ .special-code-row{grid-template-columns:1fr auto!important;grid-template-areas:"identity toggle" "regions regions" "summary summary";gap:10px!important;}
+ .special-code-show-label{display:none!important;}
+ .special-region-control{width:100%!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+ .special-region-pill{width:auto!important;min-width:0!important;}
+}
+</style>
+
+<style id="v66-30-special-fullwidth">
+/* V66.30 — Special Squawks becomes a full-width settings panel below the two-column area. */
+.special-squawk-setting{grid-column:1 / -1!important;margin-top:0!important;padding:24px 26px 26px!important;border:1px solid var(--line)!important;border-radius:18px!important;background:#f7f8f5!important;box-sizing:border-box!important}
+.special-squawk-setting>label{display:block!important;font-size:8px!important;color:var(--muted)!important;font-weight:900!important;letter-spacing:.13em!important;margin:0 0 7px!important}
+.special-squawk-copy-wide{margin:0!important}.special-squawk-copy-wide strong{font-size:15px!important;letter-spacing:.06em!important}.special-squawk-copy-wide small{font-size:10px!important;max-width:760px!important;margin-top:5px!important}
+.special-code-header{display:grid!important;grid-template-columns:300px minmax(330px,390px) minmax(170px,1fr) 70px!important;align-items:center!important;gap:18px!important;padding:20px 16px 8px!important;color:#8a9290!important;font-size:7px!important;font-weight:950!important;letter-spacing:.13em!important;text-transform:uppercase!important}
+.special-code-header span:nth-child(2){text-align:center!important}.special-code-header span:nth-child(3){text-align:left!important}.special-code-header span:nth-child(4){text-align:center!important}
+.special-code-grid{display:flex!important;flex-direction:column!important;gap:8px!important;margin-top:0!important}
+.special-code-row{display:grid!important;grid-template-columns:300px minmax(330px,390px) minmax(170px,1fr) 70px!important;align-items:center!important;gap:18px!important;min-height:76px!important;padding:12px 16px!important;border:1px solid #dde1de!important;border-radius:14px!important;background:#fff!important;box-sizing:border-box!important}
+.special-code-identity{display:flex!important;align-items:center!important;gap:16px!important;min-width:0!important}.special-code-identity b{font-size:27px!important;min-width:82px!important;line-height:1!important;letter-spacing:.04em!important;font-weight:950!important}.special-code-identity small{font-size:9px!important;line-height:1.3!important;letter-spacing:.09em!important;font-weight:900!important;color:#707978!important;text-transform:uppercase!important}
+.special-region-control{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:auto!important;min-width:0!important}.special-region-pill{width:auto!important;min-width:0!important;min-height:44px!important;height:44px!important;padding:8px 10px!important;border-radius:10px!important;font-size:8px!important;letter-spacing:.07em!important}
+.special-code-summary{justify-self:start!important;font-size:9px!important;letter-spacing:.08em!important;line-height:1.2!important;white-space:nowrap!important}.special-code-show-label{justify-self:center!important;color:#8a9290!important;font-size:7px!important;font-weight:950!important;letter-spacing:.11em!important;text-transform:uppercase!important}.special-code-toggle{justify-self:center!important}.special-code-row .special-code-toggle{width:48px!important;height:28px!important}.special-code-row .special-code-toggle .toggle-track::after{width:22px!important;height:22px!important}.special-code-row .special-code-toggle input:checked + .toggle-track::after{transform:translateX(20px)!important}
+.special-label-option{margin-top:12px!important;padding:14px 16px!important;min-height:64px!important;background:#fff!important;border:1px solid #dde1de!important;border-radius:13px!important}.special-label-option small{max-width:760px!important}
+@media(max-width:1050px){.special-code-header,.special-code-row{grid-template-columns:240px minmax(290px,340px) minmax(130px,1fr) 64px!important;gap:12px!important}.special-code-identity{gap:12px!important}.special-code-identity b{font-size:24px!important;min-width:72px!important}.special-region-pill{font-size:7px!important;padding:8px 5px!important}}
+@media(max-width:800px){.special-squawk-setting{padding:20px 18px 22px!important}.special-code-header{display:none!important}.special-code-row{grid-template-columns:1fr auto!important;grid-template-areas:"identity toggle" "regions regions" "summary summary";gap:10px!important;min-height:0!important;padding:14px!important}.special-code-identity{grid-area:identity;align-items:center!important}.special-region-control{grid-area:regions;width:100%!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}.special-code-summary{grid-area:summary}.special-code-toggle{grid-area:toggle}.special-code-show-label{display:none!important}}
+</style>
+
+
+<style id="v66-31-special-premium">
+/* V66.31 — premium Sky Around Me Special Squawk matrix */
+.special-squawk-setting{
+  position:relative!important;
+  padding:26px 28px 28px!important;
+  border:1px solid #dfe2de!important;
+  border-radius:20px!important;
+  background:linear-gradient(180deg,#f9faf7 0%,#f4f6f2 100%)!important;
+  box-shadow:0 10px 28px rgba(23,30,30,.045)!important;
+}
+.special-squawk-setting>label{
+  font-size:8px!important;
+  letter-spacing:.18em!important;
+  margin-bottom:8px!important;
+  color:#7b8381!important;
+}
+.special-squawk-copy-wide strong{
+  font-size:16px!important;
+  letter-spacing:.075em!important;
+  font-weight:950!important;
+  color:#15191a!important;
+}
+.special-squawk-copy-wide small{
+  font-size:10px!important;
+  line-height:1.5!important;
+  color:#7a8280!important;
+  margin-top:6px!important;
+}
+
+/* Header and rows now use five real columns: identity / regions / coverage / show / switch */
+.special-code-header{
+  display:grid!important;
+  grid-template-columns:300px minmax(390px,1fr) 150px 48px 54px!important;
+  align-items:center!important;
+  gap:14px!important;
+  padding:20px 18px 8px!important;
+  color:#929a98!important;
+  font-size:7px!important;
+  font-weight:950!important;
+  letter-spacing:.16em!important;
+  text-transform:uppercase!important;
+}
+.special-code-header span:nth-child(2){text-align:left!important}
+.special-code-header span:nth-child(3){text-align:left!important}
+.special-code-header span:nth-child(4){text-align:center!important}
+.special-code-header span:nth-child(5){text-align:center!important}
+
+.special-code-grid{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:7px!important;
+  margin-top:0!important;
+}
+.special-code-row{
+  display:grid!important;
+  grid-template-columns:300px minmax(390px,1fr) 150px 48px 54px!important;
+  align-items:center!important;
+  gap:14px!important;
+  min-height:78px!important;
+  padding:11px 18px!important;
+  border:1px solid #e1e4e0!important;
+  border-radius:15px!important;
+  background:rgba(255,255,255,.86)!important;
+  box-sizing:border-box!important;
+  transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease!important;
+}
+.special-code-row:hover{
+  border-color:#cbd4d0!important;
+  box-shadow:0 5px 16px rgba(23,30,30,.045)!important;
+}
+.special-code-row.emergency{
+  box-shadow:inset 3px 0 0 #d62f2f!important;
+}
+.special-code-row.vfr{
+  box-shadow:inset 3px 0 0 #d97706!important;
+}
+.special-code-identity{
+  display:flex!important;
+  align-items:center!important;
+  gap:17px!important;
+  min-width:0!important;
+}
+.special-code-identity b{
+  font-size:28px!important;
+  min-width:82px!important;
+  line-height:1!important;
+  letter-spacing:.035em!important;
+  font-weight:950!important;
+}
+.special-code-identity small{
+  font-size:8px!important;
+  line-height:1.35!important;
+  letter-spacing:.12em!important;
+  font-weight:900!important;
+  color:#6f7876!important;
+  text-transform:uppercase!important;
+}
+
+/* Region selector: softer, premium segmented control */
+.special-region-control{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:6px!important;
+  width:auto!important;
+  min-width:0!important;
+  padding:4px!important;
+  border:1px solid #dfe3df!important;
+  border-radius:11px!important;
+  background:#f0f3ef!important;
+}
+.special-region-pill{
+  appearance:none!important;
+  width:auto!important;
+  min-width:0!important;
+  min-height:40px!important;
+  height:40px!important;
+  padding:7px 10px!important;
+  border:1px solid transparent!important;
+  border-radius:8px!important;
+  background:transparent!important;
+  color:#737c7a!important;
+  font:950 8px/1 Arial,sans-serif!important;
+  letter-spacing:.09em!important;
+  cursor:pointer!important;
+  white-space:nowrap!important;
+  transition:all .16s ease!important;
+}
+.special-region-pill:hover{
+  color:#1b3a42!important;
+  background:#e5eeec!important;
+}
+.special-region-pill.active{
+  background:#176f8b!important;
+  border-color:#176f8b!important;
+  color:#fff!important;
+  box-shadow:0 3px 8px rgba(23,111,139,.20)!important;
+}
+.special-region-pill:active{transform:translateY(1px)!important}
+.special-region-pill:focus-visible{
+  outline:2px solid #176f8b!important;
+  outline-offset:2px!important;
+}
+
+/* Coverage becomes a calm status chip rather than plain floating text */
+.special-code-summary{
+  justify-self:start!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  min-height:28px!important;
+  padding:0 10px!important;
+  border-radius:999px!important;
+  background:#eef2ef!important;
+  color:#6f7876!important;
+  font-size:7px!important;
+  font-weight:950!important;
+  letter-spacing:.10em!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  text-transform:uppercase!important;
+}
+.special-code-summary.worldwide{
+  background:#e7f0f2!important;
+  color:#176f8b!important;
+}
+.special-code-summary.none{
+  background:#f0f1ef!important;
+  color:#a0a6a4!important;
+}
+
+/* Show label and switch are separate columns, but visually form one compact control */
+.special-code-show-label{
+  justify-self:center!important;
+  color:#949b99!important;
+  font-size:6.5px!important;
+  font-weight:950!important;
+  letter-spacing:.14em!important;
+  text-transform:uppercase!important;
+}
+.special-code-toggle{
+  justify-self:center!important;
+  margin:0!important;
+}
+.special-code-row .special-code-toggle{
+  width:46px!important;
+  height:27px!important;
+}
+.special-code-row .special-code-toggle .toggle-track{
+  box-shadow:inset 0 0 0 1px #c9cfcc!important;
+}
+.special-code-row .special-code-toggle .toggle-track::after{
+  width:21px!important;
+  height:21px!important;
+}
+.special-code-row .special-code-toggle input:checked + .toggle-track{
+  background:#176f8b!important;
+}
+.special-code-row .special-code-toggle input:checked + .toggle-track::after{
+  transform:translateX(19px)!important;
+}
+
+/* Separate labels setting gets the same visual language */
+.special-label-option{
+  margin-top:13px!important;
+  padding:15px 18px!important;
+  min-height:64px!important;
+  border:1px solid #e0e4e0!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.special-label-option b{
+  font-size:9px!important;
+  letter-spacing:.11em!important;
+}
+.special-label-option small{
+  font-size:9px!important;
+  color:#7a8280!important;
+  line-height:1.4!important;
+}
+
+/* At narrower widths, preserve the premium hierarchy instead of allowing columns to wrap awkwardly */
+@media(max-width:1100px){
+  .special-code-header{
+    grid-template-columns:250px minmax(300px,1fr) 125px 42px 50px!important;
+    gap:10px!important;
+  }
+  .special-code-row{
+    grid-template-columns:250px minmax(300px,1fr) 125px 42px 50px!important;
+    gap:10px!important;
+  }
+  .special-code-identity{gap:12px!important}
+  .special-code-identity b{font-size:25px!important;min-width:72px!important}
+  .special-region-pill{font-size:7px!important}
+}
+@media(max-width:800px){
+  .special-squawk-setting{padding:22px 18px 24px!important}
+  .special-code-header{display:none!important}
+  .special-code-row{
+    grid-template-columns:1fr auto!important;
+    grid-template-areas:
+      "identity toggle"
+      "regions regions"
+      "summary summary"
+      "showlabel showlabel"!important;
+    gap:10px!important;
+    min-height:0!important;
+    padding:14px!important;
+  }
+  .special-code-identity{grid-area:identity!important}
+  .special-region-control{grid-area:regions!important;width:100%!important}
+  .special-code-summary{grid-area:summary!important;justify-self:start!important}
+  .special-code-show-label{grid-area:showlabel!important;display:none!important}
+  .special-code-toggle{grid-area:toggle!important}
+}
+@media(max-width:520px){
+  .special-region-pill{min-height:38px!important;height:38px!important;font-size:6.5px!important}
+  .special-code-identity small{font-size:7px!important}
+}
+</style>
+
 </head>
 <body>
 
@@ -1846,24 +2234,71 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
    <div class="form"><div><label>FLIGHT NUMBER</label><input id="listFlight" placeholder="e.g. SQ23"></div><div><label>DATE</label><input id="listDate" type="date"></div><div class="wide"><label>NAME</label><input id="listName" placeholder="Flight Name"></div><button class="btn primary" id="listSave">ADD TO WATCHLIST</button></div>
    <div class="hint">Route lookup is automatic. Enter the exact commercial flight number and date. Saved flights remain on this iPad.</div>
    <div class="sky-settings"><div class="sky-settings-head"><div><div class="sky-settings-title">SKY SETTINGS</div><div class="sky-settings-sub">Choose what you want to see, where to watch, and how far out.</div></div><div class="sky-settings-value" id="rangeValue">100 KM</div></div><div class="range-setting range-setting-primary"><label>MAXIMUM DISTANCE</label><div class="sky-setting-row"><input class="sky-range" id="rangeInput" type="range" min="1" max="250" step="1" value="100" aria-label="Maximum aircraft distance in kilometres"><input class="sky-number" id="rangeNumber" type="number" min="1" max="250" step="1" value="100" aria-label="Maximum aircraft distance in kilometres"></div><div class="extended-setting"><label style="font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.13em;display:block;margin-bottom:7px">EXTENDED AIRSPACE</label><div class="extended-row"><div class="extended-copy"><strong>SHOW OUTER AIRCRAFT</strong><small>Shows aircraft up to 100 KM outside your selected radius. Outer aircraft are not identified or selectable until they enter your active radius.</small></div><label class="toggle" aria-label="Show outer aircraft"><input id="extendedAirspaceToggle" type="checkbox"><span class="toggle-track"></span></label></div></div>
-<div class="special-squawk-setting">
- <label>SPECIAL SQUAWKS</label>
- <div class="special-squawk-copy special-squawk-copy-wide">
-  <strong>CHOOSE WHICH CODES TO SHOW</strong>
-  <small>Worldwide ADS-B feed. Turn individual codes on/off so you only plot the traffic you care about.</small>
- </div>
- <div class="special-code-grid" aria-label="Special squawk filters">
-  <label class="special-code-option emergency"><span><b>7700</b><small>GENERAL EMERGENCY</small></span><span class="toggle"><input id="specialCode7700" data-special-code="7700" type="checkbox"><span class="toggle-track"></span></span></label>
-  <label class="special-code-option emergency"><span><b>7600</b><small>RADIO FAILURE</small></span><span class="toggle"><input id="specialCode7600" data-special-code="7600" type="checkbox"><span class="toggle-track"></span></span></label>
-  <label class="special-code-option emergency"><span><b>7500</b><small>UNLAWFUL INTERFERENCE</small></span><span class="toggle"><input id="specialCode7500" data-special-code="7500" type="checkbox"><span class="toggle-track"></span></span></label>
-  <label class="special-code-option vfr"><span><b>7000</b><small>VFR / CONSPICUITY</small></span><span class="toggle"><input id="specialCode7000" data-special-code="7000" type="checkbox"><span class="toggle-track"></span></span></label>
-  <label class="special-code-option vfr"><span><b>1200</b><small>VFR</small></span><span class="toggle"><input id="specialCode1200" data-special-code="1200" type="checkbox"><span class="toggle-track"></span></span></label>
- </div>
- <div class="special-label-option"><span><b>DISPLAY SPECIAL SQUAWK LABELS</b><small>Show the 7700 / 7600 / 7500 / 7000 / 1200 bubble above aircraft.</small></span><label class="toggle"><input id="specialSquawkLabelsToggle" type="checkbox"><span class="toggle-track"></span></label></div>
-</div>
+
 </div><div class="refresh-setting"><label>REFRESH RATE</label><div class="sky-setting-row"><input class="sky-range" id="refreshInput" type="range" min="2" max="60" step="1" value="45" aria-label="ADS-B refresh rate in seconds"><input class="sky-number" id="refreshNumber" type="number" min="2" max="60" step="1" value="45" aria-label="ADS-B refresh rate in seconds"></div><div class="refresh-setting-note">How often Sky Around Me refreshes the live ADS-B aircraft data. 2 seconds is the fastest setting.</div><div class="refresh-usage" id="refreshUsage">SESSION REQUESTS: 0 · ~1,800 / HOUR AT 2 SEC</div></div><div class="location-setting"><label>WATCH LOCATION</label><div class="location-row"><select id="locationSelect" aria-label="Watch location"><option value="device">DEVICE LOCATION</option><option value="lusk">LUSK, IRELAND</option><option value="martock">MARTOCK, UK</option><option value="lhr">LONDON HEATHROW, UK</option><option value="custom">CUSTOM PLACE…</option></select><button type="button" class="btn location-btn" id="useDeviceLocation">USE DEVICE</button></div><div class="custom-location" id="customLocation" hidden><input id="placeSearch" placeholder="Search for a place e.g. Montpellier" aria-label="Place name"><button type="button" class="btn" id="findPlace">FIND PLACE</button><span id="locationMessage">Search uses the place name only.</span></div><div class="current-location" id="currentLocation">Device Location</div></div></div>
   </div>
   <div class="panel watch-card"><h2>Saved flights</h2><div class="watch-list" id="watchList"></div><div class="selected-note">The selected watch location controls the airspace radius, nearest aircraft and map centre. Device Location is the default option; named places can be saved by selecting them here.</div></div>
+ <div class="special-squawk-setting">
+ <label>SPECIAL SQUAWKS</label>
+ <div class="special-squawk-copy special-squawk-copy-wide">
+  <strong>CHOOSE WHICH CODES TO SHOW</strong>
+  <small>Turn each squawk on/off, then choose which regions you want to monitor.</small>
+ </div>
+ <div class="special-code-header" aria-hidden="true"><span>SQUAWK</span><span>WATCH REGIONS</span><span>COVERAGE</span><span>SHOW</span></div>
+ <div class="special-code-grid" aria-label="Special squawk filters">
+  <div class="special-code-row emergency" data-special-row-code="7700">
+   <div class="special-code-identity"><b>7700</b><small>GENERAL EMERGENCY</small></div>
+   <div class="special-region-control" aria-label="7700 regions">
+    <button type="button" class="special-region-pill" id="specialRegion7700america" data-special-code="7700" data-special-region="america" aria-pressed="true">AMERICA</button>
+    <button type="button" class="special-region-pill" id="specialRegion7700europe" data-special-code="7700" data-special-region="europe" aria-pressed="true">EUROPE</button>
+    <button type="button" class="special-region-pill" id="specialRegion7700asia" data-special-code="7700" data-special-region="asia" aria-pressed="true">ASIA</button>
+   </div>
+   <div class="special-code-summary" id="specialRegionSummary7700">WORLDWIDE</div>
+   <span class="special-code-show-label">SHOW</span><label class="toggle special-code-toggle" aria-label="Show 7700 special squawk"><input id="specialCode7700" data-special-code="7700" type="checkbox"><span class="toggle-track"></span></label>
+  </div>
+  <div class="special-code-row emergency" data-special-row-code="7600">
+   <div class="special-code-identity"><b>7600</b><small>RADIO FAILURE</small></div>
+   <div class="special-region-control" aria-label="7600 regions">
+    <button type="button" class="special-region-pill" id="specialRegion7600america" data-special-code="7600" data-special-region="america" aria-pressed="true">AMERICA</button>
+    <button type="button" class="special-region-pill" id="specialRegion7600europe" data-special-code="7600" data-special-region="europe" aria-pressed="true">EUROPE</button>
+    <button type="button" class="special-region-pill" id="specialRegion7600asia" data-special-code="7600" data-special-region="asia" aria-pressed="true">ASIA</button>
+   </div>
+   <div class="special-code-summary" id="specialRegionSummary7600">WORLDWIDE</div>
+   <span class="special-code-show-label">SHOW</span><label class="toggle special-code-toggle" aria-label="Show 7600 special squawk"><input id="specialCode7600" data-special-code="7600" type="checkbox"><span class="toggle-track"></span></label>
+  </div>
+  <div class="special-code-row emergency" data-special-row-code="7500">
+   <div class="special-code-identity"><b>7500</b><small>UNLAWFUL INTERFERENCE</small></div>
+   <div class="special-region-control" aria-label="7500 regions">
+    <button type="button" class="special-region-pill" id="specialRegion7500america" data-special-code="7500" data-special-region="america" aria-pressed="true">AMERICA</button>
+    <button type="button" class="special-region-pill" id="specialRegion7500europe" data-special-code="7500" data-special-region="europe" aria-pressed="true">EUROPE</button>
+    <button type="button" class="special-region-pill" id="specialRegion7500asia" data-special-code="7500" data-special-region="asia" aria-pressed="true">ASIA</button>
+   </div>
+   <div class="special-code-summary" id="specialRegionSummary7500">WORLDWIDE</div>
+   <span class="special-code-show-label">SHOW</span><label class="toggle special-code-toggle" aria-label="Show 7500 special squawk"><input id="specialCode7500" data-special-code="7500" type="checkbox"><span class="toggle-track"></span></label>
+  </div>
+  <div class="special-code-row vfr" data-special-row-code="7000">
+   <div class="special-code-identity"><b>7000</b><small>VFR / CONSPICUITY</small></div>
+   <div class="special-region-control" aria-label="7000 regions">
+    <button type="button" class="special-region-pill" id="specialRegion7000america" data-special-code="7000" data-special-region="america" aria-pressed="true">AMERICA</button>
+    <button type="button" class="special-region-pill" id="specialRegion7000europe" data-special-code="7000" data-special-region="europe" aria-pressed="true">EUROPE</button>
+    <button type="button" class="special-region-pill" id="specialRegion7000asia" data-special-code="7000" data-special-region="asia" aria-pressed="true">ASIA</button>
+   </div>
+   <div class="special-code-summary" id="specialRegionSummary7000">WORLDWIDE</div>
+   <span class="special-code-show-label">SHOW</span><label class="toggle special-code-toggle" aria-label="Show 7000 special squawk"><input id="specialCode7000" data-special-code="7000" type="checkbox"><span class="toggle-track"></span></label>
+  </div>
+  <div class="special-code-row vfr" data-special-row-code="1200">
+   <div class="special-code-identity"><b>1200</b><small>VFR</small></div>
+   <div class="special-region-control" aria-label="1200 regions">
+    <button type="button" class="special-region-pill" id="specialRegion1200america" data-special-code="1200" data-special-region="america" aria-pressed="true">AMERICA</button>
+    <button type="button" class="special-region-pill" id="specialRegion1200europe" data-special-code="1200" data-special-region="europe" aria-pressed="true">EUROPE</button>
+    <button type="button" class="special-region-pill" id="specialRegion1200asia" data-special-code="1200" data-special-region="asia" aria-pressed="true">ASIA</button>
+   </div>
+   <div class="special-code-summary" id="specialRegionSummary1200">WORLDWIDE</div>
+   <span class="special-code-show-label">SHOW</span><label class="toggle special-code-toggle" aria-label="Show 1200 special squawk"><input id="specialCode1200" data-special-code="1200" type="checkbox"><span class="toggle-track"></span></label>
+  </div>
+ </div>
+ <div class="special-label-option"><span><b>DISPLAY SPECIAL SQUAWK LABELS</b><small>Show the 7700 / 7600 / 7500 / 7000 / 1200 bubble above aircraft.</small></span><label class="toggle"><input id="specialSquawkLabelsToggle" type="checkbox"><span class="toggle-track"></span></label></div>
+</div>
  </div>
  <footer class="app-footer" aria-label="Sky Around Me credits">
   <div class="app-footer-brand">SKY AROUND ME</div>
@@ -1894,12 +2329,35 @@ const initialMode=savedSkySettings.locationMode||'device';
 const WATCH_LIVE_GRACE_MS=3*60*1000;
 const WATCH_LIVE_RETENTION_AFTER_ARRIVAL_MS=45*60*1000;
 const WATCH_LIVE_FALLBACK_RETENTION_MS=90*60*1000;
-const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],mapSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
+const SPECIAL_REGION_KEYS=['america','europe','asia'];
+const SPECIAL_CODES=['7700','7600','7500','7000','1200'];
+function defaultSpecialRegionSettings(){
+  return Object.fromEntries(SPECIAL_CODES.map(c=>[c,[...SPECIAL_REGION_KEYS]]));
+}
+function normalizeSpecialRegionSettings(raw){
+  const defaults=defaultSpecialRegionSettings();
+  SPECIAL_CODES.forEach(c=>{
+    if(Array.isArray(raw?.[c])){
+      defaults[c]=SPECIAL_REGION_KEYS.filter(r=>raw[c].includes(r));
+    }
+  });
+  return defaults;
+}
+function encodeSpecialRegionSettings(){
+  return SPECIAL_CODES.map(c=>`${c}:${(S.specialSquawkRegions?.[c]||[]).join('|')}`).join(';');
+}
+function specialRegionEnabled(code,region){
+  const selected=S.specialSquawkRegions?.[code]||[];
+  if(SPECIAL_REGION_KEYS.every(r=>selected.includes(r)))return true;
+  return !!selected.includes(region);
+}
+const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],mapSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
 const $=id=>document.getElementById(id);
 function setTextSafe(id,value){const el=$(id);if(el)el.textContent=value??'';}
 function updateRefreshUsage(){const perHour=Math.round(3600/S.refreshSec);const el=$('refreshUsage');if(el)el.textContent=`SESSION REQUESTS: ${S.livePollCount.toLocaleString()} · ~${perHour.toLocaleString()} / HOUR AT ${S.refreshSec} SEC`;}
-function saveSkySettings(){localStorage.setItem('skyAroundMeSettings',JSON.stringify({rangeKm:S.rangeKm,location:S.locationMode,locationName:S.locationName,lat:S.lat,lon:S.lon,extendedAirspace:!!S.extendedAirspace,specialSquawks:S.specialSquawkCodes.length>0,specialSquawkCodes:S.specialSquawkCodes.slice(),specialSquawkLabels:!!S.specialSquawkLabels,refreshSec:S.refreshSec,rotationDeg:S.rotationDeg,rotationLocked:!!S.rotationLocked}))}
-function updateSkySettingsUI(){updateRefreshUsage();if($('rangeInput'))$('rangeInput').value=S.rangeKm;if($('rangeNumber'))$('rangeNumber').value=S.rangeKm;if($('rangeValue'))$('rangeValue').textContent=S.rangeKm+' KM';if($('rangePill'))$('rangePill').textContent=S.rangeKm+' KM AIRSPACE RADIUS';if($('extendedPill'))$('extendedPill').hidden=!(S.extendedAirspace&&S.rangeKm<100);if($('mapLocation'))$('mapLocation').textContent=S.locationName.toUpperCase();if($('locationSelect'))$('locationSelect').value=S.locationMode==='device'?'device':(places[S.locationMode]?S.locationMode:'custom');if($('currentLocation'))$('currentLocation').textContent=S.locationName;if($('customLocation'))$('customLocation').hidden=S.locationMode!=='custom';if($('extendedAirspaceToggle'))$('extendedAirspaceToggle').checked=!!S.extendedAirspace;['7700','7600','7500','7000','1200'].forEach(c=>{const el=$('specialCode'+c);if(el)el.checked=S.specialSquawkCodes.includes(c)});if($('specialSquawkLabelsToggle'))$('specialSquawkLabelsToggle').checked=!!S.specialSquawkLabels;if($('refreshInput'))$('refreshInput').value=S.refreshSec;if($('refreshNumber'))$('refreshNumber').value=S.refreshSec;if($('locationSelect')&&S.locationMode==='device')$('locationSelect').value='device';S.specialSquawks=S.specialSquawkCodes.length>0}
+function saveSkySettings(){localStorage.setItem('skyAroundMeSettings',JSON.stringify({rangeKm:S.rangeKm,location:S.locationMode,locationName:S.locationName,lat:S.lat,lon:S.lon,extendedAirspace:!!S.extendedAirspace,specialSquawks:S.specialSquawkCodes.length>0,specialSquawkCodes:S.specialSquawkCodes.slice(),specialSquawkRegions:normalizeSpecialRegionSettings(S.specialSquawkRegions),specialSquawkLabels:!!S.specialSquawkLabels,refreshSec:S.refreshSec,rotationDeg:S.rotationDeg,rotationLocked:!!S.rotationLocked}))}
+function updateSpecialRegionSummaries(){SPECIAL_CODES.forEach(c=>{const selected=S.specialSquawkRegions?.[c]||[];const all=SPECIAL_REGION_KEYS.every(r=>selected.includes(r));const label=all?'WORLDWIDE':selected.length?selected.map(r=>r.toUpperCase()).join(' · '):'NO REGIONS';const el=$('specialRegionSummary'+c);if(el){el.textContent=label;el.classList.toggle('worldwide',all);el.classList.toggle('none',!selected.length);}SPECIAL_REGION_KEYS.forEach(r=>{const re=$(`specialRegion${c}${r}`);if(re){const active=selected.includes(r);re.classList.toggle('active',active);re.setAttribute('aria-pressed',active?'true':'false');}});});}
+function updateSkySettingsUI(){updateRefreshUsage();if($('rangeInput'))$('rangeInput').value=S.rangeKm;if($('rangeNumber'))$('rangeNumber').value=S.rangeKm;if($('rangeValue'))$('rangeValue').textContent=S.rangeKm+' KM';if($('rangePill'))$('rangePill').textContent=S.rangeKm+' KM AIRSPACE RADIUS';if($('extendedPill'))$('extendedPill').hidden=!(S.extendedAirspace&&S.rangeKm<100);if($('mapLocation'))$('mapLocation').textContent=S.locationName.toUpperCase();if($('locationSelect'))$('locationSelect').value=S.locationMode==='device'?'device':(places[S.locationMode]?S.locationMode:'custom');if($('currentLocation'))$('currentLocation').textContent=S.locationName;if($('customLocation'))$('customLocation').hidden=S.locationMode!=='custom';if($('extendedAirspaceToggle'))$('extendedAirspaceToggle').checked=!!S.extendedAirspace;['7700','7600','7500','7000','1200'].forEach(c=>{const el=$('specialCode'+c);if(el)el.checked=S.specialSquawkCodes.includes(c);});updateSpecialRegionSummaries();if($('specialSquawkLabelsToggle'))$('specialSquawkLabelsToggle').checked=!!S.specialSquawkLabels;if($('refreshInput'))$('refreshInput').value=S.refreshSec;if($('refreshNumber'))$('refreshNumber').value=S.refreshSec;if($('locationSelect')&&S.locationMode==='device')$('locationSelect').value='device';S.specialSquawks=S.specialSquawkCodes.length>0}
 function applyLocation(lat,lon,name,mode){S.lat=Number(lat);S.lon=Number(lon);S.locationName=name;S.locationMode=mode;saveSkySettings();updateSkySettingsUI();if(typeof me!=='undefined'){me.setLatLng([S.lat,S.lon]);rangeCircle.setLatLng([S.lat,S.lon]);if(typeof extendedCircle!=='undefined'&&extendedCircle)extendedCircle.setLatLng([S.lat,S.lon]);map.setView([S.lat,S.lon],8)};S.lastItems=[];S.lastAllItems=[];S.globalSpecialItems=[];S.specialMarkers.forEach(x=>map.removeLayer(x));S.specialMarkers.clear();S.tracks.clear();S.trails.forEach(x=>map.removeLayer(x));S.trails.clear();S.markers.forEach(x=>map.removeLayer(x));S.markers.clear();S.extendedMarkers.forEach(x=>map.removeLayer(x));S.extendedMarkers.clear();poll()}
 async function reverseGeocodeDevice(lat,lon){try{const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon)+'&zoom=10&addressdetails=1',{headers:{Accept:'application/json'}});if(!r.ok)throw new Error('Reverse geocode failed');const j=await r.json();const a=j?.address||{};const place=a.city||a.town||a.village||a.municipality||a.county||'Device Location';const region=a.state||a.region||'';const country=a.country||'';return [place,region,country].filter(Boolean).slice(0,3).join(', ')}catch(e){return 'Device Location'}}
 async function useDeviceLocation(){if(!navigator.geolocation){$('locationMessage').textContent='Device location is not available in this browser.';return}$('locationMessage').textContent='Requesting device location…';navigator.geolocation.getCurrentPosition(async pos=>{const name=await reverseGeocodeDevice(pos.coords.latitude,pos.coords.longitude);applyLocation(pos.coords.latitude,pos.coords.longitude,name,'device');$('locationMessage').textContent='Using the iPad device location.'},err=>{if(S.locationMode==='device'){const p=places.lusk;applyLocation(p.lat,p.lon,p.name,'lusk');$('locationMessage').textContent='Device location unavailable; using Lusk as the saved fallback.'}else{$('locationMessage').textContent='Location unavailable. Choose a named place instead.'}},{enableHighAccuracy:true,maximumAge:300000,timeout:10000})}
@@ -3780,7 +4238,7 @@ function heroExtendedItems(){if(!S.extendedAirspace)return [];const all=Array.is
 const SPECIAL_SQUAWK_EMERGENCY=new Set(['7500','7600','7700']);
 const SPECIAL_SQUAWK_VFR=new Set(['7000','1200']);
 function normalSquawk(value){const s=String(value??'').trim().replace(/\s+/g,'');return /^\d{4}$/.test(s)?s:''}
-function specialSquawkKind(x){const s=normalSquawk(x?.squawk);if(!s||!S.specialSquawkCodes.includes(s))return '';if(SPECIAL_SQUAWK_EMERGENCY.has(s))return 'emergency';if(SPECIAL_SQUAWK_VFR.has(s))return 'vfr';return ''}
+function specialSquawkKind(x){const s=normalSquawk(x?.squawk);if(!s||!S.specialSquawkCodes.includes(s))return '';if(x?._specialRegion&&!specialRegionEnabled(s,x._specialRegion))return '';if(SPECIAL_SQUAWK_EMERGENCY.has(s))return 'emergency';if(SPECIAL_SQUAWK_VFR.has(s))return 'vfr';return ''}
 function specialSquawkLabel(x){const s=normalSquawk(x?.squawk),k=specialSquawkKind(x);if(!k)return '';return k==='emergency'?`${s} · EMERGENCY`:`${s} · VFR`}
 function specialSquawkColour(x){const k=specialSquawkKind(x);return k==='emergency'?'#d62f2f':k==='vfr'?'#d97706':''}
 
@@ -4041,7 +4499,8 @@ function isCommercialAircraft(a){
 async function fetchAircraft(){
   const distKm=S.extendedAirspace?Math.min(250,Math.max(100,Math.max(1,Number(S.rangeKm)||100))):Math.min(250,Math.max(1,Number(S.rangeKm)||100));
   const specialCodes=S.specialSquawkCodes.join(',');
-  const adsbUrl=`${SKY_AROUND_ME_NETLIFY}?lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${encodeURIComponent(distKm)}&special=${S.specialSquawkCodes.length?'1':'0'}&specialCodes=${encodeURIComponent(specialCodes)}`;
+  const specialRegions=encodeSpecialRegionSettings();
+  const adsbUrl=`${SKY_AROUND_ME_NETLIFY}?lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${encodeURIComponent(distKm)}&special=${S.specialSquawkCodes.length?'1':'0'}&specialCodes=${encodeURIComponent(specialCodes)}&specialRegions=${encodeURIComponent(specialRegions)}`;
   try{
     const j=await fetchJson(adsbUrl,'Live aircraft proxy');
     if(j&&j.error)throw new Error(j.message||j.error);
@@ -4260,9 +4719,23 @@ async function refreshWatchStream(){
  })();
  try{return await S.watchSearchPending}finally{S.watchSearchPending=null}
 }
+function specialRegionForPoint(lat,lon){
+  const la=Number(lat),lo=Number(lon);
+  if(!Number.isFinite(la)||!Number.isFinite(lo))return '';
+  // Broad tracking regions used by Sky Around Me. The regions are intentionally
+  // coarse so the control is useful for monitoring rather than political geography.
+  if(la>=-60&&la<=85&&lo>=-170&&lo<=-20)return 'america';
+  if(la>=34&&la<=72&&lo>=-25&&lo<45)return 'europe';
+  if(la>=-10&&la<=82&&lo>=45&&lo<=180)return 'asia';
+  // Eastern Mediterranean / western Asia is treated as Asia where it sits
+  // outside the Europe box; Africa and Oceania are outside the three filters.
+  if(la>=0&&la<=55&&lo>=25&&lo<45)return 'asia';
+  return '';
+}
 function isRawSpecialSquawk(a){
  const s=normalSquawk(a?.squawk??a?.squawk_code??a?.code_7600??a?.emergency_squawk);
- return !!s&&S.specialSquawkCodes.includes(s);
+ const region=specialRegionForPoint(a?.lat,a?.lon);
+ return !!s&&S.specialSquawkCodes.includes(s)&&specialRegionEnabled(s,region);
 }
 async function poll(){
  if(!document.getElementById('map')||S.pollInFlight)return;
@@ -4273,7 +4746,7 @@ async function poll(){
  try{
   const j=await fetchAircraft();
   const raw=(Array.isArray(j.ac)?j.ac:[]).filter(a=>isCommercialAircraft(a)||(S.specialSquawks&&isRawSpecialSquawk(a)));
-  const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600),specialOnly:!!(S.specialSquawks&&!isCommercialAircraft(a)&&isRawSpecialSquawk(a)),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));
+  const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600),_specialRegion:specialRegionForPoint(a.lat,a.lon),specialOnly:!!(S.specialSquawks&&!isCommercialAircraft(a)&&isRawSpecialSquawk(a)),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));
   const previousItems=Array.isArray(S.lastItems)?S.lastItems:[];
   allItems.forEach(x=>{if(!x.specialOnly)hydrateCachedLiveRoute(x,previousItems);});
   const activeRaw=allItems.filter(x=>x.d<=S.rangeKm);
@@ -4286,7 +4759,7 @@ async function poll(){
     return x;
   });
   const specialRaw=Array.isArray(j.specialAc)?j.specialAc:[];
-  S.globalSpecialItems=specialRaw.map(a=>({icao:String(a.hex||'').toLowerCase(),callsign:String(a.flight||'').trim(),registration:String(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||j._skySpecialProvider||'GLOBAL ADS-B',category:a.category||'',squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600||a.emergency_squawk),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon))&&specialSquawkKind(x)).map(x=>({...x,d:hav(S.lat,S.lon,Number(x.lat),Number(x.lon))}));
+  S.globalSpecialItems=specialRaw.map(a=>({icao:String(a.hex||'').toLowerCase(),callsign:String(a.flight||'').trim(),registration:String(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||j._skySpecialProvider||'GLOBAL ADS-B',category:a.category||'',squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600||a.emergency_squawk),_specialRegion:specialRegionForPoint(a.lat,a.lon),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon))&&specialSquawkKind(x)).map(x=>({...x,d:hav(S.lat,S.lon,Number(x.lat),Number(x.lon))}));
   S.lastAllItems=allItems;S.lastItems=items;
   updateSpecialSquawkCounter();
   // STREAM A ONLY: local aircraft determine Featured and Live Sky.
@@ -4337,6 +4810,24 @@ document.querySelectorAll('[data-special-code]').forEach(el=>el.addEventListener
  S.specialSquawkCodes=['7700','7600','7500','7000','1200'].filter(c=>next.has(c));
  S.specialSquawks=S.specialSquawkCodes.length>0;
  saveSkySettings();
+ updateSkySettingsUI();
+ S.globalSpecialItems=[];
+ S.specialMarkers.forEach(m=>map.removeLayer(m));S.specialMarkers.clear();
+ updateSpecialSquawkCounter();
+ render(S.lastItems||[]);
+ refreshHomeDisplay();
+ poll();
+}));
+document.querySelectorAll('[data-special-region]').forEach(el=>el.addEventListener('click',(event)=>{
+ const code=String(el.dataset.specialCode||'');
+ const region=String(el.dataset.specialRegion||'');
+ event.preventDefault();event.stopPropagation();
+ if(!SPECIAL_CODES.includes(code)||!SPECIAL_REGION_KEYS.includes(region))return;
+ const current=new Set(S.specialSquawkRegions?.[code]||[]);
+ if(current.has(region))current.delete(region);else current.add(region);
+ S.specialSquawkRegions[code]=SPECIAL_REGION_KEYS.filter(r=>current.has(r));
+ saveSkySettings();
+ updateSpecialRegionSummaries();
  updateSkySettingsUI();
  S.globalSpecialItems=[];
  S.specialMarkers.forEach(m=>map.removeLayer(m));S.specialMarkers.clear();
