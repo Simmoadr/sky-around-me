@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- SKY AROUND ME V66.0 — LIVE ROUTE CONFIDENCE ARCHITECTURE -->
-<!-- Sky Around Me V66.0 — live-route confidence architecture -->
+<!-- SKY AROUND ME V66.2 — LIVE ROUTE CONFIDENCE ARCHITECTURE + RESTORED HEADER -->
+<!-- Sky Around Me V66.2 — live-route confidence architecture -->
 <!-- Sky Around Me V63.9 — watched-flight dual-time display + quiet-state / airport fixes -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -4453,11 +4453,10 @@ body .hero .hero-bottom .journey-percent {
 window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 </script>
 
-<style id="v661-final-ipad-fit">
-/* V66.1 — FINAL iPAD LANDSCAPE FIT
-   Remove the stray literal \n\n text node and use the full visible viewport for Featured.
-   The hero + watched-flight card now consume the available height without
-   leaving the large dead area underneath on wall-mounted iPad landscape. */
+<style id="v662-final-ipad-fit">
+/* V66.2 — RESTORE HEADER + FIT FEATURED TO THE FULL iPAD LANDSCAPE VIEWPORT
+   Keeps the original header/navigation visible. Removes the stray literal \n\n text node and uses a calculated dashboard layout so the hero and watched-flight
+   card fit inside the visible viewport without page scrolling or dead space. */
 @media (min-width:701px) and (orientation:landscape){
   html,body{
     width:100%!important;
@@ -4472,15 +4471,31 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
     height:100dvh!important;
     min-height:0!important;
     margin:0!important;
-    padding:16px 16px 14px!important;
+    padding:8px 16px 10px!important;
     box-sizing:border-box!important;
     overflow:hidden!important;
   }
-  .topbar{display:none!important;}
+  .topbar{
+    display:flex!important;
+    height:48px!important;
+    min-height:48px!important;
+    padding:0 0 9px!important;
+    margin:0!important;
+    align-items:center!important;
+    box-sizing:border-box!important;
+  }
+  .brand{gap:10px!important;}
+  .mark{width:34px!important;height:34px!important;border-radius:10px!important;}
+  .brand-name{font-size:14px!important;}
+  .brand-sub{font-size:8px!important;margin-top:2px!important;}
+  .nav{padding:4px!important;gap:5px!important;}
+  .nav button{padding:8px 15px!important;font-size:9px!important;}
+  .clock{font-size:9px!important;}
   main{
-    height:100%!important;
+    height:calc(100% - 48px)!important;
     min-height:0!important;
     margin:0!important;
+    overflow:hidden!important;
   }
   .home{
     display:block!important;
@@ -4493,7 +4508,7 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
     box-sizing:border-box!important;
   }
   .hero{
-    height:calc(100dvh - 139px)!important;
+    height:calc(100% - 110px)!important;
     min-height:0!important;
     max-height:none!important;
     margin:0!important;
@@ -4509,9 +4524,11 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
   .home > div[style*="justify-content:flex-end"]{display:none!important;}
 }
 
-@media (min-width:701px) and (orientation:landscape) and (max-height:800px){
-  .app{padding:10px 12px 10px!important;}
-  .hero{height:calc(100dvh - 122px)!important;}
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .app{padding:6px 12px 8px!important;}
+  .topbar{height:43px!important;min-height:43px!important;padding-bottom:7px!important;}
+  main{height:calc(100% - 43px)!important;}
+  .hero{height:calc(100% - 100px)!important;}
   .watch-bottom-compact{height:94px!important;min-height:94px!important;max-height:94px!important;margin-top:6px!important;}
 }
 </style>
