@@ -2209,7 +2209,8 @@ function updateHeroJourneyProgress(pct,aircraft){
  // The live ADS-B object always has an ICAO hex. Use that as the aircraft
  // identity so a new nearest aircraft can never inherit the previous journey.
  const key=String(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||'').trim().toLowerCase();
- const routeKey=String(f?.fromCode||'')+'>'+String(f?.toCode||'');
+ const routeSource=aircraft?.watchRef||aircraft||{};
+ const routeKey=String(routeSource?.fromCode||routeSource?.from||routeSource?.routeFrom||'')+'>'+String(routeSource?.toCode||routeSource?.to||routeSource?.routeTo||'');
  const previousKey=heroProgressAircraftKey;
  const changedAircraft=!!key&&!!previousKey&&key!==previousKey;
  const changedRoute=!!routeKey&&!!heroProgressRouteKey&&routeKey!==heroProgressRouteKey;
