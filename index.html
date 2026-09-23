@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- Sky Around Me V66.12 — clean refresh-rate build (2–60 seconds) -->
+<!-- Sky Around Me V66.13 — refresh rate applies to Nearest Aircraft only -->
 <head>
 <!-- Sky Around Me V66.10 — hard-reset progress animations on aircraft/flight identity change -->
 <!-- Sky Around Me V66.5 — navigation regression fix: restore the proven V64.8 nav event path; no map/aircraft/backend logic changed. -->
@@ -3873,6 +3873,8 @@ async function refreshWatchStream(){
 
  const key=watchKey(target),now=Date.now();
  const sameLive=!!(S.watchLive&&S.watchLive.watchKey===key&&S.watchLive.icao);
+ // NEXT WATCHED FLIGHT deliberately keeps its own discovery cadence.
+ // The user-configurable refresh rate applies ONLY to the Nearest Aircraft / Live Sky ADS-B polling.
  const interval=sameLive?45000:60000;
  if(sameLive&&now-S.watchSearchAt<interval){
    refreshHomeDisplay();
