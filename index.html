@@ -3815,7 +3815,13 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  const journeyDestLon=journey?.toLon!=null?Number(journey.toLon):routePoint(journey?.toCode)?.[1];
  const journeyDistance=journey&&Number.isFinite(journeyDestLat)&&Number.isFinite(journeyDestLon)&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),journeyDestLat,journeyDestLon):null;
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
- const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=progressPercent(journey,x);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=formatProgressPercent(pct);updateHeroJourneyProgress(pct,x)}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);updateHeroJourneyProgress(0,x)}}
+ const ji=$('journeyInfo');if(ji){if(journey&&journey.fromCode&&journey.toCode){ji.hidden=false;const pct=progressPercent(journey,x);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=formatProgressPercent(pct);updateHeroJourneyProgress(pct,x)}else{
+ // No resolved route: never show the previous aircraft's completion state.
+ // Hide the journey strip and hard-reset its progress so a later route
+ // resolution starts cleanly from 0% rather than visually moving backwards.
+ ji.hidden=true;
+ resetHeroJourneyProgress();
+ }}
  updateFeatureSpecialPanel();
 }
 const ROUTE_CACHE_TTL=10*60*1000;
