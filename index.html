@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Sky Around Me V64.8 — V64.7 baseline + live-route identity hardening -->
+<!-- Sky Around Me V65.0 — ADSB.lol Routeset live route test -->
 <!-- Sky Around Me V63.9 — watched-flight dual-time display + quiet-state / airport fixes -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -1864,7 +1864,7 @@ if(!Array.isArray(watchlist))watchlist=[];
 const oldDefaultWatch=watchlist.length===1&&watchlist[0]&&watchlist[0].name==="Mariana's flight"&&watchlist[0].flight===''&&watchlist[0].from==='Singapore'&&watchlist[0].to==='New York JFK';
 if(oldDefaultWatch || (watch&&watch.name==="Mariana's flight"&&watch.flight===''&&watch.from==='Singapore'&&watch.to==='New York JFK')){watch=null;watchlist=[];localStorage.removeItem('skyAroundMeWatch');localStorage.removeItem('skyAroundMeWatchlist')}
 if(!watch)watch={};
-const WATCH_LIVE_STORAGE_KEY='skyAroundMeWatchLiveV2';
+const WATCH_LIVE_STORAGE_KEY='skyAroundMeWatchLive';
 function clearPersistedWatchLive(){try{localStorage.removeItem(WATCH_LIVE_STORAGE_KEY)}catch(e){}}
 function persistWatchLive(live){
  try{
@@ -2777,7 +2777,7 @@ function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
 }
 function hydrateCachedLiveRoute(x,previousItems){
  const cs=normalFlightCode(x?.callsign);if(!cs)return x;
- const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),hx=normalFlightCode(x?.icao||x?.hex||''),key=routeCacheKey(cs,date,reg,hx);
+ const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),hx=normalFlightCode(x?.icao||x?.hex||''),lat=Number(x?.lat),lon=Number(x?.lon),key=routeCacheKey(cs,date,reg,hx,lat,lon);
  // First retain the route from the previous live-feed object. The aircraft object
  // is recreated on every poll, so without this the UI briefly has no route.
  const previous=Array.isArray(previousItems)?previousItems.find(a=>
@@ -3056,7 +3056,7 @@ const ROUTE_TIMEOUT=5000;
 const liveRouteCache=new Map();
 const liveRoutePending=new Map();
 function utcDateKey(){return new Date().toISOString().slice(0,10)}
-function routeCacheKey(flight,date,registration,hex){return 'route-v13|'+normalFlightCode(flight)+'|'+normalFlightCode(registration||'')+'|'+normalFlightCode(hex||'')+'|'+date}
+function routeCacheKey(flight,date,registration,hex,lat,lon){const la=Number.isFinite(Number(lat))?Number(lat).toFixed(2):'';const lo=Number.isFinite(Number(lon))?Number(lon).toFixed(2):'';return 'route-v13|'+normalFlightCode(flight)+'|'+normalFlightCode(registration||'')+'|'+normalFlightCode(hex||'')+'|'+la+'|'+lo+'|'+date}
 async function lookupFlightRoute(callsign,date,registration,hex,lat,lon){
  const cs=normalFlightCode(callsign);
  const reg=String(registration||'').trim().toUpperCase();
@@ -3064,7 +3064,8 @@ async function lookupFlightRoute(callsign,date,registration,hex,lat,lon){
  if(!cs&&!reg&&!hx)return {status:'NOT_FOUND',flight:cs,date,source:'ADS-B'};
  // V64.6 — nearest/live aircraft route resolution is callsign + exact aircraft identity only.
  // We deliberately do NOT resolve a passenger flight number here.
- const params=`lookup=callsign&value=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&hex=${encodeURIComponent(hx)}&lat=${encodeURIComponent(Number.isFinite(Number(lat))?Number(lat):'')}&lon=${encodeURIComponent(Number.isFinite(Number(lon))?Number(lon):'')}&debug=1`;
+ const la=Number(lat),lo=Number(lon);
+ const params=`lookup=callsign&value=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&hex=${encodeURIComponent(hx)}&lat=${encodeURIComponent(Number.isFinite(la)?la:'')}&lon=${encodeURIComponent(Number.isFinite(lo)?lo:'')}&debug=1`;
  const controller=new AbortController();
  const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
  try{
@@ -3074,6 +3075,7 @@ async function lookupFlightRoute(callsign,date,registration,hex,lat,lon){
   airLabsArchitectureCheck(r,'callsign');airLabsUsageRecord(r,'callsign');
   if(!r.ok){const e=new Error('Flight route lookup HTTP '+r.status);e.status=r.status;throw e}
   const j=await r.json();
+  if(j?._skyRoutesetDebug){ window._skyLastRoutesetDebug=j._skyRoutesetDebug; }
   const rr=j?.route||{};
   const fr=j?.flightroute||{};
   const origin=fr?.origin||{};
@@ -3108,7 +3110,7 @@ function getCachedRoute(key){
 function putCachedRoute(key,route){liveRouteCache.set(key,route);try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');raw[key]={route,cachedAt:Date.now()};localStorage.setItem('skyAroundMeRouteCache',JSON.stringify(raw))}catch(e){/* optional */}}
 async function enrichLiveRoute(x){
  const cs=normalFlightCode(x?.callsign);if(!cs)return;
- const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),hx=normalFlightCode(x?.icao||x?.hex||''),key=routeCacheKey(cs,date,reg,hx);
+ const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),hx=normalFlightCode(x?.icao||x?.hex||''),lat=Number(x?.lat),lon=Number(x?.lon),key=routeCacheKey(cs,date,reg,hx,lat,lon);
  if(liveRouteCache.has(key)){
   const cached=applyKnownMultiLegRoute(x,liveRouteCache.get(key));x.liveRoute=cached;
   if(cached?.status==='FOUND'){if(cached.airlineCode)x.airlineCode=cached.airlineCode;if(cached.airlineName)x.airlineName=cached.airlineName;}
@@ -3118,7 +3120,7 @@ async function enrichLiveRoute(x){
  if(liveRoutePending.has(key))return liveRoutePending.get(key);
  const task=(async()=>{
    try{
-     const rawRoute=await lookupFlightRoute(cs,date,reg,hx,x?.lat,x?.lon);
+     const rawRoute=await lookupFlightRoute(cs,date,reg,hx,lat,lon);
      const route=applyKnownMultiLegRoute(x,rawRoute);
      putCachedRoute(key,route);x.liveRoute=route;
      if(route?.status==='FOUND'){
@@ -3667,10 +3669,7 @@ async function searchGlobalWatchedFlight(f){
  // If a stable aircraft identity is already known, try it without relying on
  // the live callsign. This is the safest recovery path after a transient
  // callsign change or a browser refresh.
- // V64.7: never use persisted registration/hex as the first watched-flight lookup.
- // The current operational callsign is the authoritative live-flight identity.
- // A registration belongs to the aircraft, not to today's flight.
- if(false && (baseParams.hex||baseParams.registration)){
+ if(baseParams.hex||baseParams.registration){
    try{
      const params=new URLSearchParams({...baseParams,callsign:''});
      if(SKY_DEBUG_ENABLED)params.set('debug','1');
@@ -3757,7 +3756,6 @@ async function refreshWatchStream(){
      live.watchKey=key;
      live.watchRef=target;
      live.watchGlobal=true;
-     live.watchIdentityVerified=true;
      live.lastSeenAt=searchedAt;
      live.staleSince=0;
      S.watchLive=live;
