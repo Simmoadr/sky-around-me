@@ -1808,6 +1808,9 @@ async function searchPlace(){const q=$('placeSearch').value.trim();if(!q){$('loc
 const pages=[...document.querySelectorAll('.page')];
 function showSkyPage(pageId){
   const target=['home','mapPage','flights'].includes(pageId)?pageId:'home';
+  // My Flights is a settings/watchlist page and is intentionally scrollable on
+  // the iPad. Featured and Live Sky retain the fixed wall-display viewport.
+  document.documentElement.classList.toggle('sky-flights-scroll',target==='flights');
   pages.forEach(p=>{
     const active=p.id===target;
     p.classList.toggle('active',active);
@@ -4533,6 +4536,39 @@ body .hero .hero-bottom .journey-percent {
     text-overflow:clip!important;
     max-width:100%!important;
     letter-spacing:-.045em!important;
+  }
+}
+</style>
+<style id="v668-my-flights-scroll-fix">
+/* V66.8 — MY FLIGHTS is a normal scrollable settings/watchlist page.
+   Featured and Live Sky remain fixed wall-display views. */
+@media (min-width:701px) and (orientation:landscape){
+  html.sky-flights-scroll,
+  html.sky-flights-scroll body{
+    width:100%!important;
+    height:auto!important;
+    min-height:100%!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+  }
+  html.sky-flights-scroll .app{
+    width:100%!important;
+    height:auto!important;
+    min-height:100vh!important;
+    max-width:none!important;
+    overflow:visible!important;
+  }
+  html.sky-flights-scroll main{
+    height:auto!important;
+    min-height:0!important;
+    overflow:visible!important;
+  }
+  html.sky-flights-scroll .flights-page{
+    height:auto!important;
+    min-height:calc(100dvh - 48px)!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:40px!important;
   }
 }
 </style>
