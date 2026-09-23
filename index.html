@@ -4410,7 +4410,6 @@ body .hero .hero-bottom .journey-percent {
   .hero .journey-info{padding:0 5px!important;}
 }
 </style>
-\n\n
 
 
 <style id="v616-ipad-fit">
@@ -4453,3 +4452,66 @@ body .hero .hero-bottom .journey-percent {
 <script>
 window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 </script>
+
+<style id="v661-final-ipad-fit">
+/* V66.1 — FINAL iPAD LANDSCAPE FIT
+   Remove the stray literal \n\n text node and use the full visible viewport for Featured.
+   The hero + watched-flight card now consume the available height without
+   leaving the large dead area underneath on wall-mounted iPad landscape. */
+@media (min-width:701px) and (orientation:landscape){
+  html,body{
+    width:100%!important;
+    height:100%!important;
+    min-height:100%!important;
+    overflow:hidden!important;
+  }
+  body{margin:0!important;}
+  .app{
+    width:100%!important;
+    max-width:none!important;
+    height:100dvh!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:16px 16px 14px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+  }
+  .topbar{display:none!important;}
+  main{
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+  }
+  .home{
+    display:block!important;
+    height:100%!important;
+    min-height:0!important;
+    max-height:none!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+  .hero{
+    height:calc(100dvh - 139px)!important;
+    min-height:0!important;
+    max-height:none!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+  .watch-bottom-compact{
+    height:102px!important;
+    min-height:102px!important;
+    max-height:102px!important;
+    margin:7px 0 0!important;
+    box-sizing:border-box!important;
+  }
+  .home > div[style*="justify-content:flex-end"]{display:none!important;}
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:800px){
+  .app{padding:10px 12px 10px!important;}
+  .hero{height:calc(100dvh - 122px)!important;}
+  .watch-bottom-compact{height:94px!important;min-height:94px!important;max-height:94px!important;margin-top:6px!important;}
+}
+</style>
