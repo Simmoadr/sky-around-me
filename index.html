@@ -69,7 +69,7 @@
 .btn{border:1px solid #cfd2cd;background:#fff;color:#111;padding:11px 15px;border-radius:12px;font-size:10px;font-weight:900;letter-spacing:.08em}.btn.primary{background:#111;color:#fff;border-color:#111}.panel{background:var(--paper);border:1px solid #e1e2de;border-radius:24px;box-shadow:var(--shadow)}
 /* PAGE 2 */
 .map-page{padding-top:22px}.map-wrap{position:relative;height:calc(100vh - 145px);min-height:600px;border:1px solid #d9dcda;border-radius:25px;overflow:hidden;background:#eef0ee}
-/* V66.23 — shared compass pill for Featured + Live Sky. The compact state shows the compass first, then the bearing. Hover/focus/tap expands the rotation controls without overlap. */
+/* V66.20 — shared compass pill for Featured + Live Sky. The compact state shows the compass first, then the bearing. Hover/focus/tap expands the rotation controls without overlap. */
 .map-rotation-controls,.hero-map-rotation-controls{position:absolute;z-index:700;left:16px;top:16px;display:flex;align-items:center;gap:4px;padding:5px;width:42px;height:42px;background:rgba(248,248,244,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid #e1e2de;border-radius:50%;box-shadow:0 8px 22px rgba(23,30,30,.10);pointer-events:auto;overflow:hidden;transition:width .22s ease,border-radius .22s ease,background .22s ease,box-shadow .22s ease}
 .map-rotation-controls:hover,.map-rotation-controls:focus-within,.map-rotation-controls.is-expanded,.hero-map-rotation-controls:hover,.hero-map-rotation-controls:focus-within,.hero-map-rotation-controls.is-expanded{width:238px;border-radius:13px;box-shadow:0 10px 26px rgba(23,30,30,.13)}
 .rotation-mini-compass{position:relative;flex:0 0 30px;width:30px;height:30px;border:1px solid #cfd6d3;border-radius:50%;display:grid;place-items:center;background:#fff;box-shadow:0 2px 7px rgba(23,30,30,.08);cursor:pointer}
@@ -484,13 +484,6 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .identity{grid-template-columns:minmax(260px,1.05fr) minmax(0,2.95fr);align-items:center;}
 .telemetry{width:min(100%,960px);margin-left:auto;margin-right:auto;justify-self:center;align-items:center;}
 @media(max-width:1050px){.telemetry{width:100%;margin-left:0;margin-right:0;}}
-</style>
-
-<style>
-/* V66.23 — Keep the Featured compass exactly as designed, but remove the
-   LIVE AIRCRAFT / callsign wording that was sitting immediately beside it.
-   The flight information remains available in the existing lower Featured panel. */
-.hero-map-brand{display:none!important;}
 </style>
 
 <style>
