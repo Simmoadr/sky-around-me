@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Sky Around Me V66.7 — progress/aircraft animation reset on identity change -->
+<!-- Sky Around Me V66.9 — hard-reset progress animations on aircraft/flight identity change -->
 <!-- Sky Around Me V66.5 — navigation regression fix: restore the proven V64.8 nav event path; no map/aircraft/backend logic changed. -->
 <!-- SKY AROUND ME V66.4 — NAVIGATION / VIEW REGRESSION FIX -->
 <!-- Sky Around Me V66.2 — live-route confidence architecture -->
@@ -2145,40 +2145,55 @@ let heroMapCycleKey='';
 let heroProgressAircraftKey='';
 let heroProgressDisplayed=0;
 let heroProgressResetToken=0;
+let heroProgressResetPendingKey='';
 function updateHeroJourneyProgress(pct,aircraft){
  const bar=$('flightProgress'),plane=$('progressPlane');
  if(!bar&&!plane)return;
  const value=Math.max(0,Math.min(100,Number(pct)||0));
- const key=String(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||aircraft?.callsign||'').trim().toLowerCase();
+ // The live ADS-B object always has an ICAO hex. Use that as the aircraft
+ // identity so a new nearest aircraft can never inherit the previous journey.
+ const key=String(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||'').trim().toLowerCase();
  const previousKey=heroProgressAircraftKey;
  const changed=!!key&&!!previousKey&&key!==previousKey;
  const first=!!key&&!previousKey;
- heroProgressAircraftKey=key;
+
  if(changed){
   const token=++heroProgressResetToken;
+  heroProgressAircraftKey=key;
   heroProgressDisplayed=0;
-  // A different aircraft is a completely new journey. Hard-reset both the
-  // bar and aircraft to 0% before allowing the new value to animate forward.
+  heroProgressResetPendingKey=key;
+
+  // HARD RESET: first put both the bar and the aircraft at exactly 0% with
+  // transitions disabled, then force layout so the browser commits the reset.
+  // Only after that do we enable the transition to the new aircraft's value.
   if(bar){bar.style.transition='none';bar.style.width='0%';}
   if(plane){plane.style.transition='none';plane.style.left='0%';}
   void (bar?.offsetWidth||plane?.offsetWidth||0);
+
   requestAnimationFrame(()=>{
-   if(token!==heroProgressResetToken)return;
+   if(token!==heroProgressResetToken||heroProgressAircraftKey!==key)return;
+   heroProgressResetPendingKey='';
    heroProgressDisplayed=value;
-   if(bar){bar.style.transition='';bar.style.width=value+'%';}
-   if(plane){plane.style.transition='';plane.style.left=value+'%';}
+   if(bar){bar.style.transition='width .6s ease';bar.style.width=value+'%';}
+   if(plane){plane.style.transition='left .7s ease, transform .7s ease';plane.style.left=value+'%';}
   });
   return;
  }
+
+ // While the reset frame is pending, do not let another render immediately
+ // write 23% (or any other value) before the browser has painted the 0% state.
+ if(key&&heroProgressResetPendingKey===key)return;
+
  if(first){
+  heroProgressAircraftKey=key;
   heroProgressDisplayed=value;
   if(bar)bar.style.width=value+'%';
   if(plane)plane.style.left=value+'%';
   return;
  }
- // A single aircraft must never visually travel backwards because of a small
- // ADS-B position/route-progress fluctuation. Keep the displayed journey
- // monotonic until the aircraft itself changes.
+
+ // Same aircraft: small ADS-B route-progress fluctuations must not make the
+ // displayed journey move backwards.
  const next=Math.max(heroProgressDisplayed,value);
  heroProgressDisplayed=next;
  if(bar)bar.style.width=next+'%';
@@ -3289,11 +3304,12 @@ function getHomeBottomWatchedFlight(items){
 let homeWatchProgressKey='';
 let homeWatchProgressDisplayed=0;
 let homeWatchProgressResetToken=0;
+let homeWatchProgressResetPendingKey='';
 function updateHomeWatchProgress(pct,flightKey,enabled=true){
  const bar=$('homeWatchProgressBar'),plane=$('homeWatchProgressPlane');
  if(!bar&&!plane)return;
  if(!enabled){
-  homeWatchProgressKey='';homeWatchProgressDisplayed=0;++homeWatchProgressResetToken;
+  homeWatchProgressKey='';homeWatchProgressDisplayed=0;homeWatchProgressResetPendingKey='';++homeWatchProgressResetToken;
   if(bar){bar.style.transition='none';bar.style.width='0%';}
   if(plane){plane.style.transition='none';plane.style.left='0%';}
   void (bar?.offsetWidth||plane?.offsetWidth||0);
@@ -3305,30 +3321,43 @@ function updateHomeWatchProgress(pct,flightKey,enabled=true){
  const previousKey=homeWatchProgressKey;
  const changed=!!key&&!!previousKey&&key!==previousKey;
  const first=!!key&&!previousKey;
- homeWatchProgressKey=key;
+
  if(changed){
   const token=++homeWatchProgressResetToken;
+  homeWatchProgressKey=key;
   homeWatchProgressDisplayed=0;
-  // The Next Watched Flight card may switch from one watched flight to another.
-  // Never animate the new flight backwards from the previous flight's percent.
+  homeWatchProgressResetPendingKey=key;
+
+  // HARD RESET the Next Watched Flight animation. The new flight must be
+  // painted at 0% before its actual completion percentage is animated in.
   if(bar){bar.style.transition='none';bar.style.width='0%';}
   if(plane){plane.style.transition='none';plane.style.left='0%';}
   void (bar?.offsetWidth||plane?.offsetWidth||0);
+
   requestAnimationFrame(()=>{
-   if(token!==homeWatchProgressResetToken)return;
+   if(token!==homeWatchProgressResetToken||homeWatchProgressKey!==key)return;
+   homeWatchProgressResetPendingKey='';
    homeWatchProgressDisplayed=value;
-   if(bar){bar.style.transition='';bar.style.width=value+'%';}
-   if(plane){plane.style.transition='';plane.style.left=value+'%';}
+   if(bar){bar.style.transition='width .5s ease';bar.style.width=value+'%';}
+   if(plane){plane.style.transition='left .5s ease';plane.style.left=value+'%';}
   });
   return;
  }
+
+ // Do not allow the normal render pass to overwrite the freshly reset 0%
+ // state before the browser has painted it.
+ if(key&&homeWatchProgressResetPendingKey===key)return;
+
  if(first){
+  homeWatchProgressKey=key;
   homeWatchProgressDisplayed=value;
   if(bar)bar.style.width=value+'%';
   if(plane)plane.style.left=value+'%';
   return;
  }
- // Keep the same watched flight monotonic as ADS-B position updates arrive.
+
+ // Same watched flight: keep progress monotonic against small live-data
+ // fluctuations. A new watched flight is handled by the hard reset above.
  const next=Math.max(homeWatchProgressDisplayed,value);
  homeWatchProgressDisplayed=next;
  if(bar)bar.style.width=next+'%';
