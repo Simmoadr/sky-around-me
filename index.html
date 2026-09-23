@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Sky Around Me V65.0 — ADSB.lol Routeset live route test -->
+<!-- SKY AROUND ME V66.0 — LIVE ROUTE CONFIDENCE ARCHITECTURE -->
+<!-- Sky Around Me V66.0 — live-route confidence architecture -->
 <!-- Sky Around Me V63.9 — watched-flight dual-time display + quiet-state / airport fixes -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -2777,7 +2778,7 @@ function normaliseRoute(raw,flight,date,source='FlightRouteLookup'){
 }
 function hydrateCachedLiveRoute(x,previousItems){
  const cs=normalFlightCode(x?.callsign);if(!cs)return x;
- const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),hx=normalFlightCode(x?.icao||x?.hex||''),lat=Number(x?.lat),lon=Number(x?.lon),key=routeCacheKey(cs,date,reg,hx,lat,lon);
+ const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),hx=normalFlightCode(x?.icao||x?.hex||''),key=routeCacheKey(cs,date,reg,hx,x?.lat,x?.lon);
  // First retain the route from the previous live-feed object. The aircraft object
  // is recreated on every poll, so without this the UI briefly has no route.
  const previous=Array.isArray(previousItems)?previousItems.find(a=>
@@ -3050,22 +3051,21 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
  const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=pct+'% COMPLETE';updateHeroJourneyProgress(pct,x)}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);updateHeroJourneyProgress(0,x)}}
 }
-const ROUTE_CACHE_TTL=30*60*1000;
+const ROUTE_CACHE_TTL=10*60*1000;
 const ROUTE_FAILURE_TTL=5*60*1000;
 const ROUTE_TIMEOUT=5000;
 const liveRouteCache=new Map();
 const liveRoutePending=new Map();
 function utcDateKey(){return new Date().toISOString().slice(0,10)}
-function routeCacheKey(flight,date,registration,hex,lat,lon){const la=Number.isFinite(Number(lat))?Number(lat).toFixed(2):'';const lo=Number.isFinite(Number(lon))?Number(lon).toFixed(2):'';return 'route-v13|'+normalFlightCode(flight)+'|'+normalFlightCode(registration||'')+'|'+normalFlightCode(hex||'')+'|'+la+'|'+lo+'|'+date}
-async function lookupFlightRoute(callsign,date,registration,hex,lat,lon){
+function routeCacheKey(flight,date,registration,hex,lat,lon){return 'route-v12|'+normalFlightCode(flight)+'|'+normalFlightCode(registration||'')+'|'+normalFlightCode(hex||'')+'|'+date+'|'+(Number.isFinite(Number(lat))?Number(lat).toFixed(1):'x')+'|'+(Number.isFinite(Number(lon))?Number(lon).toFixed(1):'x')}
+async function lookupFlightRoute(callsign,date,registration,hex,lat,lon,heading){
  const cs=normalFlightCode(callsign);
  const reg=String(registration||'').trim().toUpperCase();
  const hx=String(hex||'').trim().toUpperCase();
  if(!cs&&!reg&&!hx)return {status:'NOT_FOUND',flight:cs,date,source:'ADS-B'};
  // V64.6 — nearest/live aircraft route resolution is callsign + exact aircraft identity only.
  // We deliberately do NOT resolve a passenger flight number here.
- const la=Number(lat),lo=Number(lon);
- const params=`lookup=callsign&value=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&hex=${encodeURIComponent(hx)}&lat=${encodeURIComponent(Number.isFinite(la)?la:'')}&lon=${encodeURIComponent(Number.isFinite(lo)?lo:'')}&debug=1`;
+ const params=`lookup=callsign&value=${encodeURIComponent(cs)}&registration=${encodeURIComponent(reg)}&hex=${encodeURIComponent(hx)}&lat=${encodeURIComponent(Number(lat))}&lon=${encodeURIComponent(Number(lon))}&heading=${encodeURIComponent(Number(heading))}&debug=1`;
  const controller=new AbortController();
  const timer=setTimeout(()=>controller.abort(),ROUTE_TIMEOUT);
  try{
@@ -3075,7 +3075,6 @@ async function lookupFlightRoute(callsign,date,registration,hex,lat,lon){
   airLabsArchitectureCheck(r,'callsign');airLabsUsageRecord(r,'callsign');
   if(!r.ok){const e=new Error('Flight route lookup HTTP '+r.status);e.status=r.status;throw e}
   const j=await r.json();
-  if(j?._skyRoutesetDebug){ window._skyLastRoutesetDebug=j._skyRoutesetDebug; }
   const rr=j?.route||{};
   const fr=j?.flightroute||{};
   const origin=fr?.origin||{};
@@ -3099,7 +3098,7 @@ async function lookupFlightRoute(callsign,date,registration,hex,lat,lon){
  }finally{clearTimeout(timer)}
 }
 function loadRouteCache(){
- try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');const now=Date.now();Object.entries(raw).forEach(([k,v])=>{if(k.startsWith('route-v13|')&&v&&v.cachedAt&&now-v.cachedAt<ROUTE_CACHE_TTL){liveRouteCache.set(k,v.route||null)}})}catch(e){console.debug('Route cache load failed',e)}
+ try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');const now=Date.now();Object.entries(raw).forEach(([k,v])=>{if(k.startsWith('route-v12|')&&v&&v.cachedAt&&now-v.cachedAt<ROUTE_CACHE_TTL){liveRouteCache.set(k,v.route||null)}})}catch(e){console.debug('Route cache load failed',e)}
 }
 function persistRouteCache(){
  try{const out={};liveRouteCache.forEach((route,key)=>{out[key]={route,cachedAt:Date.now()}});localStorage.setItem('skyAroundMeRouteCache',JSON.stringify(out))}catch(e){/* cache is optional */}
@@ -3110,7 +3109,7 @@ function getCachedRoute(key){
 function putCachedRoute(key,route){liveRouteCache.set(key,route);try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');raw[key]={route,cachedAt:Date.now()};localStorage.setItem('skyAroundMeRouteCache',JSON.stringify(raw))}catch(e){/* optional */}}
 async function enrichLiveRoute(x){
  const cs=normalFlightCode(x?.callsign);if(!cs)return;
- const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),hx=normalFlightCode(x?.icao||x?.hex||''),lat=Number(x?.lat),lon=Number(x?.lon),key=routeCacheKey(cs,date,reg,hx,lat,lon);
+ const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),hx=normalFlightCode(x?.icao||x?.hex||''),key=routeCacheKey(cs,date,reg,hx,x?.lat,x?.lon);
  if(liveRouteCache.has(key)){
   const cached=applyKnownMultiLegRoute(x,liveRouteCache.get(key));x.liveRoute=cached;
   if(cached?.status==='FOUND'){if(cached.airlineCode)x.airlineCode=cached.airlineCode;if(cached.airlineName)x.airlineName=cached.airlineName;}
@@ -3120,7 +3119,7 @@ async function enrichLiveRoute(x){
  if(liveRoutePending.has(key))return liveRoutePending.get(key);
  const task=(async()=>{
    try{
-     const rawRoute=await lookupFlightRoute(cs,date,reg,hx,lat,lon);
+     const rawRoute=await lookupFlightRoute(cs,date,reg,hx,x?.lat,x?.lon,x?.heading);
      const route=applyKnownMultiLegRoute(x,rawRoute);
      putCachedRoute(key,route);x.liveRoute=route;
      if(route?.status==='FOUND'){
