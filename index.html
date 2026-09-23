@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Sky Around Me V64.4 — live-route accuracy + Featured fresh-position fix -->
+<!-- Sky Around Me V64.7 — strict watched-flight identity separation; callsign-first live tracking -->
 <!-- Sky Around Me V63.9 — watched-flight dual-time display + quiet-state / airport fixes -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -1864,7 +1864,7 @@ if(!Array.isArray(watchlist))watchlist=[];
 const oldDefaultWatch=watchlist.length===1&&watchlist[0]&&watchlist[0].name==="Mariana's flight"&&watchlist[0].flight===''&&watchlist[0].from==='Singapore'&&watchlist[0].to==='New York JFK';
 if(oldDefaultWatch || (watch&&watch.name==="Mariana's flight"&&watch.flight===''&&watch.from==='Singapore'&&watch.to==='New York JFK')){watch=null;watchlist=[];localStorage.removeItem('skyAroundMeWatch');localStorage.removeItem('skyAroundMeWatchlist')}
 if(!watch)watch={};
-const WATCH_LIVE_STORAGE_KEY='skyAroundMeWatchLive';
+const WATCH_LIVE_STORAGE_KEY='skyAroundMeWatchLiveV2';
 function clearPersistedWatchLive(){try{localStorage.removeItem(WATCH_LIVE_STORAGE_KEY)}catch(e){}}
 function persistWatchLive(live){
  try{
@@ -3667,7 +3667,10 @@ async function searchGlobalWatchedFlight(f){
  // If a stable aircraft identity is already known, try it without relying on
  // the live callsign. This is the safest recovery path after a transient
  // callsign change or a browser refresh.
- if(baseParams.hex||baseParams.registration){
+ // V64.7: never use persisted registration/hex as the first watched-flight lookup.
+ // The current operational callsign is the authoritative live-flight identity.
+ // A registration belongs to the aircraft, not to today's flight.
+ if(false && (baseParams.hex||baseParams.registration)){
    try{
      const params=new URLSearchParams({...baseParams,callsign:''});
      if(SKY_DEBUG_ENABLED)params.set('debug','1');
@@ -3754,6 +3757,7 @@ async function refreshWatchStream(){
      live.watchKey=key;
      live.watchRef=target;
      live.watchGlobal=true;
+     live.watchIdentityVerified=true;
      live.lastSeenAt=searchedAt;
      live.staleSince=0;
      S.watchLive=live;
