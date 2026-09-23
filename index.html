@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- Sky Around Me V66.22 — emergency counter + hard progress reset + worldwide special squawks -->
+<!-- Sky Around Me V66.39 — hard 0% paint before new-aircraft progress animation -->
 <head>
 <!-- Sky Around Me V66.10 — hard-reset progress animations on aircraft/flight identity change -->
 <!-- Sky Around Me V66.5 — navigation regression fix: restore the proven V64.8 nav event path; no map/aircraft/backend logic changed. -->
@@ -2743,15 +2743,21 @@ function animateHeroProgressFromZero(value,key,routeKey,token){
  if(!key)return;
  cancelHeroProgressAnimation();
  const bar=$('flightProgress'),plane=$('progressPlane');
- // Keep the reset visible for a complete paint before moving the new aircraft.
+ // The new aircraft owns the progress state immediately. The visual must
+ // remain at 0% until a later paint, otherwise the browser can interpolate
+ // directly from the previous aircraft's value to the new aircraft's value.
+ heroProgressAircraftKey=key;
+ heroProgressRouteKey=routeKey;
+ heroProgressDisplayed=0;
+ setProgressVisual(bar,plane,0,false);
+ void (bar?.offsetWidth||plane?.offsetWidth||0);
  heroProgressAnimationFrame=requestAnimationFrame(()=>{
    heroProgressAnimationFrame=null;
    heroProgressAnimationFrame2=requestAnimationFrame(()=>{
      heroProgressAnimationFrame2=null;
      if(token!==heroProgressResetToken)return;
-     if(heroProgressAircraftKey && heroProgressAircraftKey!==key)return;
-     heroProgressAircraftKey=key;
-     heroProgressRouteKey=routeKey;
+     if(heroProgressAircraftKey!==key)return;
+     // Only now allow the bar/aircraft to animate from the already-painted 0%.
      heroProgressDisplayed=value;
      setProgressVisual(bar,plane,value,true);
    });
@@ -2775,19 +2781,21 @@ function updateHeroJourneyProgress(pct,aircraft){
    return;
  }
 
- const previousIdentity=heroProgressAircraftKey+'|'+normalProgressKey(heroProgressRouteKey);
+ const previousIdentity=heroProgressAircraftKey;
  if(heroProgressAircraftKey && identityKey!==previousIdentity){
-   resetHeroJourneyProgress(identityKey);
+   // NEW AIRCRAFT: hard reset the visual to 0%, paint that state, then
+   // animate the new aircraft from 0% to its actual progress. Never animate
+   // directly from the previous aircraft's percentage.
+   ++heroProgressResetToken;
    const token=heroProgressResetToken;
    animateHeroProgressFromZero(value,identityKey,routeKey,token);
    return;
  }
 
  if(!heroProgressAircraftKey){
-   heroProgressAircraftKey=identityKey;
-   heroProgressRouteKey=routeKey;
-   heroProgressDisplayed=value;
-   setProgressVisual(bar,plane,value,true);
+   ++heroProgressResetToken;
+   const token=heroProgressResetToken;
+   animateHeroProgressFromZero(value,identityKey,routeKey,token);
    return;
  }
 
