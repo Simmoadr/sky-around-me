@@ -3722,7 +3722,7 @@ function isCommercialAircraft(a){
 
 async function fetchAircraft(){
   const distKm=S.extendedAirspace?Math.min(250,Math.max(100,Math.max(1,Number(S.rangeKm)||100))):Math.min(250,Math.max(1,Number(S.rangeKm)||100));
-  const adsbUrl=`${SKY_AROUND_ME_NETLIFY}?lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${encodeURIComponent(distKm)}&_ts=${Date.now()}`;
+  const adsbUrl=`${SKY_AROUND_ME_NETLIFY}?lat=${encodeURIComponent(S.lat)}&lon=${encodeURIComponent(S.lon)}&dist=${encodeURIComponent(distKm)}`;
   try{
     const j=await fetchJson(adsbUrl,'Live aircraft proxy');
     if(j&&j.error)throw new Error(j.message||j.error);
@@ -3946,9 +3946,6 @@ async function poll(){
  $('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';
  try{
   const j=await fetchAircraft();
-  // V66.15 freshness guard: the live proxy stamps each response when it is fetched.
-  const feedAgeMs=Number(j?._skyFetchedAt||0)?Math.max(0,Date.now()-Number(j._skyFetchedAt)):0;
-  if(feedAgeMs>10000)console.warn('Sky Around Me: live ADS-B response is stale by '+Math.round(feedAgeMs/1000)+'s');
   const raw=(Array.isArray(j.ac)?j.ac:[]).filter(isCommercialAircraft);
   const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));
   const previousItems=Array.isArray(S.lastItems)?S.lastItems:[];
