@@ -2134,6 +2134,10 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 }
 </style>
 
+<style id="v66-37-device-location-colour">
+/* V66.37 — device location green matched to the Live Position reference. */
+body{}
+</style>
 </head>
 <body>
 
@@ -3056,7 +3060,7 @@ function renderHeroFlightMap(live,watch){
     // Local airspace view: show every commercial aircraft currently inside the
     // selected radius, with the Featured aircraft visually highlighted.
     L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,color:WATCH_ROUTE_COLOR,weight:1,fillOpacity:.025,dashArray:'5 8',interactive:false}).addTo(heroFlightLayer);
-    L.circleMarker([S.lat,S.lon],{radius:6,color:'#39ff88',weight:3,fillColor:'#39ff88',fillOpacity:1,opacity:1,interactive:false}).addTo(heroFlightLayer);
+    L.circleMarker([S.lat,S.lon],{radius:6,color:'#3d805e',weight:3,fillColor:'#3d805e',fillOpacity:1,opacity:1,interactive:false}).addTo(heroFlightLayer);
     const localItems=Array.isArray(S.lastItems)?S.lastItems:[];
     const outerItems=heroExtendedItems();
     outerItems.forEach(item=>{
@@ -4329,8 +4333,8 @@ function updateFeatureSpecialPanel(){
  const vs=x.vs==null?'—':(Number(x.vs)*196.850394).toFixed(0)+' ft/min';
  const region=String(x._specialRegion||'').toUpperCase()||'WORLDWIDE';
  panel.hidden=false;
- panel.innerHTML=`<div class="feature-special-head"><div class="feature-special-title"><span class="feature-special-plane ${kind}" style="--special-colour:${colour}">${miniAircraftSvg()}</span><div><div class="feature-special-kicker" style="color:${colour}">${kind==='emergency'?'EMERGENCY':'SPECIAL'} · SQUAWK ${escapeHtml(code)}</div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(specialSquawkReason(code))}</small></div></div><button type="button" class="feature-special-close" id="featureSpecialClose" aria-label="Close special aircraft selection">CLOSE</button></div><div class="feature-special-grid"><div><label>OPERATOR</label><b>${escapeHtml(operator||'—')}</b></div><div><label>AIRCRAFT</label><b>${escapeHtml(model)}</b></div><div><label>REGISTRATION</label><b>${escapeHtml(reg)}</b></div><div><label>ICAO</label><b>${escapeHtml(icao)}</b></div><div><label>DISTANCE</label><b>${Number.isFinite(d)?d.toFixed(1)+' km':'—'}</b></div><div><label>ALTITUDE</label><b>${escapeHtml(alt)}</b></div><div><label>SPEED</label><b>${escapeHtml(speed)}</b></div><div><label>HEADING</label><b>${escapeHtml(heading)}</b></div><div><label>VERTICAL SPEED</label><b>${escapeHtml(vs)}</b></div><div><label>REGION</label><b>${escapeHtml(region)}</b></div><div><label>DATA SOURCE</label><b>${escapeHtml(x.source||'ADS-B')}</b></div></div><div class="feature-special-hint">SELECTED AIRCRAFT · LIVE DATA CONTINUES TO REFRESH · AUTO ROTATION PAUSED</div>`;
- const close=$('featureSpecialClose');if(close)close.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();clearFeatureSpecialSelection()});
+ panel.innerHTML=`<div class="feature-special-head"><div class="feature-special-title"><span class="feature-special-plane ${kind}" style="--special-colour:${colour}">${miniAircraftSvg()}</span><div><div class="feature-special-kicker" style="color:${colour}">${kind==='emergency'?'EMERGENCY':'SPECIAL'} · SQUAWK ${escapeHtml(code)}</div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(specialSquawkReason(code))}</small></div></div><button type="button" class="feature-special-close" id="featureSpecialClose" aria-label="Close special aircraft selection"><span class="feature-close-flight" aria-hidden="true"><span class="feature-close-plane">${miniAircraftSvg()}</span><span class="feature-close-route"></span><span class="feature-close-x">×</span></span></button></div><div class="feature-special-grid"><div><label>OPERATOR</label><b>${escapeHtml(operator||'—')}</b></div><div><label>AIRCRAFT</label><b>${escapeHtml(model)}</b></div><div><label>REGISTRATION</label><b>${escapeHtml(reg)}</b></div><div><label>ICAO</label><b>${escapeHtml(icao)}</b></div><div><label>DISTANCE</label><b>${Number.isFinite(d)?d.toFixed(1)+' km':'—'}</b></div><div><label>ALTITUDE</label><b>${escapeHtml(alt)}</b></div><div><label>SPEED</label><b>${escapeHtml(speed)}</b></div><div><label>HEADING</label><b>${escapeHtml(heading)}</b></div><div><label>VERTICAL SPEED</label><b>${escapeHtml(vs)}</b></div><div><label>REGION</label><b>${escapeHtml(region)}</b></div><div><label>DATA SOURCE</label><b>${escapeHtml(x.source||'ADS-B')}</b></div></div><div class="feature-special-hint">SELECTED AIRCRAFT · LIVE DATA CONTINUES TO REFRESH · AUTO ROTATION PAUSED</div>`;
+ const close=$('featureSpecialClose');if(close)close.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(close.classList.contains('is-closing'))return;close.classList.add('is-closing');setTimeout(()=>clearFeatureSpecialSelection(),430)});
  const heroBottom=panel.closest('.hero-bottom');if(heroBottom)heroBottom.classList.add('feature-special-selected');
 }
 function selectFeatureSpecialAircraft(icao){
@@ -4378,7 +4382,7 @@ function setMapBearing(deg){S.rotationDeg=normaliseBearing(deg);if(map&&typeof m
 function rotateMapBy(delta){if(S.rotationLocked)return;setMapBearing(S.rotationDeg+delta)}
 function toggleRotationLock(){S.rotationLocked=!S.rotationLocked;saveSkySettings();updateRotationUI()}
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,color:'#39ff88',weight:3,fillColor:'#39ff88',fillOpacity:1,opacity:1,interactive:false}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);let extendedCircle=L.circle([S.lat,S.lon],{radius:100000,color:'#176f8b',weight:1,opacity:S.extendedAirspace&&S.rangeKm<100?1:0,fillOpacity:0,dashArray:'2 7',interactive:false}).addTo(map);function fitLiveSkyExtended(){if(!map||!S.extendedAirspace||S.rangeKm>=100)return;extendedCircle.setLatLng([S.lat,S.lon]);map.fitBounds(extendedCircle.getBounds(),{padding:[45,45],maxZoom:9,animate:false});}
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,color:'#3d805e',weight:3,fillColor:'#3d805e',fillOpacity:1,opacity:1,interactive:false}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);let extendedCircle=L.circle([S.lat,S.lon],{radius:100000,color:'#176f8b',weight:1,opacity:S.extendedAirspace&&S.rangeKm<100?1:0,fillOpacity:0,dashArray:'2 7',interactive:false}).addTo(map);function fitLiveSkyExtended(){if(!map||!S.extendedAirspace||S.rangeKm>=100)return;extendedCircle.setLatLng([S.lat,S.lon]);map.fitBounds(extendedCircle.getBounds(),{padding:[45,45],maxZoom:9,animate:false});}
 $('rotateLeft').addEventListener('click',()=>rotateMapBy(-15));$('rotateRight').addEventListener('click',()=>rotateMapBy(15));$('rotationLock').addEventListener('click',toggleRotationLock);setupRotationControl('mapRotationControls');setupRotationControl('heroMapRotationControls');updateRotationUI();
 // V66.32 — Live Sky map-card progress uses the same identity-safe reset rule.
 let liveProgressKey='';
@@ -5115,6 +5119,37 @@ body .hero .hero-bottom .journey-percent {
 #specialCountPill{display:none!important;}
 @media(max-width:900px){.special-code-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
 @media(max-width:700px){.special-code-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.special-label-option{align-items:flex-start;}.map-card-special-summary{margin:-1px 0 9px;}}
+</style>
+
+<style id="v66-36-premium-feature-close">
+/* V66.36 — premium Featured special-aircraft exit control. The aircraft flies to the X. */
+body .feature-special-close{
+  position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;
+  width:112px!important;height:42px!important;padding:0!important;border:1px solid rgba(65,82,84,.22)!important;
+  border-radius:22px!important;background:rgba(255,255,255,.82)!important;color:#253234!important;
+  box-shadow:0 4px 14px rgba(28,39,40,.08),inset 0 1px 0 rgba(255,255,255,.9)!important;
+  overflow:hidden!important;cursor:pointer!important;
+  transition:box-shadow .22s ease,transform .22s ease,background .22s ease,border-color .22s ease!important;
+}
+body .feature-special-close:hover{
+  background:#fff!important;border-color:rgba(50,72,74,.32)!important;
+  box-shadow:0 7px 18px rgba(28,39,40,.12),inset 0 1px 0 rgba(255,255,255,.95)!important;
+  transform:translateY(-1px)!important;
+}
+body .feature-special-close:active{transform:translateY(0) scale(.985)!important;}
+.feature-close-flight{position:relative;width:88px;height:26px;display:flex;align-items:center;justify-content:space-between;}
+.feature-close-route{position:absolute;left:15px;right:16px;top:12px;height:1px;background:linear-gradient(90deg,rgba(37,50,52,.14),rgba(37,50,52,.30));}
+.feature-close-route:after{content:'';position:absolute;left:18%;right:8%;top:-1px;height:3px;background:linear-gradient(90deg,transparent,rgba(37,50,52,.12),transparent);filter:blur(1px);opacity:.8;}
+.feature-close-plane{position:absolute;left:1px;top:5px;width:20px;height:20px;display:grid;place-items:center;z-index:2;color:#277e96;transition:left .42s cubic-bezier(.22,.8,.22,1),transform .42s cubic-bezier(.22,.8,.22,1),color .18s ease;filter:drop-shadow(0 2px 2px rgba(23,30,30,.12));}
+.feature-close-plane svg{width:20px!important;height:20px!important;display:block!important;transform:rotate(90deg)!important;transform-origin:center!important;}
+.feature-close-x{position:absolute;right:0;top:1px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;z-index:2;background:#eef1ef;border:1px solid rgba(65,82,84,.18);color:#334143;font:500 20px/20px Arial,sans-serif;transition:background .22s ease,border-color .22s ease,transform .22s ease,color .22s ease;}
+.feature-special-close:hover .feature-close-plane{left:62px;color:#24383c;}
+.feature-special-close:hover .feature-close-x{background:#e4e9e6;border-color:rgba(50,72,74,.28);}
+.feature-special-close.is-closing{pointer-events:none;background:#fff!important;box-shadow:0 8px 20px rgba(28,39,40,.14)!important;}
+.feature-special-close.is-closing .feature-close-plane{left:62px;transform:scale(1.08);color:#24383c;}
+.feature-special-close.is-closing .feature-close-route{background:linear-gradient(90deg,rgba(39,126,150,.18),rgba(39,126,150,.42));}
+.feature-special-close.is-closing .feature-close-x{transform:scale(1.08);background:#e1e7e4;}
+@media(max-width:700px){body .feature-special-close{width:92px!important;height:38px!important}.feature-close-flight{width:70px}.feature-close-plane{width:18px;height:18px}.feature-close-plane svg{width:18px!important;height:18px!important}.feature-special-close:hover .feature-close-plane,.feature-special-close.is-closing .feature-close-plane{left:48px}.feature-close-x{width:22px;height:22px;font-size:18px;line-height:18px;}}
 </style>
 </body></html>
 
