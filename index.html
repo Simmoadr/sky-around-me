@@ -2222,7 +2222,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 
   <div class="hud top-hud"><div class="pill"><span class="live-dot"></span><b id="mapStatus">LIVE</b> · <span id="mapLocation">LUSK</span></div><div class="top-hud-right"><div class="pill special-count-pill" id="specialCountPill" hidden>● <span id="specialCountText">SPECIAL 0</span></div><div class="pill" id="countPill">0 aircraft found · —</div></div></div>
   <div class="hud bottom-hud"><div class="pill range" id="rangePill">100 KM AIRSPACE RADIUS</div><div class="pill range extended-pill" id="extendedPill" hidden>EXTENDED · 100 KM</div></div>
-  <div class="map-card" id="mapCard"><div class="map-card-special-summary" id="mapCardSpecialSummary" hidden><span class="summary-dot"></span><b id="mapCardSpecialSummaryText">EMERGENCY 0 · SPECIAL 0</b></div><div class="map-card-kicker" id="status">LIVE AIRCRAFT</div><div class="map-card-title" id="call">—</div><div class="map-card-sub" id="detail">Select an aircraft for flight details.</div><div class="map-card-special-info" id="mapCardSpecialInfo" hidden></div><div class="map-card-route" id="mapCardRoute" hidden><div class="map-card-route-head"><div><span>FROM</span><b id="liveFrom">—</b><small id="liveFromName"></small></div><div class="map-card-route-arrow">→</div><div class="map-card-route-to"><span>TO</span><b id="liveTo">—</b><small id="liveToName"></small></div></div><div class="map-card-progress"><div class="map-card-progress-label" id="liveProgressLabel">—% COMPLETE</div><div class="map-card-progress-track"><i id="liveProgressBar"></i><span class="progress-plane" id="liveProgressPlane"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"/></svg></span></div></div></div><div class="map-stats"><div class="map-stat"><span>DISTANCE TO GO</span><b id="dist">—</b></div><div class="map-stat"><span>ALTITUDE</span><b id="alt">—</b></div><div class="map-stat"><span>SPEED</span><b id="speed">—</b></div><div class="map-stat"><span>HEADING</span><b id="heading">—</b></div></div></div>
+  <div class="map-card" id="mapCard"><div class="map-card-special-summary" id="mapCardSpecialSummary" hidden></div><div class="map-card-kicker" id="status">LIVE AIRCRAFT</div><div class="map-card-title" id="call">—</div><div class="map-card-sub" id="detail">Select an aircraft for flight details.</div><div class="map-card-special-info" id="mapCardSpecialInfo" hidden></div><div class="map-card-route" id="mapCardRoute" hidden><div class="map-card-route-head"><div><span>FROM</span><b id="liveFrom">—</b><small id="liveFromName"></small></div><div class="map-card-route-arrow">→</div><div class="map-card-route-to"><span>TO</span><b id="liveTo">—</b><small id="liveToName"></small></div></div><div class="map-card-progress"><div class="map-card-progress-label" id="liveProgressLabel">—% COMPLETE</div><div class="map-card-progress-track"><i id="liveProgressBar"></i><span class="progress-plane" id="liveProgressPlane"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"/></svg></span></div></div></div><div class="map-stats"><div class="map-stat"><span>DISTANCE TO GO</span><b id="dist">—</b></div><div class="map-stat"><span>ALTITUDE</span><b id="alt">—</b></div><div class="map-stat"><span>SPEED</span><b id="speed">—</b></div><div class="map-stat"><span>HEADING</span><b id="heading">—</b></div></div></div>
  </div>
 </section>
 
@@ -2828,22 +2828,24 @@ function specialSquawkCounts(){
  items.forEach(x=>specialSquawkKind(x)==='emergency'?emergency++:vfr++);
  return {total:items.length,emergency,vfr};
 }
+function specialCounterState(c){
+ const emergencyEnabled=S.specialSquawkCodes.some(code=>SPECIAL_SQUAWK_EMERGENCY.has(String(code)));
+ const specialEnabled=S.specialSquawkCodes.some(code=>SPECIAL_SQUAWK_VFR.has(String(code)));
+ return {emergencyEnabled,specialEnabled,visible:emergencyEnabled||specialEnabled};
+}
 function updateSpecialSquawkCounter(){
  const c=specialSquawkCounts();
- const visible=!!S.specialSquawks;
- const text=`EMERGENCY ${c.emergency} · SPECIAL ${c.total}`;
+ const counter=specialCounterHtml(c);
  const mapPill=$('specialCountPill');
  const mapText=$('specialCountText');
  if(mapPill)mapPill.hidden=true;
- if(mapText)mapText.textContent=text;
+ if(mapText)mapText.textContent=counter;
  const summary=$('mapCardSpecialSummary');
- const summaryText=$('mapCardSpecialSummaryText');
- if(summary){summary.hidden=!visible;summary.classList.toggle('has-emergency',c.emergency>0);}
- if(summaryText)summaryText.textContent=text;
+ if(summary){summary.hidden=!counter;summary.classList.toggle('has-emergency',c.emergency>0);summary.classList.toggle('has-special',c.vfr>0);summary.innerHTML=counter;}
  const heroPill=$('heroSpecialCountPill');
  const heroText=$('heroSpecialCountText');
  if(heroPill){heroPill.hidden=true;heroPill.classList.toggle('has-emergency',c.emergency>0);}
- if(heroText)heroText.textContent=text;
+ if(heroText)heroText.innerHTML=counter;
 }
 function heroMapAirportIcon(code,name,side){
  const c=escapeHtml(code||'');
@@ -2851,7 +2853,14 @@ function heroMapAirportIcon(code,name,side){
  return L.divIcon({className:'hero-airport-icon',iconSize:[0,0],iconAnchor:[0,0],html:`<div class="hero-airport-label ${side||''}"><span>${c}</span><small>${n}</small></div><div class="hero-airport-dot"></div>`});
 }
 function miniAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"/></svg>'}
-function specialCounterHtml(c){return `<div class="special-counter-inner"><span class="special-counter-item emergency"><i class="special-counter-plane">${miniAircraftSvg()}</i><b>EMERGENCY</b><strong>${c.emergency}</strong></span><span class="special-counter-divider">·</span><span class="special-counter-item vfr"><i class="special-counter-plane">${miniAircraftSvg()}</i><b>SPECIAL</b><strong>${c.total}</strong></span></div>`}
+function specialCounterHtml(c){
+ const state=specialCounterState(c);
+ if(!state.visible)return '';
+ const rows=[];
+ if(state.emergencyEnabled)rows.push(`<span class="special-counter-item emergency"><i class="special-counter-plane">${miniAircraftSvg()}</i><b>EMERGENCY</b><strong>${c.emergency}</strong></span>`);
+ if(state.specialEnabled)rows.push(`<span class="special-counter-item vfr"><i class="special-counter-plane">${miniAircraftSvg()}</i><b>SPECIAL</b><strong>${c.vfr}</strong></span>`);
+ return `<div class="special-counter-inner">${rows.join('<span class="special-counter-divider">·</span>')}</div>`;
+}
 function specialSquawkReason(code){
  const map={
   '7700':'GENERAL EMERGENCY',
@@ -4394,7 +4403,7 @@ function updateMapCard(x){
  const card=$('mapCard');if(!card)return;
  const specialSummary=$('mapCardSpecialSummary');
  const specialSummaryText=$('mapCardSpecialSummaryText');
- if(specialSummary){const c=specialSquawkCounts();specialSummary.hidden=!S.specialSquawks;specialSummary.classList.toggle('has-emergency',c.emergency>0);if(specialSummaryText)specialSummaryText.innerHTML=specialCounterHtml(c);}
+ if(specialSummary){const c=specialSquawkCounts();const counter=specialCounterHtml(c);specialSummary.hidden=!counter;specialSummary.classList.toggle('has-emergency',c.emergency>0);specialSummary.classList.toggle('has-special',c.vfr>0);specialSummary.innerHTML=counter;}
  const specialInfo=$('mapCardSpecialInfo');
  if(!x){
   resetLiveProgress('');
@@ -4853,8 +4862,21 @@ async function poll(){
   S.featured=f?.icao||null;
   if(previousFeatured!==S.featured){ resetHeroJourneyProgress(S.featured||''); }
   render(items);
-  if(f){renderLiveHome(f);if(!S.mapSelected)updateMapCard(f);else{const selected=S.lastItems.find(a=>a.icao===S.mapSelected);if(selected)updateMapCard(selected);else updateMapCard(f);}}
-  else{S.featured=null;renderScheduledHome();const selected=specialAircraftForSelection(S.mapSelected);updateMapCard(selected||null);}
+  const selectedAircraft=S.mapSelected?specialAircraftForSelection(S.mapSelected):null;
+  if(f){
+   // LIVE SKY selection is a user lock: keep the live feed updating positions,
+   // but never replace the selected aircraft with the nearest/Featured aircraft.
+   if(!(selectedAircraft&&$('mapPage')?.classList.contains('active')))renderLiveHome(f);
+   if(selectedAircraft)updateMapCard(selectedAircraft);else updateMapCard(f);
+  }else{
+   S.featured=null;
+   renderScheduledHome();
+   if(selectedAircraft)updateMapCard(selectedAircraft);else updateMapCard(null);
+  }
+  if(S.mapSelected&&!selectedAircraft){
+   // The selected aircraft has left the current feed. Release the lock cleanly.
+   S.mapSelected=null;
+  }
   renderHomeWatch(items);
   const outerCount=(S.extendedAirspace&&S.rangeKm<100&&Array.isArray(S.lastAllItems))?S.lastAllItems.filter(x=>Number.isFinite(Number(x?.d))&&x.d>S.rangeKm&&x.d<=100).length:0;const sc=specialSquawkCounts();$('countPill').textContent=S.extendedAirspace&&S.rangeKm<100?`${items.length} in ${S.rangeKm} km · ${outerCount} extended · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:`${items.length} aircraft in range · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;$('mapStatus').textContent='LIVE';updateSpecialSquawkCounter();
  }catch(e){
@@ -5745,4 +5767,59 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 .hero-aircraft-marker .special-squawk-map-bubble{bottom:calc(100% + 9px);}
 /* The standalone Featured counter is now redundant; keep the DOM for compatibility but don't render it. */
 #heroSpecialCountPill{display:none!important;}
+</style>
+
+<style id="v66-34-special-counter-selection-lock">
+/* V66.34 — Featured/Live Sky special counter parity + selected-aircraft lock. */
+body .map-card-special-summary{
+  display:flex!important;
+  align-items:center!important;
+  min-height:0!important;
+  margin:0 0 13px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:inherit!important;
+  font-size:inherit!important;
+  letter-spacing:normal!important;
+}
+body .map-card-special-summary[hidden]{display:none!important;}
+body .map-card-special-summary .special-counter-inner{
+  display:flex!important;
+  align-items:center!important;
+  gap:9px!important;
+  flex-wrap:wrap!important;
+}
+body .map-card-special-summary .special-counter-item{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  line-height:1!important;
+}
+body .map-card-special-summary .special-counter-item.emergency{color:#d62f2f!important;}
+body .map-card-special-summary .special-counter-item.vfr{color:#d97706!important;}
+body .map-card-special-summary .special-counter-plane{
+  width:14px!important;height:14px!important;display:inline-grid!important;
+  place-items:center!important;flex:0 0 auto!important;
+}
+body .map-card-special-summary .special-counter-plane svg{
+  width:14px!important;height:14px!important;display:block!important;
+  transform:rotate(90deg)!important;transform-origin:center!important;
+}
+body .map-card-special-summary .special-counter-item b{
+  font-size:9px!important;font-weight:950!important;letter-spacing:.10em!important;
+}
+body .map-card-special-summary .special-counter-item strong{
+  font-size:10px!important;font-weight:950!important;letter-spacing:.03em!important;
+}
+body .map-card-special-summary .special-counter-divider{
+  color:#9da4a3!important;font-weight:950!important;font-size:12px!important;
+}
+/* Keep the selected aircraft card visually live without allowing the refresh cycle
+   to replace it with the nearest aircraft. */
+body #mapCard .map-card-special-info{margin-top:11px;}
+body #mapCard .map-card-special-info .special-info-code{font-size:10px;}
+body #mapCard .map-card-special-info .special-info-meta{flex-wrap:wrap;}
 </style>
