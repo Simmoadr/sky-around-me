@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Sky Around Me V66.9 — hard-reset progress animations on aircraft/flight identity change -->
+<!-- Sky Around Me V66.10 — hard-reset progress animations on aircraft/flight identity change -->
 <!-- Sky Around Me V66.5 — navigation regression fix: restore the proven V64.8 nav event path; no map/aircraft/backend logic changed. -->
 <!-- SKY AROUND ME V66.4 — NAVIGATION / VIEW REGRESSION FIX -->
 <!-- Sky Around Me V66.2 — live-route confidence architecture -->
@@ -1736,7 +1736,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   </div>
   <div class="watch-compact-route" id="homeWatchProgressRow">
    <div class="watch-compact-end"><span>FROM</span><b id="homeWatchProgressFrom">—</b><small id="homeWatchFromName">—</small></div>
-   <div class="watch-compact-progress"><div class="watch-progress-label" id="homeWatchProgressLabel">0% COMPLETE</div><div class="watch-progress-track"><i id="homeWatchProgressBar"></i><span id="homeWatchProgressPlane">✈</span></div></div>
+   <div class="watch-compact-progress"><div class="watch-progress-label" id="homeWatchProgressLabel">0.00% COMPLETE</div><div class="watch-progress-track"><i id="homeWatchProgressBar"></i><span id="homeWatchProgressPlane">✈</span></div></div>
    <div class="watch-compact-end watch-compact-end-right"><span>TO</span><b id="homeWatchProgressTo">—</b><small id="homeWatchToName">—</small></div>
   </div>
   <div class="watch-legacy-state" aria-hidden="true">
@@ -2609,6 +2609,22 @@ async function loadAirportDatabase(){
 }
 function greatCirclePoint(a,b,t){const r=Math.PI/180,A=[a[0]*r,a[1]*r],B=[b[0]*r,b[1]*r];const va=[Math.cos(A[0])*Math.cos(A[1]),Math.cos(A[0])*Math.sin(A[1]),Math.sin(A[0])],vb=[Math.cos(B[0])*Math.cos(B[1]),Math.cos(B[0])*Math.sin(B[1]),Math.sin(B[0])];const dot=Math.max(-1,Math.min(1,va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2])),d=Math.acos(dot);if(d<1e-8)return a.slice();const sd=Math.sin(d);const x=[(Math.sin((1-t)*d)/sd)*va[0]+(Math.sin(t*d)/sd)*vb[0],(Math.sin((1-t)*d)/sd)*va[1]+(Math.sin(t*d)/sd)*vb[1],(Math.sin((1-t)*d)/sd)*va[2]+(Math.sin(t*d)/sd)*vb[2]];return [Math.atan2(x[2],Math.hypot(x[0],x[1]))/r,Math.atan2(x[1],x[0])/r]}
 function routeProgress(f,live){if(!f||!live||live.lat==null||live.lon==null)return 0;const a=f.fromLat!=null?[f.fromLat,f.fromLon]:routePoint(f.fromCode),b=f.toLat!=null?[f.toLat,f.toLon]:routePoint(f.toCode);if(!a||!b)return 0;const done=hav(a[0],a[1],live.lat,live.lon),remaining=hav(live.lat,live.lon,b[0],b[1]);const total=done+remaining;return total?Math.max(0,Math.min(1,done/total)):0}
+// V66.10 — progress is displayed to two decimals. Never display 100.00% while
+// the aircraft is still materially away from its destination. This avoids the
+// confusing state where the bar looks complete but the telemetry still shows,
+// for example, 13 km remaining. 100.00% is reserved for the final approach
+// zone (<= 0.5 km from destination); otherwise the maximum live display is
+// 99.99%.
+function progressPercent(f,live){
+ if(!f||!live||live.lat==null||live.lon==null)return 0;
+ const raw=routeProgress(f,live)*100;
+ const toLat=f.toLat!=null?Number(f.toLat):routePoint(f.toCode)?.[0];
+ const toLon=f.toLon!=null?Number(f.toLon):routePoint(f.toCode)?.[1];
+ const remaining=(Number.isFinite(toLat)&&Number.isFinite(toLon))?hav(Number(live.lat),Number(live.lon),toLat,toLon):null;
+ const capped=(remaining!=null&&remaining>0.5)?Math.min(raw,99.99):raw;
+ return Math.max(0,Math.min(100,Number(capped.toFixed(2))));
+}
+function formatProgressPercent(value){return Math.max(0,Math.min(100,Number(value)||0)).toFixed(2)+'% COMPLETE'}
 function planeSvg(){return '<div class="route-plane"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="#111" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></svg></div>'}
 function fitQuietHeroTitle(){
  const el=$('flightName');
@@ -2661,7 +2677,7 @@ function renderQuietScheduledHero(next){
    $('journeyFromName').textContent=airportDisplayName(next.fromCode,next.from);
    $('journeyTo').textContent=next.toCode;
    $('journeyToName').textContent=airportDisplayName(next.toCode,next.to);
-   $('journeyPercent').textContent='0% COMPLETE';
+   $('journeyPercent').textContent='0.00% COMPLETE';
    $('flightProgress').style.width='0%';
    const pp=$('progressPlane');if(pp)pp.style.left='0%';
   }else{
@@ -3099,7 +3115,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  const journeyDestLon=journey?.toLon!=null?Number(journey.toLon):routePoint(journey?.toCode)?.[1];
  const journeyDistance=journey&&Number.isFinite(journeyDestLat)&&Number.isFinite(journeyDestLon)&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),journeyDestLat,journeyDestLon):null;
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';
- const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=Math.round(routeProgress(journey,x)*100);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=pct+'% COMPLETE';updateHeroJourneyProgress(pct,x)}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);updateHeroJourneyProgress(0,x)}}
+ const ji=$('journeyInfo');if(ji){ji.hidden=false;if(journey&&journey.fromCode&&journey.toCode){const pct=progressPercent(journey,x);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=formatProgressPercent(pct);updateHeroJourneyProgress(pct,x)}else{$('journeyFrom').textContent='—';$('journeyFromName').textContent=routeStatusLabel(x?.liveRoute);$('journeyTo').textContent='—';$('journeyToName').textContent='';$('journeyPercent').textContent=routeStatusLabel(x?.liveRoute);updateHeroJourneyProgress(0,x)}}
 }
 const ROUTE_CACHE_TTL=10*60*1000;
 const ROUTE_FAILURE_TTL=5*60*1000;
@@ -3265,7 +3281,7 @@ function watchedCompletion(f,live){
  const a=f.fromLat!=null&&f.fromLon!=null?[Number(f.fromLat),Number(f.fromLon)]:routePoint(f.fromCode);
  const b=f.toLat!=null&&f.toLon!=null?[Number(f.toLat),Number(f.toLon)]:routePoint(f.toCode);
  if(!a||!b||!a.every(Number.isFinite)||!b.every(Number.isFinite))return null;
- return Math.round(routeProgress(f,live)*100);
+ return progressPercent(f,live);
 }
 function formatWatchTimeZoneLabel(code){return code?`${String(code).toUpperCase()} LOCAL`:''}
 
@@ -3412,7 +3428,7 @@ function renderHomeWatch(items){
  setTextSafe('homeWatchReg',liveRegistration||next.registration||next.reg||'—');
  setTextSafe('homeWatchCallsign',liveCallsign||next.callsign||'—');
  setTextSafe('homeWatchStatus',live?(phase==='LANDED'?'COMPLETED':watchLiveIsStale(next)?'SEARCHING':'LIVE'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':state==='SEARCHING'?'SEARCHING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY')));
- setTextSafe('homeWatchStatusSub',live?(phase==='LANDED'?'FLIGHT ENDED':watchLiveIsStale(next)?'SEARCHING FOR LIVE POSITION · LAST SEEN '+Math.max(1,Math.floor((Date.now()-Number(S.watchLive.lastSeenAt||Date.now()))/60000))+'M AGO':'LIVE TRACKING · '+pct+'% COMPLETE'):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING FOR LIVE POSITION':state==='SEARCHING'?'SEARCHING FOR LIVE POSITION':state==='SCHEDULED'?countdownText(next):'flight day complete'));
+ setTextSafe('homeWatchStatusSub',live?(phase==='LANDED'?'FLIGHT ENDED':watchLiveIsStale(next)?'SEARCHING FOR LIVE POSITION · LAST SEEN '+Math.max(1,Math.floor((Date.now()-Number(S.watchLive.lastSeenAt||Date.now()))/60000))+'M AGO':'LIVE TRACKING · '+formatProgressPercent(pct)):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING FOR LIVE POSITION':state==='SEARCHING'?'SEARCHING FOR LIVE POSITION':state==='SCHEDULED'?countdownText(next):'flight day complete'));
  const dep=formatDepartureDisplay(next);
  setTextSafe('homeWatchDeparture',dep.primary||next.departureTime||'—');
  setTextSafe('homeWatchDepartureSub',dep.secondary||'—');
@@ -3431,12 +3447,12 @@ function renderHomeWatch(items){
  if(progressFrom)progressFrom.textContent=next.fromCode||'—';
  if(progressTo)progressTo.textContent=next.toCode||'—';
  setTextSafe('homeWatchFromName',airportDisplayName(next.fromCode,next.from));setTextSafe('homeWatchToName',airportDisplayName(next.toCode,next.to));
- if(progressLabel)progressLabel.textContent=routeReady?`${pct}% COMPLETE`:'—% COMPLETE';
+ if(progressLabel)progressLabel.textContent=routeReady?formatProgressPercent(pct):'—% COMPLETE';
  const watchProgressKey=watchKey(next);
  updateHomeWatchProgress(pct,watchProgressKey,routeReady);
  if(progressRow)progressRow.hidden=!routeReady;
  const st=$('homeWatchState');if(st){st.className='state '+(live?(watchLiveIsStale(next)?'wait':'live'):(future||state==='SCHEDULED'||state==='TRACKING PENDING'?'wait':'active'));st.textContent=live?(phase==='LANDED'?'COMPLETED':watchLiveIsStale(next)?'SEARCHING':'LIVE'):(future?'SCHEDULED':state==='TRACKING PENDING'?'PENDING':(state==='SCHEDULED'?'SCHEDULED':state==='COMPLETED'?'COMPLETED':'READY'));}
- const stSub=$('homeWatchStateSub');if(stSub)stSub.textContent=live?(phase==='LANDED'?'FLIGHT ENDED':watchLiveIsStale(next)?'SEARCHING…':`LIVE TRACKING · ${pct}% COMPLETE`):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING…':state==='SEARCHING'?'SEARCHING…':'');
+ const stSub=$('homeWatchStateSub');if(stSub)stSub.textContent=live?(phase==='LANDED'?'FLIGHT ENDED':watchLiveIsStale(next)?'SEARCHING…':`LIVE TRACKING · ${formatProgressPercent(pct)}`):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING…':state==='SEARCHING'?'SEARCHING…':'');
 
  // Existing live values remain available to the rest of the UI, even though the
  // compact card now presents identity/status in the six metric columns above.
@@ -3556,8 +3572,8 @@ function updateMapCard(x){
  if(route&&route.fromCode&&route.toCode){
    $('liveFrom').textContent=route.fromCode;$('liveFromName').textContent=route.from||route.fromName||'';
    $('liveTo').textContent=route.toCode;$('liveToName').textContent=route.to||route.toName||'';
-   const pct=Math.round(routeProgress(route,x)*100);
-   $('liveProgressLabel').textContent=pct+'% COMPLETE';$('liveProgressBar').style.width=pct+'%';$('liveProgressPlane').style.left=pct+'%';
+   const pct=progressPercent(route,x);
+   $('liveProgressLabel').textContent=formatProgressPercent(pct);$('liveProgressBar').style.width=pct+'%';$('liveProgressPlane').style.left=pct+'%';
  }
  const dest=route&&route.toLat!=null&&route.toLon!=null?hav(x.lat,x.lon,route.toLat,route.toLon):null;
  $('dist').textContent=dest!=null?Math.round(dest).toLocaleString('en-GB')+' km':'—';
