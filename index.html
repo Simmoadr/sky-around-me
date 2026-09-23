@@ -2698,54 +2698,60 @@ let heroMapMode='journey';
 let heroMapCycleTimer=null;
 let heroMapCycleKey='';
 
-// V64.5 — Featured journey progress must reset when the featured aircraft
-// changes. If Plane A is at 85% and Plane B becomes nearest at 23%, never
-// animate 85% -> 23% (which looks like the aircraft flying backwards).
-// A new aircraft always starts at 0% and then animates forward to its actual
-// route progress. Same aircraft continues to update normally.
+// V66.32 — deterministic progress controller.
+// Progress is keyed by aircraft + route. When the identity changes, the old
+// visual state is cancelled, hard-reset to 0%, and only then is the new value
+// animated forward. Stale requestAnimationFrame callbacks can no longer
+// re-apply the previous aircraft's percentage.
+function normalProgressKey(value){return String(value||'').trim().toLowerCase();}
+
+function setProgressVisual(bar,plane,value,animated=false){
+ const v=Math.max(0,Math.min(100,Number(value)||0));
+ if(bar){bar.style.transition=animated?'width .6s ease':'none';bar.style.width=v+'%';}
+ if(plane){plane.style.transition=animated?'left .7s ease, transform .7s ease':'none';plane.style.left=v+'%';}
+}
+
+// Featured / hero journey progress
 let heroProgressAircraftKey='';
 let heroProgressRouteKey='';
 let heroProgressDisplayed=0;
 let heroProgressResetToken=0;
-let heroProgressResetPendingKey='';
-let heroProgressAnimationScheduledKey='';
+let heroProgressAnimationFrame=null;
+let heroProgressAnimationFrame2=null;
 
-/*
- * V66.23 — hard progress reset.
- * Never allow an old percentage to animate backwards into a new aircraft.
- * A changed aircraft/route is painted at 0% first, then its actual progress
- * is applied after two animation frames.
- */
-function normalProgressKey(value){return String(value||'').trim().toLowerCase();}
+function cancelHeroProgressAnimation(){
+ if(heroProgressAnimationFrame!==null){cancelAnimationFrame(heroProgressAnimationFrame);heroProgressAnimationFrame=null;}
+ if(heroProgressAnimationFrame2!==null){cancelAnimationFrame(heroProgressAnimationFrame2);heroProgressAnimationFrame2=null;}
+}
 
 function resetHeroJourneyProgress(nextKey=''){
  const bar=$('flightProgress'),plane=$('progressPlane');
+ cancelHeroProgressAnimation();
  ++heroProgressResetToken;
- heroProgressResetPendingKey=normalProgressKey(nextKey);
- heroProgressAnimationScheduledKey='';
  heroProgressAircraftKey='';
  heroProgressRouteKey='';
  heroProgressDisplayed=0;
- if(bar){bar.style.transition='none';bar.style.width='0%';}
- if(plane){plane.style.transition='none';plane.style.left='0%';}
+ setProgressVisual(bar,plane,0,false);
  void (bar?.offsetWidth||plane?.offsetWidth||0);
 }
 
 function animateHeroProgressFromZero(value,key,routeKey,token){
- if(!key || heroProgressAnimationScheduledKey===key)return;
- heroProgressAnimationScheduledKey=key;
- requestAnimationFrame(()=>requestAnimationFrame(()=>{
-   if(token!==heroProgressResetToken)return;
-   if(heroProgressResetPendingKey!==key)return;
-   heroProgressResetPendingKey='';
-   heroProgressAnimationScheduledKey='';
-   heroProgressAircraftKey=key;
-   heroProgressRouteKey=routeKey;
-   heroProgressDisplayed=value;
-   const bar=$('flightProgress'),plane=$('progressPlane');
-   if(bar){bar.style.transition='width .6s ease';bar.style.width=value+'%';}
-   if(plane){plane.style.transition='left .7s ease, transform .7s ease';plane.style.left=value+'%';}
- }));
+ if(!key)return;
+ cancelHeroProgressAnimation();
+ const bar=$('flightProgress'),plane=$('progressPlane');
+ // Keep the reset visible for a complete paint before moving the new aircraft.
+ heroProgressAnimationFrame=requestAnimationFrame(()=>{
+   heroProgressAnimationFrame=null;
+   heroProgressAnimationFrame2=requestAnimationFrame(()=>{
+     heroProgressAnimationFrame2=null;
+     if(token!==heroProgressResetToken)return;
+     if(heroProgressAircraftKey && heroProgressAircraftKey!==key)return;
+     heroProgressAircraftKey=key;
+     heroProgressRouteKey=routeKey;
+     heroProgressDisplayed=value;
+     setProgressVisual(bar,plane,value,true);
+   });
+ });
 }
 
 function updateHeroJourneyProgress(pct,aircraft){
@@ -2755,47 +2761,36 @@ function updateHeroJourneyProgress(pct,aircraft){
  const key=normalProgressKey(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||'');
  const routeSource=aircraft?.watchRef||aircraft||{};
  const routeKey=String(routeSource?.fromCode||routeSource?.from||routeSource?.routeFrom||'')+'>'+String(routeSource?.toCode||routeSource?.to||routeSource?.routeTo||'');
+ const identityKey=key+'|'+normalProgressKey(routeKey);
 
  if(!key){
-   if(bar){bar.style.transition='none';bar.style.width='0%';}
-   if(plane){plane.style.transition='none';plane.style.left='0%';}
-   heroProgressAircraftKey='';
-   heroProgressRouteKey=routeKey;
-   heroProgressDisplayed=0;
+   cancelHeroProgressAnimation();
+   ++heroProgressResetToken;
+   heroProgressAircraftKey='';heroProgressRouteKey=routeKey;heroProgressDisplayed=0;
+   setProgressVisual(bar,plane,0,false);
    return;
  }
 
- if(heroProgressResetPendingKey===key){
+ const previousIdentity=heroProgressAircraftKey+'|'+normalProgressKey(heroProgressRouteKey);
+ if(heroProgressAircraftKey && identityKey!==previousIdentity){
+   resetHeroJourneyProgress(identityKey);
    const token=heroProgressResetToken;
-   if(bar){bar.style.transition='none';bar.style.width='0%';}
-   if(plane){plane.style.transition='none';plane.style.left='0%';}
-   animateHeroProgressFromZero(value,key,routeKey,token);
-   return;
- }
-
- const changedAircraft=!!heroProgressAircraftKey&&key!==heroProgressAircraftKey;
- const changedRoute=!!heroProgressRouteKey&&routeKey!==heroProgressRouteKey;
- if(changedAircraft||changedRoute){
-   resetHeroJourneyProgress(key);
-   const token=heroProgressResetToken;
-   animateHeroProgressFromZero(value,key,routeKey,token);
+   animateHeroProgressFromZero(value,identityKey,routeKey,token);
    return;
  }
 
  if(!heroProgressAircraftKey){
-   heroProgressAircraftKey=key;
+   heroProgressAircraftKey=identityKey;
    heroProgressRouteKey=routeKey;
    heroProgressDisplayed=value;
-   if(bar){bar.style.transition='width .6s ease';bar.style.width=value+'%';}
-   if(plane){plane.style.transition='left .7s ease, transform .7s ease';plane.style.left=value+'%';}
+   setProgressVisual(bar,plane,value,true);
    return;
  }
 
  heroProgressRouteKey=routeKey;
  const next=Math.max(heroProgressDisplayed,value);
  heroProgressDisplayed=next;
- if(bar){bar.style.transition='width .6s ease';bar.style.width=next+'%';}
- if(plane){plane.style.transition='left .7s ease, transform .7s ease';plane.style.left=next+'%';}
+ setProgressVisual(bar,plane,next,true);
 }
 const AIRPORT_DISPLAY_NAMES={
  LHR:'London Heathrow',LGW:'London Gatwick',STN:'London Stansted',MAN:'Manchester',BHX:'Birmingham',BRS:'Bristol',
@@ -4003,67 +3998,71 @@ function getHomeBottomWatchedFlight(items){
 let homeWatchProgressKey='';
 let homeWatchProgressDisplayed=0;
 let homeWatchProgressResetToken=0;
-let homeWatchProgressResetPendingKey='';
+let homeWatchProgressAnimationFrame=null;
+let homeWatchProgressAnimationFrame2=null;
+
+function cancelHomeWatchProgressAnimation(){
+ if(homeWatchProgressAnimationFrame!==null){cancelAnimationFrame(homeWatchProgressAnimationFrame);homeWatchProgressAnimationFrame=null;}
+ if(homeWatchProgressAnimationFrame2!==null){cancelAnimationFrame(homeWatchProgressAnimationFrame2);homeWatchProgressAnimationFrame2=null;}
+}
+
 function resetHomeWatchProgress(nextKey=''){
  const bar=$('homeWatchProgressBar'),plane=$('homeWatchProgressPlane');
+ cancelHomeWatchProgressAnimation();
  ++homeWatchProgressResetToken;
- const key=normalProgressKey(nextKey);
- homeWatchProgressKey=key;
+ homeWatchProgressKey=normalProgressKey(nextKey);
  homeWatchProgressDisplayed=0;
- homeWatchProgressResetPendingKey=key;
- if(bar){bar.style.transition='none';bar.style.width='0%';}
- if(plane){plane.style.transition='none';plane.style.left='0%';}
+ setProgressVisual(bar,plane,0,false);
  void (bar?.offsetWidth||plane?.offsetWidth||0);
- if(!key){
-  homeWatchProgressResetPendingKey='';
-  requestAnimationFrame(()=>{if(bar)bar.style.transition='width .5s ease';if(plane)plane.style.transition='left .5s ease';});
- }
 }
+
 function updateHomeWatchProgress(pct,flightKey,enabled=true){
  const bar=$('homeWatchProgressBar'),plane=$('homeWatchProgressPlane');
  if(!bar&&!plane)return;
  if(!enabled){
-  homeWatchProgressKey='';homeWatchProgressDisplayed=0;homeWatchProgressResetPendingKey='';++homeWatchProgressResetToken;
-  if(bar){bar.style.transition='none';bar.style.width='0%';}
-  if(plane){plane.style.transition='none';plane.style.left='0%';}
-  void (bar?.offsetWidth||plane?.offsetWidth||0);
-  if(bar)bar.style.transition='';if(plane)plane.style.transition='';
-  return;
+   cancelHomeWatchProgressAnimation();
+   ++homeWatchProgressResetToken;
+   homeWatchProgressKey='';homeWatchProgressDisplayed=0;
+   setProgressVisual(bar,plane,0,false);
+   return;
  }
+
  const value=Math.max(0,Math.min(100,Number(pct)||0));
  const key=normalProgressKey(flightKey);
- const previousKey=homeWatchProgressKey;
- if(key&&homeWatchProgressResetPendingKey===key){
-  const token=homeWatchProgressResetToken;
-  homeWatchProgressResetPendingKey='';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-   if(token!==homeWatchProgressResetToken||homeWatchProgressKey!==key)return;
-   homeWatchProgressDisplayed=value;
-   if(bar){bar.style.transition='width .5s ease';bar.style.width=value+'%';}
-   if(plane){plane.style.transition='left .5s ease';plane.style.left=value+'%';}
-  }));
-  return;
- }
- if(key&&previousKey&&key!==previousKey){
-  resetHomeWatchProgress(key);
-  return;
- }
  if(!key){
-  if(bar)bar.style.width='0%';
-  if(plane)plane.style.left='0%';
-  return;
+   cancelHomeWatchProgressAnimation();
+   ++homeWatchProgressResetToken;
+   homeWatchProgressKey='';homeWatchProgressDisplayed=0;
+   setProgressVisual(bar,plane,0,false);
+   return;
  }
- if(!previousKey){
-  homeWatchProgressKey=key;
-  homeWatchProgressDisplayed=value;
-  if(bar)bar.style.width=value+'%';
-  if(plane)plane.style.left=value+'%';
-  return;
+
+ if(homeWatchProgressKey && key!==homeWatchProgressKey){
+   resetHomeWatchProgress(key);
+   const token=homeWatchProgressResetToken;
+   cancelHomeWatchProgressAnimation();
+   homeWatchProgressAnimationFrame=requestAnimationFrame(()=>{
+     homeWatchProgressAnimationFrame=null;
+     homeWatchProgressAnimationFrame2=requestAnimationFrame(()=>{
+       homeWatchProgressAnimationFrame2=null;
+       if(token!==homeWatchProgressResetToken||homeWatchProgressKey!==key)return;
+       homeWatchProgressDisplayed=value;
+       setProgressVisual(bar,plane,value,true);
+     });
+   });
+   return;
  }
+
+ if(!homeWatchProgressKey){
+   homeWatchProgressKey=key;
+   homeWatchProgressDisplayed=value;
+   setProgressVisual(bar,plane,value,true);
+   return;
+ }
+
  const next=Math.max(homeWatchProgressDisplayed,value);
  homeWatchProgressDisplayed=next;
- if(bar)bar.style.width=next+'%';
- if(plane)plane.style.left=next+'%';
+ setProgressVisual(bar,plane,next,true);
 }
 
 function renderHomeWatch(items){
@@ -4315,6 +4314,72 @@ function toggleRotationLock(){S.rotationLocked=!S.rotationLocked;saveSkySettings
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);let extendedCircle=L.circle([S.lat,S.lon],{radius:100000,color:'#176f8b',weight:1,opacity:S.extendedAirspace&&S.rangeKm<100?1:0,fillOpacity:0,dashArray:'2 7',interactive:false}).addTo(map);function fitLiveSkyExtended(){if(!map||!S.extendedAirspace||S.rangeKm>=100)return;extendedCircle.setLatLng([S.lat,S.lon]);map.fitBounds(extendedCircle.getBounds(),{padding:[45,45],maxZoom:9,animate:false});}
 $('rotateLeft').addEventListener('click',()=>rotateMapBy(-15));$('rotateRight').addEventListener('click',()=>rotateMapBy(15));$('rotationLock').addEventListener('click',toggleRotationLock);setupRotationControl('mapRotationControls');setupRotationControl('heroMapRotationControls');updateRotationUI();
+// V66.32 — Live Sky map-card progress uses the same identity-safe reset rule.
+let liveProgressKey='';
+let liveProgressDisplayed=0;
+let liveProgressResetToken=0;
+let liveProgressAnimationFrame=null;
+let liveProgressAnimationFrame2=null;
+
+function cancelLiveProgressAnimation(){
+ if(liveProgressAnimationFrame!==null){cancelAnimationFrame(liveProgressAnimationFrame);liveProgressAnimationFrame=null;}
+ if(liveProgressAnimationFrame2!==null){cancelAnimationFrame(liveProgressAnimationFrame2);liveProgressAnimationFrame2=null;}
+}
+
+function resetLiveProgress(nextKey=''){
+ const bar=$('liveProgressBar'),plane=$('liveProgressPlane');
+ cancelLiveProgressAnimation();
+ ++liveProgressResetToken;
+ liveProgressKey=normalProgressKey(nextKey);
+ liveProgressDisplayed=0;
+ setProgressVisual(bar,plane,0,false);
+ void (bar?.offsetWidth||plane?.offsetWidth||0);
+}
+
+function updateLiveProgress(pct,aircraft,route){
+ const bar=$('liveProgressBar'),plane=$('liveProgressPlane');
+ if(!bar&&!plane)return;
+ const routeKey=String(route?.fromCode||route?.from||'')+'>'+String(route?.toCode||route?.to||'');
+ const aircraftKey=normalProgressKey(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||'');
+ const key=aircraftKey+'|'+normalProgressKey(routeKey);
+ const value=Math.max(0,Math.min(100,Number(pct)||0));
+
+ if(!aircraftKey||!routeKey || routeKey==='>'){
+   cancelLiveProgressAnimation();
+   ++liveProgressResetToken;
+   liveProgressKey='';liveProgressDisplayed=0;
+   setProgressVisual(bar,plane,0,false);
+   return;
+ }
+
+ if(liveProgressKey && key!==liveProgressKey){
+   resetLiveProgress(key);
+   const token=liveProgressResetToken;
+   cancelLiveProgressAnimation();
+   liveProgressAnimationFrame=requestAnimationFrame(()=>{
+     liveProgressAnimationFrame=null;
+     liveProgressAnimationFrame2=requestAnimationFrame(()=>{
+       liveProgressAnimationFrame2=null;
+       if(token!==liveProgressResetToken||liveProgressKey!==key)return;
+       liveProgressDisplayed=value;
+       setProgressVisual(bar,plane,value,true);
+     });
+   });
+   return;
+ }
+
+ if(!liveProgressKey){
+   liveProgressKey=key;
+   liveProgressDisplayed=value;
+   setProgressVisual(bar,plane,value,true);
+   return;
+ }
+
+ const next=Math.max(liveProgressDisplayed,value);
+ liveProgressDisplayed=next;
+ setProgressVisual(bar,plane,next,true);
+}
+
 function updateMapCard(x){
  const card=$('mapCard');if(!card)return;
  const specialSummary=$('mapCardSpecialSummary');
@@ -4322,6 +4387,7 @@ function updateMapCard(x){
  if(specialSummary){const c=specialSquawkCounts();specialSummary.hidden=!S.specialSquawks;specialSummary.classList.toggle('has-emergency',c.emergency>0);if(specialSummaryText)specialSummaryText.innerHTML=specialCounterHtml(c);}
  const specialInfo=$('mapCardSpecialInfo');
  if(!x){
+  resetLiveProgress('');
   $('status').textContent='NO AIRCRAFT SELECTED';$('call').textContent='—';$('detail').textContent='Select an aircraft for flight details.';
   $('mapCardRoute').hidden=true;$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';
   if(specialInfo){specialInfo.hidden=true;specialInfo.innerHTML='';}
@@ -4347,11 +4413,12 @@ function updateMapCard(x){
  }
  const route=x.liveRoute&&x.liveRoute.status==='FOUND'?x.liveRoute:null;
  $('mapCardRoute').hidden=!!isSpecial || !(route&&route.fromCode&&route.toCode);
+ if(isSpecial || !(route&&route.fromCode&&route.toCode)){resetLiveProgress('');}
  if(route&&route.fromCode&&route.toCode&&!isSpecial){
    $('liveFrom').textContent=route.fromCode;$('liveFromName').textContent=route.from||route.fromName||'';
    $('liveTo').textContent=route.toCode;$('liveToName').textContent=route.to||route.toName||'';
    const pct=progressPercent(route,x);
-   $('liveProgressLabel').textContent=formatProgressPercent(pct);$('liveProgressBar').style.width=pct+'%';$('liveProgressPlane').style.left=pct+'%';
+   $('liveProgressLabel').textContent=formatProgressPercent(pct);updateLiveProgress(pct,x,route);
  }
  const dest=route&&route.toLat!=null&&route.toLon!=null?hav(x.lat,x.lon,route.toLat,route.toLon):null;
  const deviceDistance=Number.isFinite(Number(x?.d))?Number(x.d):hav(S.lat,S.lon,Number(x.lat),Number(x.lon));
