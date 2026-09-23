@@ -69,22 +69,6 @@
 .btn{border:1px solid #cfd2cd;background:#fff;color:#111;padding:11px 15px;border-radius:12px;font-size:10px;font-weight:900;letter-spacing:.08em}.btn.primary{background:#111;color:#fff;border-color:#111}.panel{background:var(--paper);border:1px solid #e1e2de;border-radius:24px;box-shadow:var(--shadow)}
 /* PAGE 2 */
 .map-page{padding-top:22px}.map-wrap{position:relative;height:calc(100vh - 145px);min-height:600px;border:1px solid #d9dcda;border-radius:25px;overflow:hidden;background:#eef0ee}
-/* V66.23 — shared compass pill for Featured + Live Sky. The compact state shows the compass first, then the bearing. Hover/focus/tap expands the rotation controls without overlap. */
-.map-rotation-controls,.hero-map-rotation-controls{position:absolute;z-index:700;left:16px;top:16px;display:flex;align-items:center;gap:4px;padding:5px;width:42px;height:42px;background:rgba(248,248,244,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid #e1e2de;border-radius:50%;box-shadow:0 8px 22px rgba(23,30,30,.10);pointer-events:auto;overflow:hidden;transition:width .22s ease,border-radius .22s ease,background .22s ease,box-shadow .22s ease}
-.map-rotation-controls:hover,.map-rotation-controls:focus-within,.map-rotation-controls.is-expanded,.hero-map-rotation-controls:hover,.hero-map-rotation-controls:focus-within,.hero-map-rotation-controls.is-expanded{width:238px;border-radius:13px;box-shadow:0 10px 26px rgba(23,30,30,.13)}
-.rotation-mini-compass{position:relative;flex:0 0 30px;width:30px;height:30px;border:1px solid #cfd6d3;border-radius:50%;display:grid;place-items:center;background:#fff;box-shadow:0 2px 7px rgba(23,30,30,.08);cursor:pointer}
-.rotation-mini-compass i{position:absolute;left:50%;top:5px;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:10px solid #176f8b;transform:translateX(-50%)}
-.rotation-mini-compass i:after{content:"";position:absolute;left:-4px;top:10px;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:10px solid #c8cfcc}
-.rotation-mini-n{position:relative;z-index:2;font-size:6px;font-weight:950;letter-spacing:0;color:#176f8b;transform:translateY(-8px);pointer-events:none}
-.map-rotation-bearing{flex:0 0 54px;width:54px;min-width:54px;text-align:left;font-size:9px;letter-spacing:.08em;font-weight:900;color:#176f8b;white-space:nowrap;opacity:0;visibility:hidden;transform:translateX(-4px);transition:opacity .16s ease,transform .16s ease,visibility .16s ease}
-.map-rotation-btn{flex:0 0 34px;width:34px;height:30px;border:0;border-radius:8px;background:transparent;color:#1c2525;font:900 15px/1 inherit;cursor:pointer;opacity:0;visibility:hidden;transform:translateX(-4px);transition:opacity .16s ease,transform .16s ease,background .16s ease,visibility .16s ease}
-.map-rotation-controls:hover .map-rotation-bearing,.map-rotation-controls:focus-within .map-rotation-bearing,.map-rotation-controls.is-expanded .map-rotation-bearing,.hero-map-rotation-controls:hover .map-rotation-bearing,.hero-map-rotation-controls:focus-within .hero-map-rotation-controls .map-rotation-bearing,.hero-map-rotation-controls.is-expanded .map-rotation-bearing,.map-rotation-controls:hover .map-rotation-btn,.map-rotation-controls:focus-within .map-rotation-btn,.map-rotation-controls.is-expanded .map-rotation-btn,.hero-map-rotation-controls:hover .map-rotation-btn,.hero-map-rotation-controls:focus-within .map-rotation-btn,.hero-map-rotation-controls.is-expanded .map-rotation-btn{opacity:1;visibility:visible;transform:none}
-.map-rotation-btn:hover{background:#e9ece9}.map-rotation-btn:active{transform:scale(.96)}
-.map-rotation-lock{flex:0 0 auto;height:30px;padding:0 9px;border:1px solid #d9dcda;border-radius:8px;background:#fff;color:#687171;font-size:8px;letter-spacing:.12em;font-weight:900;cursor:pointer;opacity:0;visibility:hidden;transform:translateX(-4px);transition:opacity .16s ease,transform .16s ease,visibility .16s ease,background .16s ease}
-.map-rotation-controls:hover .map-rotation-lock,.map-rotation-controls:focus-within .map-rotation-lock,.map-rotation-controls.is-expanded .map-rotation-lock,.hero-map-rotation-controls:hover .map-rotation-lock,.hero-map-rotation-controls:focus-within .map-rotation-lock,.hero-map-rotation-controls.is-expanded .map-rotation-lock{opacity:1;visibility:visible;transform:none}
-.map-rotation-lock.locked{background:#111;color:#fff;border-color:#111}.map-rotation-lock:active{transform:scale(.98)}
-.hero-map-rotation-controls{background:rgba(248,248,244,.94);border-color:#e1e2de;box-shadow:0 8px 22px rgba(0,0,0,.18)}
-.hero-map-rotation-controls .rotation-mini-compass{background:#fff;border-color:#cfd6d3}.hero-map-rotation-controls .rotation-mini-n{color:#176f8b}.hero-map-rotation-controls .rotation-mini-compass i{border-bottom-color:#176f8b}.hero-map-rotation-controls .rotation-mini-compass i:after{border-top-color:#c8cfcc}.hero-map-rotation-controls .map-rotation-btn{color:#1c2525}.hero-map-rotation-controls .map-rotation-btn:hover{background:#e9ece9}.hero-map-rotation-controls .map-rotation-bearing{color:#176f8b}.hero-map-rotation-controls .map-rotation-lock{background:#fff;color:#243030;border-color:#d9dcda}.hero-map-rotation-controls .map-rotation-lock.locked{background:#111;color:#fff;border-color:#111}
 .map{position:absolute;inset:0}.leaflet-container{background:#eef0ee;font:inherit}.map .leaflet-tile-pane{filter:grayscale(1) saturate(.18) brightness(1.12) contrast(.82);opacity:.72}.map .leaflet-control-attribution{font-size:7px;background:rgba(248,248,244,.58)!important;color:#6e7777;padding:1px 4px}.leaflet-control-zoom{display:none!important}.hud{position:absolute;z-index:500;pointer-events:none}.top-hud{top:16px;left:16px;right:16px;display:flex;justify-content:space-between;gap:12px}.pill{background:rgba(248,248,244,.90);backdrop-filter:blur(12px);border:1px solid #e1e2de;border-radius:12px;padding:9px 11px;font-size:11px;color:#111;box-shadow:0 7px 18px rgba(23,30,30,.08)}.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a47d;margin-right:7px}.bottom-hud{left:16px;bottom:16px;display:flex;gap:8px;align-items:center}.range{font-weight:800}.extended-pill{color:#176f8b;border-color:#b9d1d4;background:rgba(248,248,244,.92)}.aircraft-icon,.featured-icon{background:transparent!important;border:0!important}.live-aircraft-marker{position:relative;width:34px;height:34px;display:grid;place-items:center;transform-origin:center}.live-aircraft-ring{position:absolute;inset:0;border-radius:50%;background:#fff;border:1px solid #d5ddda;box-shadow:0 3px 10px rgba(23,30,30,.14)}.live-aircraft-shape{position:relative;z-index:2;width:20px;height:20px;display:grid;place-items:center;color:#111}.live-aircraft-shape svg{width:20px;height:20px;display:block}.live-aircraft-marker.tracked .live-aircraft-shape{color:#fff}.live-aircraft-marker.tracked .live-aircraft-ring{background:#111;border-color:#111;box-shadow:0 4px 12px rgba(23,30,30,.22)}.outer-aircraft-icon{background:transparent!important;border:0!important}.outer-aircraft-marker{position:relative;width:34px;height:34px;display:grid;place-items:center;transform-origin:center;opacity:.56;filter:grayscale(1)}.outer-aircraft-marker .live-aircraft-ring{background:rgba(230,236,233,.72);border-color:#9da8a4;box-shadow:0 2px 7px rgba(23,30,30,.08)}.outer-aircraft-marker .live-aircraft-shape{color:#4f5c5b}.map-card{position:absolute;z-index:600;right:16px;top:16px;width:320px;background:rgba(248,248,244,.96);color:#111;border:1px solid #e1e2de;border-radius:18px;padding:17px;box-shadow:0 12px 32px rgba(23,30,30,.10);backdrop-filter:blur(16px)}.map-card .status{color:#14836d;font-size:9px;letter-spacing:.15em;font-weight:900}.map-card .callsign{font-size:29px;font-weight:900;margin-top:6px;letter-spacing:-.03em}.map-card .desc{font-size:11px;color:#697475;margin-top:5px}.map-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:14px}.map-stat{padding:10px;background:#eef0ed;border-radius:10px}.map-stat span{display:block;color:#778080;font-size:8px;letter-spacing:.1em;font-weight:800}.map-stat b{display:block;margin-top:4px;font-size:16px}.live-map-route{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;padding-top:13px;border-top:1px solid #dfe1dd}.live-map-route-block{min-width:0}.live-map-route-block:last-child{text-align:right}.live-map-route label{display:block;font-size:7px;color:#778080;letter-spacing:.16em;font-weight:900}.live-map-route strong{display:block;font-size:17px;margin-top:4px;letter-spacing:.03em}.live-map-route small{display:block;font-size:8px;color:#8a9191;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.path-info{margin-top:12px;font-size:9px;color:#697475;line-height:1.45}
 /* PAGE 3 */
 .app-footer{margin-top:30px;padding:22px 8px 6px;border-top:1px solid var(--line);text-align:center;color:var(--muted)}.app-footer-brand{font-size:8px;font-weight:900;letter-spacing:.18em;color:#687171}.app-footer-sub{font-size:7px;letter-spacing:.12em;margin-top:4px;color:#929898}.app-footer-copy{font-size:8px;margin-top:12px;line-height:1.6}.app-footer a{color:inherit;text-decoration:none;border-bottom:1px solid #cfd3d0}.app-footer a:hover{color:var(--ink)}@media(max-width:700px){.app-footer{margin-top:22px;padding-top:18px}.app-footer-copy{font-size:7px}}
@@ -484,13 +468,6 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .identity{grid-template-columns:minmax(260px,1.05fr) minmax(0,2.95fr);align-items:center;}
 .telemetry{width:min(100%,960px);margin-left:auto;margin-right:auto;justify-self:center;align-items:center;}
 @media(max-width:1050px){.telemetry{width:100%;margin-left:0;margin-right:0;}}
-</style>
-
-<style>
-/* V66.23 — Keep the Featured compass exactly as designed, but remove the
-   LIVE AIRCRAFT / callsign wording that was sitting immediately beside it.
-   The flight information remains available in the existing lower Featured panel. */
-.hero-map-brand{display:none!important;}
 </style>
 
 <style>
@@ -1772,17 +1749,10 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
  <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn" id="editFlight">EDIT WATCHED FLIGHT</button></div>
 </section>
 
-<!-- SKY AROUND ME V66.20 — Shared compass pill styling for Featured + Live Sky; V66.19 rotation retained -->
+<!-- SKY AROUND ME V66.22 — Compass / map rotation controls removed for a clean wall-display map. -->
 <!-- PAGE 2 -->
 <section id="mapPage" class="page map-page">
  <div class="map-wrap"><div id="map" class="map"></div>
-  <div class="map-rotation-controls" id="mapRotationControls" aria-label="Map rotation controls">
-   <span class="rotation-mini-compass" aria-label="Map orientation"><span class="rotation-mini-n">N</span><i></i></span>
-   <div class="map-rotation-bearing" id="mapBearing">0° N</div>
-   <button type="button" class="map-rotation-btn" id="rotateLeft" aria-label="Rotate map anticlockwise 15 degrees" title="Rotate anticlockwise">↶</button>
-   <button type="button" class="map-rotation-btn" id="rotateRight" aria-label="Rotate map clockwise 15 degrees" title="Rotate clockwise">↷</button>
-   <button type="button" class="map-rotation-lock" id="rotationLock" aria-pressed="false">LOCK</button>
-  </div>
   <div class="hud top-hud"><div class="pill"><span class="live-dot"></span><b id="mapStatus">LIVE</b> · <span id="mapLocation">LUSK</span></div><div class="pill" id="countPill">0 aircraft found · —</div></div>
   <div class="hud bottom-hud"><div class="pill range" id="rangePill">100 KM AIRSPACE RADIUS</div><div class="pill range extended-pill" id="extendedPill" hidden>EXTENDED · 100 KM</div></div>
   <div class="map-card" id="mapCard"><div class="map-card-kicker" id="status">LIVE AIRCRAFT</div><div class="map-card-title" id="call">—</div><div class="map-card-sub" id="detail">Select an aircraft for flight details.</div><div class="map-card-route" id="mapCardRoute" hidden><div class="map-card-route-head"><div><span>FROM</span><b id="liveFrom">—</b><small id="liveFromName"></small></div><div class="map-card-route-arrow">→</div><div class="map-card-route-to"><span>TO</span><b id="liveTo">—</b><small id="liveToName"></small></div></div><div class="map-card-progress"><div class="map-card-progress-label" id="liveProgressLabel">—% COMPLETE</div><div class="map-card-progress-track"><i id="liveProgressBar"></i><span id="liveProgressPlane">✈</span></div></div></div><div class="map-stats"><div class="map-stat"><span>DISTANCE TO GO</span><b id="dist">—</b></div><div class="map-stat"><span>ALTITUDE</span><b id="alt">—</b></div><div class="map-stat"><span>SPEED</span><b id="speed">—</b></div><div class="map-stat"><span>HEADING</span><b id="heading">—</b></div></div></div>
@@ -1819,7 +1789,6 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/@tomickigrzegorz/leaflet-rotate@0.2.3/dist/leaflet-rotate.umd.min.js"></script>
 <script>
 const savedSkySettings=JSON.parse(localStorage.getItem('skyAroundMeSettings')||'null')||{};
 const places={lusk:{name:'Lusk, Ireland',lat:53.52558,lon:-6.16581},martock:{name:'Martock, UK',lat:50.9732,lon:-2.7667},lhr:{name:'London Heathrow, UK',lat:51.4700,lon:-0.4543}};
@@ -1829,11 +1798,11 @@ const initialMode=savedSkySettings.locationMode||'device';
 const WATCH_LIVE_GRACE_MS=3*60*1000;
 const WATCH_LIVE_RETENTION_AFTER_ARRIVAL_MS=45*60*1000;
 const WATCH_LIVE_FALLBACK_RETENTION_MS=90*60*1000;
-const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],mapSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
+const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],mapSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false};
 const $=id=>document.getElementById(id);
 function setTextSafe(id,value){const el=$(id);if(el)el.textContent=value??'';}
 function updateRefreshUsage(){const perHour=Math.round(3600/S.refreshSec);const el=$('refreshUsage');if(el)el.textContent=`SESSION REQUESTS: ${S.livePollCount.toLocaleString()} · ~${perHour.toLocaleString()} / HOUR AT ${S.refreshSec} SEC`;}
-function saveSkySettings(){localStorage.setItem('skyAroundMeSettings',JSON.stringify({rangeKm:S.rangeKm,location:S.locationMode,locationName:S.locationName,lat:S.lat,lon:S.lon,extendedAirspace:!!S.extendedAirspace,refreshSec:S.refreshSec,rotationDeg:S.rotationDeg,rotationLocked:!!S.rotationLocked}))}
+function saveSkySettings(){localStorage.setItem('skyAroundMeSettings',JSON.stringify({rangeKm:S.rangeKm,location:S.locationMode,locationName:S.locationName,lat:S.lat,lon:S.lon,extendedAirspace:!!S.extendedAirspace,refreshSec:S.refreshSec}))}
 function updateSkySettingsUI(){updateRefreshUsage();if($('rangeInput'))$('rangeInput').value=S.rangeKm;if($('rangeNumber'))$('rangeNumber').value=S.rangeKm;if($('rangeValue'))$('rangeValue').textContent=S.rangeKm+' KM';if($('rangePill'))$('rangePill').textContent=S.rangeKm+' KM AIRSPACE RADIUS';if($('extendedPill'))$('extendedPill').hidden=!(S.extendedAirspace&&S.rangeKm<100);if($('mapLocation'))$('mapLocation').textContent=S.locationName.toUpperCase();if($('locationSelect'))$('locationSelect').value=S.locationMode==='device'?'device':(places[S.locationMode]?S.locationMode:'custom');if($('currentLocation'))$('currentLocation').textContent=S.locationName;if($('customLocation'))$('customLocation').hidden=S.locationMode!=='custom';if($('extendedAirspaceToggle'))$('extendedAirspaceToggle').checked=!!S.extendedAirspace;if($('refreshInput'))$('refreshInput').value=S.refreshSec;if($('refreshNumber'))$('refreshNumber').value=S.refreshSec;if($('locationSelect')&&S.locationMode==='device')$('locationSelect').value='device'}
 function applyLocation(lat,lon,name,mode){S.lat=Number(lat);S.lon=Number(lon);S.locationName=name;S.locationMode=mode;saveSkySettings();updateSkySettingsUI();if(typeof me!=='undefined'){me.setLatLng([S.lat,S.lon]);rangeCircle.setLatLng([S.lat,S.lon]);if(typeof extendedCircle!=='undefined'&&extendedCircle)extendedCircle.setLatLng([S.lat,S.lon]);map.setView([S.lat,S.lon],8)};S.lastItems=[];S.lastAllItems=[];S.tracks.clear();S.trails.forEach(x=>map.removeLayer(x));S.trails.clear();S.markers.forEach(x=>map.removeLayer(x));S.markers.clear();S.extendedMarkers.forEach(x=>map.removeLayer(x));S.extendedMarkers.clear();poll()}
 async function reverseGeocodeDevice(lat,lon){try{const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon)+'&zoom=10&addressdetails=1',{headers:{Accept:'application/json'}});if(!r.ok)throw new Error('Reverse geocode failed');const j=await r.json();const a=j?.address||{};const place=a.city||a.town||a.village||a.municipality||a.county||'Device Location';const region=a.state||a.region||'';const country=a.country||'';return [place,region,country].filter(Boolean).slice(0,3).join(', ')}catch(e){return 'Device Location'}}
@@ -2266,12 +2235,33 @@ function heroAircraftIcon(angle){
 function heroRoutePoints(a,b,count=80){const pts=[];for(let i=0;i<=count;i++)pts.push(greatCirclePoint(a,b,i/count));return pts}
 function heroCurvedRoutePoints(a,p,b,count=160){
  const valid=v=>Array.isArray(v)&&v.length===2&&v.every(Number.isFinite);
- // Route geometry is the airport-to-airport great-circle path. The live ADS-B
- // position is NOT used to bend the route. Aircraft can be slightly offset from
- // the theoretical route, and the marker should remain at its real position.
- if(!valid(a)||!valid(b))return valid(p)?[[p[0],p[1]]]:[];
- return heroRoutePoints(a,b,count);
+ if(!valid(a)||!valid(p)||!valid(b))return heroRoutePoints(a,b,count);
+
+ // V66.23 — route must physically pass through the CURRENT ADS-B aircraft.
+ // Do not bend a single airport-to-airport curve around the aircraft: that can
+ // leave the rendered path visually detached from the live marker. Instead,
+ // build two great-circle legs, origin -> aircraft and aircraft -> destination.
+ // The live aircraft position is therefore an exact point on the displayed path.
+ const firstDistance=hav(a[0],a[1],p[0],p[1]);
+ const secondDistance=hav(p[0],p[1],b[0],b[1]);
+ const totalDistance=firstDistance+secondDistance;
+ if(!Number.isFinite(totalDistance)||totalDistance<0.01){
+  const out=heroRoutePoints(a,b,count);
+  out[Math.floor(count/2)]=[p[0],p[1]];
+  return out;
+ }
+ const firstCount=Math.max(1,Math.min(count-1,Math.round(count*(firstDistance/totalDistance))));
+ const secondCount=Math.max(1,count-firstCount);
+ const first=heroRoutePoints(a,p,firstCount);
+ const second=heroRoutePoints(p,b,secondCount);
+ // Avoid duplicating the live aircraft point at the join.
+ const out=first.concat(second.slice(1));
+ out[0]=[a[0],a[1]];
+ out[first.length-1]=[p[0],p[1]];
+ out[out.length-1]=[b[0],b[1]];
+ return out;
 }
+
 function heroBearing(a,b){const r=Math.PI/180;const y=Math.sin((b[1]-a[1])*r)*Math.cos(b[0]*r);const x=Math.cos(a[0]*r)*Math.sin(b[0]*r)-Math.sin(a[0]*r)*Math.cos(b[0]*r)*Math.cos((b[1]-a[1])*r);return (Math.atan2(y,x)/r+360)%360}
 // Featured uses the same interactive Leaflet map behaviour as Live Sky. Keep the user's zoom/pan between live polling refreshes; navigation back to Featured recenters it.
 const WATCH_ROUTE_COLOR='#176f8b';
@@ -2281,22 +2271,14 @@ function renderHeroFlightMap(live,watch){
  const canReuse=!!(heroFlightMap&&heroFlightLayer&&document.getElementById('heroFlightMap')&&heroFlightMap._skyMapKey===mapKey);
  const modeChanged=!!(heroFlightMap&&heroFlightMap._skyMapMode!==heroMapMode);
  if(!canReuse){
-  host.innerHTML='<div id="heroFlightMap" class="hero-flight-map"></div><div class="hero-quiet-state is-hidden" id="heroQuietState"><div class="quiet-kicker">SKY AROUND ME</div><h2>Skies are quiet</h2><p>No aircraft nearby right now.</p><small>But the world is always moving.</small><div class="quiet-quote-wrap"><div class="quiet-rule"></div><div class="quiet-quote">“Same sky. Different stories.”</div></div></div><div class="hero-map-brand" id="heroMapBrand"></div><div class="hero-map-status" id="heroMapStatus"></div><div class="hero-map-caption" id="heroMapCaption">FULL JOURNEY</div><div class="hero-map-rotation-controls" id="heroMapRotationControls" aria-label="Featured map rotation controls"><span class="rotation-mini-compass" aria-label="Featured map orientation"><span class="rotation-mini-n">N</span><i></i></span><div class="map-rotation-bearing" id="heroMapBearing">0° N</div><button type="button" class="map-rotation-btn" id="heroRotateLeft" aria-label="Rotate featured map anticlockwise 15 degrees" title="Rotate anticlockwise">↶</button><button type="button" class="map-rotation-btn" id="heroRotateRight" aria-label="Rotate featured map clockwise 15 degrees" title="Rotate clockwise">↷</button><button type="button" class="map-rotation-lock" id="heroRotationLock" aria-pressed="false">LOCK</button></div><button type="button" class="hero-map-recenter" id="heroMapRecenter" title="Recenter featured map">RECENTER</button>';
+  host.innerHTML='<div id="heroFlightMap" class="hero-flight-map"></div><div class="hero-quiet-state is-hidden" id="heroQuietState"><div class="quiet-kicker">SKY AROUND ME</div><h2>Skies are quiet</h2><p>No aircraft nearby right now.</p><small>But the world is always moving.</small><div class="quiet-quote-wrap"><div class="quiet-rule"></div><div class="quiet-quote">“Same sky. Different stories.”</div></div></div><div class="hero-map-brand" id="heroMapBrand"></div><div class="hero-map-status" id="heroMapStatus"></div><div class="hero-map-caption" id="heroMapCaption">FULL JOURNEY</div><button type="button" class="hero-map-recenter" id="heroMapRecenter" title="Recenter featured map">RECENTER</button>';
   host.style.position='relative';host.style.width='100%';host.style.height='100%';
   const recenterBtn=$('heroMapRecenter');
   if(recenterBtn)recenterBtn.addEventListener('click',recenterHeroMap);
-  const heroLeft=$('heroRotateLeft');
-  const heroRight=$('heroRotateRight');
-  const heroLock=$('heroRotationLock');
-  if(heroLeft)heroLeft.addEventListener('click',()=>rotateMapBy(-15));
-  if(heroRight)heroRight.addEventListener('click',()=>rotateMapBy(15));
-  if(heroLock)heroLock.addEventListener('click',toggleRotationLock);
-  setupRotationControl('heroMapRotationControls');
-  updateRotationUI();
   const mapEl=$('heroFlightMap');
   if(mapEl){mapEl.style.position='absolute';mapEl.style.inset='0';mapEl.style.width='100%';mapEl.style.height='100%';}
   if(heroFlightMap){try{heroFlightMap.remove()}catch(e){}heroFlightMap=null;heroFlightLayer=null}
-  heroFlightMap=L.map(mapEl,{zoomControl:false,attributionControl:true,scrollWheelZoom:true,doubleClickZoom:true,boxZoom:false,dragging:true,touchZoom:true,keyboard:true,minZoom:2,maxZoom:18,zoomDelta:1,zoomSnap:1,rotate:true,bearing:S.rotationDeg,dragRotate:false,touchRotate:false,shiftKeyRotate:false});
+  heroFlightMap=L.map(mapEl,{zoomControl:false,attributionControl:true,scrollWheelZoom:true,doubleClickZoom:true,boxZoom:false,dragging:true,touchZoom:true,keyboard:true,minZoom:2,maxZoom:18,zoomDelta:1,zoomSnap:1});
   heroFlightMap._skyMapKey=mapKey;
   heroFlightLayer=L.layerGroup().addTo(heroFlightMap);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(heroFlightMap);
@@ -2524,8 +2506,6 @@ function renderHeroFlightMap(live,watch){
    if(!canReuse)heroFlightMap.setView(pos,7);
  }
  heroFlightMap._skyMapMode=heroMapMode;
- if(typeof heroFlightMap.setBearing==='function')heroFlightMap.setBearing(S.rotationDeg);
- updateRotationUI();
  setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),60);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),300);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),900);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),1500);
 }
 function stopHeroMapCycle(){if(heroMapCycleTimer){clearInterval(heroMapCycleTimer);heroMapCycleTimer=null}heroMapCycleKey='';heroMapMode='journey'}
@@ -2571,7 +2551,6 @@ function recenterHeroMap(){
  }else{
   heroFlightMap.setView([S.lat,S.lon],6,{animate:true});
  }
- if(typeof heroFlightMap.setBearing==='function')heroFlightMap.setBearing(S.rotationDeg);
  setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),80);
 }
 let airportCoords={
@@ -3565,24 +3544,8 @@ function heroExtendedItems(){if(!S.extendedAirspace)return [];const all=Array.is
 function outerIcon(x){const heading=Number.isFinite(x?.heading)?x.heading:0;return L.divIcon({className:'outer-aircraft-icon',html:`<div class="outer-aircraft-marker" style="transform:rotate(${heading}deg)"><div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${miniAircraftSvg()}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})}
 function icon(x,featured){const tracked=!!featured;const heading=Number.isFinite(x.heading)?x.heading:0;return L.divIcon({className:tracked?'featured-icon':'aircraft-icon',html:`<div class="live-aircraft-marker ${tracked?'tracked':''}" style="transform:rotate(${heading}deg)"><div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${miniAircraftSvg()}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})}
 function choose(items){if(!items.length)return null;const airborne=items.filter(x=>(x.alt!=null&&x.alt>140)||(x.speed!=null&&x.speed>80));return (airborne.length?airborne:items).slice().sort((a,b)=>a.d-b.d)[0]}
-const map=L.map('map',{zoomControl:false,attributionControl:true,rotate:true,bearing:S.rotationDeg,dragRotate:false,touchRotate:false,shiftKeyRotate:false}).setView([S.lat,S.lon],8);
-function normaliseBearing(deg){return ((Number(deg)%360)+360)%360}
-function bearingLabel(deg){const b=normaliseBearing(deg);const dirs=['N','NE','E','SE','S','SW','W','NW'];return `${Math.round(b)}° ${dirs[Math.round(b/45)%8]}`}
-function setupRotationControl(id){
- const el=$(id);
- if(!el)return;
- const mini=el.querySelector('.rotation-mini-compass');
- if(mini){mini.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();el.classList.toggle('is-expanded')})}
- el.addEventListener('click',e=>{
-  if(e.pointerType==='touch' && !e.target.closest('.map-rotation-btn,.map-rotation-lock,.rotation-mini-compass')){el.classList.toggle('is-expanded')}
- });
-}
-function updateRotationUI(){const b=normaliseBearing(S.rotationDeg);const label=bearingLabel(b);if($('mapBearing'))$('mapBearing').textContent=label;if($('heroMapBearing'))$('heroMapBearing').textContent=label;const lockIds=['rotationLock','heroRotationLock'];lockIds.forEach(id=>{const lock=$(id);if(lock){lock.textContent=S.rotationLocked?'LOCKED':'LOCK';lock.classList.toggle('locked',!!S.rotationLocked);lock.setAttribute('aria-pressed',String(!!S.rotationLocked));lock.title=S.rotationLocked?'Unlock map rotation controls':'Lock map rotation';}})}
-function setMapBearing(deg){S.rotationDeg=normaliseBearing(deg);if(map&&typeof map.setBearing==='function')map.setBearing(S.rotationDeg);if(heroFlightMap&&typeof heroFlightMap.setBearing==='function')heroFlightMap.setBearing(S.rotationDeg);saveSkySettings();updateRotationUI()}
-function rotateMapBy(delta){if(S.rotationLocked)return;setMapBearing(S.rotationDeg+delta)}
-function toggleRotationLock(){S.rotationLocked=!S.rotationLocked;saveSkySettings();updateRotationUI()}
+const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([S.lat,S.lon],8);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);let me=L.circleMarker([S.lat,S.lon],{radius:7,weight:3,fillOpacity:1}).addTo(map);let rangeCircle=L.circle([S.lat,S.lon],{radius:S.rangeKm*1000,weight:1,fillOpacity:.035,dashArray:'5 8'}).addTo(map);let extendedCircle=L.circle([S.lat,S.lon],{radius:100000,color:'#176f8b',weight:1,opacity:S.extendedAirspace&&S.rangeKm<100?1:0,fillOpacity:0,dashArray:'2 7',interactive:false}).addTo(map);function fitLiveSkyExtended(){if(!map||!S.extendedAirspace||S.rangeKm>=100)return;extendedCircle.setLatLng([S.lat,S.lon]);map.fitBounds(extendedCircle.getBounds(),{padding:[45,45],maxZoom:9,animate:false});}
-$('rotateLeft').addEventListener('click',()=>rotateMapBy(-15));$('rotateRight').addEventListener('click',()=>rotateMapBy(15));$('rotationLock').addEventListener('click',toggleRotationLock);setupRotationControl('mapRotationControls');setupRotationControl('heroMapRotationControls');updateRotationUI();
 function updateMapCard(x){
  const card=$('mapCard');if(!card)return;
  if(!x){
@@ -4743,4 +4706,5 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 .nav{position:relative!important;z-index:100001!important;pointer-events:auto!important;}
 .nav button{position:relative!important;z-index:100002!important;pointer-events:auto!important;touch-action:manipulation!important;}
 </style>
+
 
