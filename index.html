@@ -2351,7 +2351,7 @@ function specialRegionEnabled(code,region){
   if(SPECIAL_REGION_KEYS.every(r=>selected.includes(r)))return true;
   return !!selected.includes(region);
 }
-const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],mapSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
+const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],mapSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,specialFilterRevision:0,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
 const $=id=>document.getElementById(id);
 function setTextSafe(id,value){const el=$(id);if(el)el.textContent=value??'';}
 function updateRefreshUsage(){const perHour=Math.round(3600/S.refreshSec);const el=$('refreshUsage');if(el)el.textContent=`SESSION REQUESTS: ${S.livePollCount.toLocaleString()} · ~${perHour.toLocaleString()} / HOUR AT ${S.refreshSec} SEC`;}
@@ -4237,7 +4237,17 @@ function heroExtendedItems(){if(!S.extendedAirspace)return [];const all=Array.is
 const SPECIAL_SQUAWK_EMERGENCY=new Set(['7500','7600','7700']);
 const SPECIAL_SQUAWK_VFR=new Set(['7000','1200']);
 function normalSquawk(value){const s=String(value??'').trim().replace(/\s+/g,'');return /^\d{4}$/.test(s)?s:''}
-function specialSquawkKind(x){const s=normalSquawk(x?.squawk);if(!s||!S.specialSquawkCodes.includes(s))return '';if(x?._specialRegion&&!specialRegionEnabled(s,x._specialRegion))return '';if(SPECIAL_SQUAWK_EMERGENCY.has(s))return 'emergency';if(SPECIAL_SQUAWK_VFR.has(s))return 'vfr';return ''}
+function specialSquawkKind(x){
+ const s=normalSquawk(x?.squawk);
+ if(!s||!S.specialSquawkCodes.includes(s))return '';
+ const region=String(x?._specialRegion||'');
+ const selected=S.specialSquawkRegions?.[s]||[];
+ const worldwide=SPECIAL_REGION_KEYS.every(r=>selected.includes(r));
+ if(!worldwide && (!region||!selected.includes(region)))return '';
+ if(SPECIAL_SQUAWK_EMERGENCY.has(s))return 'emergency';
+ if(SPECIAL_SQUAWK_VFR.has(s))return 'vfr';
+ return '';
+}
 function specialSquawkLabel(x){const s=normalSquawk(x?.squawk),k=specialSquawkKind(x);if(!k)return '';return k==='emergency'?`${s} · EMERGENCY`:`${s} · VFR`}
 function specialSquawkColour(x){const k=specialSquawkKind(x);return k==='emergency'?'#d62f2f':k==='vfr'?'#d97706':''}
 
@@ -4787,17 +4797,16 @@ async function refreshWatchStream(){
  try{return await S.watchSearchPending}finally{S.watchSearchPending=null}
 }
 function specialRegionForPoint(lat,lon){
-  const la=Number(lat),lo=Number(lon);
-  if(!Number.isFinite(la)||!Number.isFinite(lo))return '';
-  // Broad tracking regions used by Sky Around Me. The regions are intentionally
-  // coarse so the control is useful for monitoring rather than political geography.
-  if(la>=-60&&la<=85&&lo>=-170&&lo<=-20)return 'america';
-  if(la>=34&&la<=72&&lo>=-25&&lo<45)return 'europe';
-  if(la>=-10&&la<=82&&lo>=45&&lo<=180)return 'asia';
-  // Eastern Mediterranean / western Asia is treated as Asia where it sits
-  // outside the Europe box; Africa and Oceania are outside the three filters.
-  if(la>=0&&la<=55&&lo>=25&&lo<45)return 'asia';
-  return '';
+ const la=Number(lat),lo=Number(lon);
+ if(!Number.isFinite(la)||!Number.isFinite(lo))return '';
+ // Sky Around Me monitoring regions are deliberately coarse but MUTUALLY
+ // EXCLUSIVE. Asia is Asia-Pacific, including Australia and New Zealand.
+ // This prevents aircraft in Oceania from falling through as an unclassified
+ // aircraft and bypassing a selected regional filter.
+ if(la>=-60&&la<=85&&lo>=-170&&lo<=-20)return 'america';
+ if(la>=34&&la<=72&&lo>=-25&&lo<45)return 'europe';
+ if(la>=-50&&la<=82&&lo>=45&&lo<=180)return 'asia';
+ return '';
 }
 function isRawSpecialSquawk(a){
  const s=normalSquawk(a?.squawk??a?.squawk_code??a?.code_7600??a?.emergency_squawk);
@@ -4806,12 +4815,21 @@ function isRawSpecialSquawk(a){
 }
 async function poll(){
  if(!document.getElementById('map')||S.pollInFlight)return;
+ const pollRevision=S.specialFilterRevision||0;
  S.pollInFlight=true;
  S.livePollCount++;
  updateRefreshUsage();
  $('mapStatus').textContent='SCANNING';$('status').textContent='SCANNING AIRSPACE';
  try{
   const j=await fetchAircraft();
+  // If the user changed a special-squawk code/region while this request was
+  // in flight, its special payload was generated from the old filter. Discard
+  // that response and immediately poll again using the current settings.
+  if(pollRevision!==(S.specialFilterRevision||0)){
+    S.pollInFlight=false;
+    setTimeout(()=>poll(),0);
+    return;
+  }
   const raw=(Array.isArray(j.ac)?j.ac:[]).filter(a=>isCommercialAircraft(a)||(S.specialSquawks&&isRawSpecialSquawk(a)));
   const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600),_specialRegion:specialRegionForPoint(a.lat,a.lon),specialOnly:!!(S.specialSquawks&&!isCommercialAircraft(a)&&isRawSpecialSquawk(a)),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));
   const previousItems=Array.isArray(S.lastItems)?S.lastItems:[];
@@ -4872,6 +4890,7 @@ if($('specialCountPill'))$('specialCountPill').addEventListener('click',()=>{ co
 document.querySelectorAll('[data-special-code]').forEach(el=>el.addEventListener('change',()=>{
  const code=String(el.dataset.specialCode||'');
  if(!code)return;
+ S.specialFilterRevision=(S.specialFilterRevision||0)+1;
  const next=new Set(S.specialSquawkCodes);
  if(el.checked)next.add(code);else next.delete(code);
  S.specialSquawkCodes=['7700','7600','7500','7000','1200'].filter(c=>next.has(c));
@@ -4890,6 +4909,7 @@ document.querySelectorAll('[data-special-region]').forEach(el=>el.addEventListen
  const region=String(el.dataset.specialRegion||'');
  event.preventDefault();event.stopPropagation();
  if(!SPECIAL_CODES.includes(code)||!SPECIAL_REGION_KEYS.includes(region))return;
+ S.specialFilterRevision=(S.specialFilterRevision||0)+1;
  const current=new Set(S.specialSquawkRegions?.[code]||[]);
  if(current.has(region))current.delete(region);else current.add(region);
  S.specialSquawkRegions[code]=SPECIAL_REGION_KEYS.filter(r=>current.has(r));
