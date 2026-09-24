@@ -2702,75 +2702,105 @@ let heroMapMode='journey';
 let heroMapCycleTimer=null;
 let heroMapCycleKey='';
 
-// V66.32 — deterministic progress controller.
-// Progress is keyed by aircraft + route. When the identity changes, the old
-// visual state is cancelled, hard-reset to 0%, and only then is the new value
-// animated forward. Stale requestAnimationFrame callbacks can no longer
-// re-apply the previous aircraft's percentage.
+// V66.53 — single-owner deterministic Featured Journey progress controller.
+// The Featured bar/plane are driven ONLY by requestAnimationFrame. CSS transitions
+// are deliberately disabled so a new telemetry poll can never fight an existing
+// animation and make the aircraft appear to travel backwards.
 function normalProgressKey(value){return String(value||'').trim().toLowerCase();}
 
-// V66.52 — deterministic Featured Journey progress.
-// NON-NEGOTIABLE RULE: an aircraft/route identity change hard-resets to 0%.
-// A lower telemetry percentage from the SAME aircraft is ignored so GPS/ADS-B
-// position jitter can never make the aircraft move backwards.
-// Reset animation is exactly 4 seconds from 0% to the new target, regardless
-// of the target percentage. Linear timing therefore makes 0->90 visually
-// faster than 0->20 while both complete in exactly 4 seconds.
 const HERO_PROGRESS_RESET_MS=4000;
 const HERO_PROGRESS_INCREMENT_MS=300;
 
-function setProgressVisual(bar,plane,value,animated=false,durationMs=HERO_PROGRESS_INCREMENT_MS){
+let heroProgressAircraftKey='';
+let heroProgressRouteKey='';
+let heroProgressDisplayed=0;
+let heroProgressTarget=0;
+let heroProgressResetToken=0;
+let heroProgressAnimationFrame=null;
+let heroProgressAnimationMode='';
+let heroProgressAnimationStart=0;
+let heroProgressAnimationFrom=0;
+let heroProgressAnimationTo=0;
+let heroProgressAnimationDuration=0;
+
+function setProgressVisual(bar,plane,value,animated=false,durationMs=300){
  const v=Math.max(0,Math.min(100,Number(value)||0));
  const ms=Math.max(0,Number(durationMs)||0);
  if(bar){bar.style.transition=animated?`width ${ms}ms linear`:'none';bar.style.width=v+'%';}
  if(plane){plane.style.transition=animated?`left ${ms}ms linear, transform ${ms}ms linear`:'none';plane.style.left=v+'%';}
 }
 
-// Featured / hero journey progress
-let heroProgressAircraftKey='';
-let heroProgressRouteKey='';
-let heroProgressDisplayed=0;
-let heroProgressResetToken=0;
-let heroProgressAnimationFrame=null;
-let heroProgressAnimationFrame2=null;
+function setHeroProgressVisual(value){
+ const v=Math.max(0,Math.min(100,Number(value)||0));
+ const bar=$('flightProgress'),plane=$('progressPlane');
+ // The Featured controller owns these two elements completely. CSS transitions
+ // are always disabled so no browser interpolation can fight the RAF loop.
+ if(bar){bar.style.transition='none';bar.style.width=v+'%';}
+ if(plane){plane.style.transition='none';plane.style.left=v+'%';}
+}
 
 function cancelHeroProgressAnimation(){
  if(heroProgressAnimationFrame!==null){cancelAnimationFrame(heroProgressAnimationFrame);heroProgressAnimationFrame=null;}
- if(heroProgressAnimationFrame2!==null){cancelAnimationFrame(heroProgressAnimationFrame2);heroProgressAnimationFrame2=null;}
+ heroProgressAnimationMode='';
+}
+
+function heroProgressFrame(now){
+ heroProgressAnimationFrame=null;
+ const token=heroProgressResetToken;
+ if(!heroProgressAnimationMode)return;
+ if(token!==heroProgressResetToken)return;
+
+ if(heroProgressAnimationMode==='reset'){
+   const elapsed=Math.max(0,now-heroProgressAnimationStart);
+   const t=Math.min(1,elapsed/heroProgressAnimationDuration);
+   const v=heroProgressAnimationFrom+(heroProgressAnimationTo-heroProgressAnimationFrom)*t;
+   heroProgressDisplayed=Math.max(heroProgressDisplayed,v);
+   setHeroProgressVisual(heroProgressDisplayed);
+   if(t>=1){
+     heroProgressDisplayed=Math.max(heroProgressDisplayed,heroProgressTarget);
+     setHeroProgressVisual(heroProgressDisplayed);
+     heroProgressAnimationMode='';
+     return;
+   }
+   heroProgressAnimationFrame=requestAnimationFrame(heroProgressFrame);
+   return;
+ }
+
+ if(heroProgressAnimationMode==='increment'){
+   const elapsed=Math.max(0,now-heroProgressAnimationStart);
+   const t=Math.min(1,elapsed/heroProgressAnimationDuration);
+   const v=heroProgressAnimationFrom+(heroProgressAnimationTo-heroProgressAnimationFrom)*t;
+   heroProgressDisplayed=Math.max(heroProgressDisplayed,v);
+   setHeroProgressVisual(heroProgressDisplayed);
+   if(t>=1){
+     heroProgressDisplayed=Math.max(heroProgressDisplayed,heroProgressTarget);
+     setHeroProgressVisual(heroProgressDisplayed);
+     heroProgressAnimationMode='';
+     return;
+   }
+   heroProgressAnimationFrame=requestAnimationFrame(heroProgressFrame);
+ }
+}
+
+function startHeroProgressAnimation(from,to,duration,mode){
+ cancelHeroProgressAnimation();
+ heroProgressAnimationMode=mode;
+ heroProgressAnimationStart=performance.now();
+ heroProgressAnimationFrom=Math.max(0,Math.min(100,Number(from)||0));
+ heroProgressAnimationTo=Math.max(heroProgressAnimationFrom,Math.min(100,Number(to)||0));
+ heroProgressAnimationDuration=Math.max(1,Number(duration)||1);
+ setHeroProgressVisual(heroProgressAnimationFrom);
+ heroProgressAnimationFrame=requestAnimationFrame(heroProgressFrame);
 }
 
 function resetHeroJourneyProgress(nextKey=''){
- const bar=$('flightProgress'),plane=$('progressPlane');
  cancelHeroProgressAnimation();
  ++heroProgressResetToken;
  heroProgressAircraftKey='';
  heroProgressRouteKey='';
  heroProgressDisplayed=0;
- // HARD RESET. No transition is allowed on the reset itself.
- setProgressVisual(bar,plane,0,false);
- void (bar?.offsetWidth||plane?.offsetWidth||0);
-}
-
-function animateHeroProgressFromZero(value,key,routeKey,token){
- if(!key)return;
- cancelHeroProgressAnimation();
- const bar=$('flightProgress'),plane=$('progressPlane');
- heroProgressAircraftKey=key;
- heroProgressRouteKey=routeKey;
- heroProgressDisplayed=0;
- // Paint a real 0% state before enabling the 4-second transition.
- setProgressVisual(bar,plane,0,false);
- void (bar?.offsetWidth||plane?.offsetWidth||0);
- heroProgressAnimationFrame=requestAnimationFrame(()=>{
-   heroProgressAnimationFrame=null;
-   heroProgressAnimationFrame2=requestAnimationFrame(()=>{
-     heroProgressAnimationFrame2=null;
-     if(token!==heroProgressResetToken)return;
-     if(heroProgressAircraftKey!==key)return;
-     heroProgressDisplayed=value;
-     setProgressVisual(bar,plane,value,true,HERO_PROGRESS_RESET_MS);
-   });
- });
+ heroProgressTarget=0;
+ setHeroProgressVisual(0);
 }
 
 function updateHeroJourneyProgress(pct,aircraft){
@@ -2783,36 +2813,44 @@ function updateHeroJourneyProgress(pct,aircraft){
  const identityKey=key+'|'+normalProgressKey(routeKey);
 
  if(!key){
-   cancelHeroProgressAnimation();
-   ++heroProgressResetToken;
-   heroProgressAircraftKey='';
-   heroProgressRouteKey=routeKey;
-   heroProgressDisplayed=0;
-   setProgressVisual(bar,plane,0,false);
+   resetHeroJourneyProgress();
    return;
  }
 
  const identityChanged=!!heroProgressAircraftKey&&identityKey!==heroProgressAircraftKey;
 
- // V66.52 — ONLY an aircraft/route identity change may reset the journey.
- // Live GPS/ADS-B position can jitter by a few kilometres between polls, which
- // can make the calculated percentage temporarily fall. That must NEVER restart
- // the 4-second animation or move the aircraft backwards. For the same
- // aircraft/route we clamp the visual progress to the highest value seen.
+ // A new aircraft or route is the ONLY reason the Featured progress may reset.
+ // The reset is committed at 0% first, then one uninterrupted 4-second RAF
+ // animation runs to the latest target. Incoming polls cannot restart it.
  if(identityChanged||!heroProgressAircraftKey){
+   cancelHeroProgressAnimation();
    ++heroProgressResetToken;
-   const token=heroProgressResetToken;
-   animateHeroProgressFromZero(value,identityKey,routeKey,token);
+   heroProgressAircraftKey=identityKey;
+   heroProgressRouteKey=routeKey;
+   heroProgressDisplayed=0;
+   heroProgressTarget=value;
+   setHeroProgressVisual(0);
+   startHeroProgressAnimation(0,value,HERO_PROGRESS_RESET_MS,'reset');
    return;
  }
 
- // Same aircraft/route: never move backwards. Ignore lower telemetry values
- // caused by position jitter and smoothly advance only when a higher value
- // arrives.
  heroProgressRouteKey=routeKey;
- const next=Math.max(heroProgressDisplayed,value);
- heroProgressDisplayed=next;
- setProgressVisual(bar,plane,next,true,HERO_PROGRESS_INCREMENT_MS);
+ // Same aircraft/route: progress is strictly monotonic. A lower telemetry
+ // value is stale/jitter and is ignored completely.
+ if(value<=heroProgressTarget && heroProgressAnimationMode==='reset')return;
+ if(value<=heroProgressDisplayed && heroProgressAnimationMode!=='reset')return;
+ heroProgressTarget=Math.max(heroProgressTarget,value);
+
+ // During the initial 4-second reset animation, only raise the target. Do not
+ // restart the animation or move its start point backwards.
+ if(heroProgressAnimationMode==='reset'){
+   heroProgressAnimationTo=heroProgressTarget;
+   return;
+ }
+
+ if(heroProgressTarget>heroProgressDisplayed){
+   startHeroProgressAnimation(heroProgressDisplayed,heroProgressTarget,HERO_PROGRESS_INCREMENT_MS,'increment');
+ }
 }
 const AIRPORT_DISPLAY_NAMES={
  LHR:'London Heathrow',LGW:'London Gatwick',STN:'London Stansted',MAN:'Manchester',BHX:'Birmingham',BRS:'Bristol',
