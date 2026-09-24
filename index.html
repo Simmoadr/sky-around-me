@@ -5921,12 +5921,12 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 .special-squawk-map-bubble.emergency b{color:#d62f2f}.special-squawk-map-bubble.vfr b{color:#d97706}
 .hero-aircraft-marker .special-squawk-map-bubble{bottom:calc(100% + 8px);}
 .outer-aircraft-marker,.live-aircraft-marker,.hero-aircraft-marker{overflow:visible!important;}
-.special-squawk-map-bubble{z-index:9999!important;}
+.special-squawk-map-bubble{z-index:9999!important;pointer-events:auto!important;cursor:pointer!important;}
 .outer-aircraft-marker .special-squawk-map-bubble,.live-aircraft-marker .special-squawk-map-bubble{bottom:calc(100% + 7px);}
 .hero-aircraft-marker .special-squawk-map-bubble{bottom:calc(100% + 9px);}
 /* V66.45 — aircraft must remain visible when multiple special labels overlap. */
 .global-special-aircraft-marker>.global-special-aircraft-shape{z-index:40!important;}
-.global-special-aircraft-marker>.special-squawk-map-bubble{z-index:10!important;background:rgba(255,255,255,.88)!important;}
+.global-special-aircraft-marker>.special-squawk-map-bubble{z-index:10!important;background:rgba(255,255,255,.88)!important;pointer-events:auto!important;cursor:pointer!important;}
 /* The standalone Featured counter is now redundant; keep the DOM for compatibility but don't render it. */
 #heroSpecialCountPill{display:none!important;}
 </style>
