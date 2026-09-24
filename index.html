@@ -1694,7 +1694,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 <style id="v66-21-worldwide-specials">
 .global-special-aircraft-icon{background:transparent!important;border:0!important;overflow:visible!important;}
 .global-special-aircraft-marker{position:relative;width:30px;height:30px;display:grid;place-items:center;transform-origin:center;overflow:visible;}
-.global-special-aircraft-shape{width:22px;height:22px;display:grid;place-items:center;color:var(--special-squawk,#d97706);filter:drop-shadow(0 1px 2px rgba(0,0,0,.24));}
+.global-special-aircraft-shape{position:absolute;left:4px;top:4px;width:22px;height:22px;display:grid;place-items:center;color:var(--special-squawk,#d97706);filter:drop-shadow(0 1px 2px rgba(0,0,0,.24));z-index:40;pointer-events:none;}
 .global-special-aircraft-shape svg{width:22px;height:22px;display:block;}
 .global-special-aircraft-marker.special-emergency .global-special-aircraft-shape{color:#d62f2f;}
 .global-special-aircraft-marker.special-vfr .global-special-aircraft-shape{color:#d97706;}
@@ -5907,7 +5907,7 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 
 /* Special squawk map bubbles: small, readable and kept upright while the aircraft rotates. */
 .special-squawk-map-bubble{
-  position:absolute;left:50%;bottom:calc(100% + 7px);z-index:20;
+  position:absolute;left:50%;bottom:calc(100% + 9px);z-index:10;
   transform:translateX(-50%) rotate(var(--bubble-counter-rotate,0deg));
   transform-origin:center bottom;display:flex;flex-direction:column;align-items:center;
   min-width:92px;max-width:150px;padding:5px 8px 6px;border-radius:9px;
@@ -5924,6 +5924,9 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 .special-squawk-map-bubble{z-index:9999!important;}
 .outer-aircraft-marker .special-squawk-map-bubble,.live-aircraft-marker .special-squawk-map-bubble{bottom:calc(100% + 7px);}
 .hero-aircraft-marker .special-squawk-map-bubble{bottom:calc(100% + 9px);}
+/* V66.45 — aircraft must remain visible when multiple special labels overlap. */
+.global-special-aircraft-marker>.global-special-aircraft-shape{z-index:40!important;}
+.global-special-aircraft-marker>.special-squawk-map-bubble{z-index:10!important;background:rgba(255,255,255,.88)!important;}
 /* The standalone Featured counter is now redundant; keep the DOM for compatibility but don't render it. */
 #heroSpecialCountPill{display:none!important;}
 </style>
