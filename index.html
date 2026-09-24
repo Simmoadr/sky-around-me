@@ -3650,10 +3650,15 @@ function applyKnownMultiLegRoute(x,route){
 }
 function liveJourneyFor(x){
  const f=getNextWatchedFlight();
+ // A live aircraft only inherits the watched-flight journey when it is
+ // positively matched to that watched flight. Do not fall back to watchRef
+ // or watchedFlightForLiveItem for an ordinary nearest aircraft: those refs
+ // can contain the previous/next watched flight and make an unresolved live
+ // aircraft incorrectly display stale FROM/TO values (for example SIN → JFK).
  if(f&&watchedLiveMatch(f,[x])) return f;
  const route=x?.liveRoute?applyKnownMultiLegRoute(x,x.liveRoute):null;
  if(route&&route.status==='FOUND')x.liveRoute=route;
- return x?.watchRef||route||watchedFlightForLiveItem(x)||null;
+ return route&&route.status==='FOUND'?route:null;
 }
 function xRouteForIdentity(callsign,registration){ const x=S.lastAllItems?.find(a=>normalFlightCode(a?.callsign)===normalFlightCode(callsign)&&normalFlightCode(a?.registration||a?.r||'')===normalFlightCode(registration)); const r=x?.liveRoute; return r?.status==='FOUND'?r:null; }
 const SKY_DEBUG_ENABLED=new URLSearchParams(window.location.search).get('debug')==='1';
@@ -5923,6 +5928,10 @@ window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 #heroSpecialCountPill{display:none!important;}
 </style>
 
+<style id="v66-44-live-route-colour">
+.hero .journey-end b{color:var(--watch-route-color,#176f8b)!important;}
+.hero .journey-end-right b{color:var(--watch-route-color,#176f8b)!important;}
+</style>
 <style id="v66-34-special-counter-selection-lock">
 /* V66.34 — Featured/Live Sky special counter parity + selected-aircraft lock. */
 body .map-card-special-summary{
