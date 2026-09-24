@@ -2314,7 +2314,7 @@ body{}
  <footer class="app-footer" aria-label="Sky Around Me credits">
   <div class="app-footer-brand">SKY AROUND ME</div>
   <div class="app-footer-sub">SAME SKY, DIFFERENT STORIES</div>
-  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.81 · BACKEND V66.81</span></div>
+  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.82 · BACKEND V66.82</span></div>
  </footer>
 </section>
 </main></div>
@@ -2362,7 +2362,7 @@ function specialRegionEnabled(code,region){
   if(SPECIAL_REGION_KEYS.every(r=>selected.includes(r)))return true;
   return !!selected.includes(region);
 }
-const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],globalSpecialLastGoodItems:[],globalSpecialLastGoodAt:0,mapSelected:null,featureSpecialSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,specialFilterRevision:0,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
+const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],globalSpecialLastGoodItems:[],globalSpecialLastGoodAt:0,mapSelected:null,featureSpecialSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,specialDebugLog:[],identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,specialFilterRevision:0,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
 S.specialSquawks=S.specialSquawkCodes.length>0;
 
 // V66.74 — persist the last healthy Special Squawk snapshot in the browser.
@@ -2936,6 +2936,30 @@ function specialCounterState(c){
  const emergencyEnabled=S.specialSquawkCodes.some(code=>SPECIAL_SQUAWK_EMERGENCY.has(String(code)));
  const specialEnabled=S.specialSquawkCodes.some(code=>SPECIAL_SQUAWK_VFR.has(String(code)));
  return {emergencyEnabled,specialEnabled,visible:emergencyEnabled||specialEnabled};
+}
+const specialDebugEnabled=new URLSearchParams(location.search).get('specialDebug')==='1';
+function ensureSpecialDebugPanel(){
+  if(!specialDebugEnabled||document.getElementById('specialDebugPanel'))return;
+  const p=document.createElement('div');p.id='specialDebugPanel';p.innerHTML='<div class="sd-head"><b>SPECIAL DEBUG V66.82</b><button id="sdClear">CLEAR</button></div><pre id="sdBody">Waiting for poll…</pre>';
+  Object.assign(p.style,{position:'fixed',right:'12px',bottom:'12px',zIndex:99999,width:'520px',maxHeight:'48vh',overflow:'auto',background:'rgba(8,18,24,.96)',color:'#dff6ff',border:'1px solid rgba(77,191,220,.5)',borderRadius:'10px',padding:'10px',font:'11px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace',boxShadow:'0 12px 40px rgba(0,0,0,.35)'});
+  document.body.appendChild(p);
+  document.getElementById('sdClear').onclick=()=>{S.specialDebugLog=[];renderSpecialDebugPanel();};
+}
+function recordSpecialDebugSnapshot(j,parsed){
+  if(!specialDebugEnabled)return;
+  ensureSpecialDebugPanel();
+  const d=j?._skySpecialDebug||{};
+  const counts={};(Array.isArray(parsed)?parsed:[]).forEach(x=>{const q=String(x.squawk||'');counts[q]=(counts[q]||0)+1;});
+  S.specialDebugLog.unshift({time:new Date().toLocaleTimeString(),status:String(j?._skySpecialStatus||'UNKNOWN'),backend:Number(d.finalCount)||0,received:Array.isArray(j?.specialAc)?j.specialAc.length:0,parsed:Array.isArray(parsed)?parsed.length:0,counts,codes:Array.isArray(d.codes)?d.codes:[],failed:Array.isArray(d.failedCodes)?d.failedCodes:[]});
+  S.specialDebugLog=S.specialDebugLog.slice(0,8);
+  renderSpecialDebugPanel();
+}
+function renderSpecialDebugPanel(){
+  if(!specialDebugEnabled)return;ensureSpecialDebugPanel();const el=document.getElementById('sdBody');if(!el)return;
+  el.textContent=S.specialDebugLog.map(x=>{
+    const codeLines=(x.codes||[]).map(c=>`  ${c.code}: ${c.status} | providers ${c.providerResults?.map(p=>p.source+'='+p.count+(p.ok?'':' ERR')).join(', ')} | merged=${c.providerMergedCount} | region=${c.regionAllowedCount} | prev=${c.previousGoodCount} | stale=${c.staleUsed?'YES':'NO'} | collapse=${c.suspiciousCollapse?'YES':'NO'}`).join('\n');
+    return `[${x.time}] ${x.status} backend=${x.backend} received=${x.received} parsed=${x.parsed} 7700=${x.counts['7700']||0} 7600=${x.counts['7600']||0} 7500=${x.counts['7500']||0} 7000=${x.counts['7000']||0} 1200=${x.counts['1200']||0}\n${codeLines}`;
+  }).join('\n\n')||'Waiting for poll…';
 }
 function updateSpecialSquawkCounter(){
  const c=specialSquawkCounts();
@@ -5150,6 +5174,7 @@ async function poll(){
   const specialRaw=Array.isArray(j.specialAc)?j.specialAc:[];
   const specialStatus=String(j._skySpecialStatus||'LIVE').toUpperCase();
   const parsedSpecialItems=specialRaw.map(a=>({icao:String(a.hex||'').toLowerCase(),callsign:String(a.flight||'').trim(),registration:String(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||j._skySpecialProvider||'GLOBAL ADS-B',category:a.category||'',specialClass:specialAircraftClass(a),squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600||a.emergency_squawk),_specialRegion:specialRegionForPoint(a.lat,a.lon),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon))&&specialSquawkKind(x)).map(x=>({...x,d:hav(S.lat,S.lon,Number(x.lat),Number(x.lon))}));
+  recordSpecialDebugSnapshot(j,parsedSpecialItems);
   // V66.42: distinguish a genuine empty feed from an unavailable upstream.
   // If every special-squawk provider fails on a poll, keep the last good set
   // rather than flashing SPECIAL 6 -> SPECIAL 0 -> SPECIAL 6. A successful
