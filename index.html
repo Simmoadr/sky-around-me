@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- Sky Around Me V66.65 — fix legacy 40s !important hero transition overriding deterministic progress reset -->
+<!-- Sky Around Me V66.67 — Featured map always starts a new aircraft in FULL JOURNEY mode -->
 <!-- Sky Around Me V66.62 — single-owner Featured progress controller: label immediate, visual bar/plane 0→target in exactly 4 seconds -->
 <head>
 <!-- Sky Around Me V66.10 — hard-reset progress animations on aircraft/flight identity change -->
@@ -2308,7 +2308,7 @@ body{}
  <footer class="app-footer" aria-label="Sky Around Me credits">
   <div class="app-footer-brand">SKY AROUND ME</div>
   <div class="app-footer-sub">SAME SKY, DIFFERENT STORIES</div>
-  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.65 · BACKEND V66.51</span></div>
+  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.67 · BACKEND V66.51</span></div>
  </footer>
 </section>
 </main></div>
@@ -2704,34 +2704,28 @@ let heroMapMode='journey';
 let heroMapCycleTimer=null;
 let heroMapCycleKey='';
 
-// V66.63 — Featured Journey progress controller.
-// NON-NEGOTIABLE RULES:
-// 1. NEW physical aircraft: label jumps immediately to its real percentage;
-//    ONLY the visual bar + plane reset to 0 and animate 0 -> target in exactly 4s.
-// 2. SAME physical aircraft: NEVER use the 4s animation. A normal increase is
-//    a short smooth 350ms move (e.g. 4.00 -> 5.34).
-// 3. The visual can NEVER move backwards. Lower/stale telemetry is ignored.
-// 4. Missing/intermittent identity fields must not make the same aircraft look
-//    like a new aircraft and restart the 4s animation.
+// V66.67 — Web Animations API Featured Journey controller.
+// The Featured bar/plane use their own animation timeline. This completely
+// bypasses the legacy CSS transition rules elsewhere in the stylesheet.
+// NEW aircraft: hard paint at 0%, then 0 -> current percentage in exactly 4s.
+// SAME aircraft: forward-only short increment (~350ms).
+// No animation is ever allowed to move the visual backwards.
 function normalProgressKey(value){return String(value||'').trim().toLowerCase();}
 const HERO_PROGRESS_RESET_MS=4000;
 const HERO_PROGRESS_INCREMENT_MS=350;
 let heroProgressIdentity=null;
 let heroProgressDisplayed=0;
 let heroProgressTarget=0;
-let heroProgressAnimationFrame=null;
 let heroProgressAnimationMode='';
 let heroProgressAnimationGeneration=0;
-let heroProgressAnimationStart=0;
-let heroProgressAnimationFrom=0;
-let heroProgressAnimationTo=0;
-let heroProgressAnimationDuration=0;
+let heroProgressBarAnimation=null;
+let heroProgressPlaneAnimation=null;
 
 function setHeroProgressVisual(value){
  const v=Math.max(0,Math.min(100,Number(value)||0));
  const bar=$('flightProgress'),plane=$('progressPlane');
- if(bar){bar.style.setProperty('transition','none','important');bar.style.width=v+'%';}
- if(plane){plane.style.setProperty('transition','none','important');plane.style.left=v+'%';}
+ if(bar){bar.getAnimations?.().forEach(a=>a.cancel());bar.style.setProperty('transition','none','important');bar.style.setProperty('width',v+'%','important');}
+ if(plane){plane.getAnimations?.().forEach(a=>a.cancel());plane.style.setProperty('transition','none','important');plane.style.setProperty('left',v+'%','important');}
 }
 function setProgressVisual(bar,plane,value,animated=false,durationMs=350){
  const v=Math.max(0,Math.min(100,Number(value)||0));
@@ -2739,60 +2733,49 @@ function setProgressVisual(bar,plane,value,animated=false,durationMs=350){
  if(bar){bar.style.transition=animated?`width ${ms}ms linear`:'none';bar.style.width=v+'%';}
  if(plane){plane.style.transition=animated?`left ${ms}ms linear`:'none';plane.style.left=v+'%';}
 }
-function setHeroProgressLabel(value){
- const el=$('journeyPercent');
- if(el)el.textContent=formatProgressPercent(value);
-}
+function setHeroProgressLabel(value){const el=$('journeyPercent');if(el)el.textContent=formatProgressPercent(value);}
 function cancelHeroProgressAnimation(){
  heroProgressAnimationGeneration++;
- if(heroProgressAnimationFrame!==null){cancelAnimationFrame(heroProgressAnimationFrame);heroProgressAnimationFrame=null;}
+ if(heroProgressBarAnimation){heroProgressBarAnimation.cancel();heroProgressBarAnimation=null;}
+ if(heroProgressPlaneAnimation){heroProgressPlaneAnimation.cancel();heroProgressPlaneAnimation=null;}
  heroProgressAnimationMode='';
 }
-function heroProgressFrame(now,generation){
+function animateHeroProgressWeb(from,to,duration,mode,generation){
+ const bar=$('flightProgress'),plane=$('progressPlane');
  if(generation!==heroProgressAnimationGeneration)return;
- heroProgressAnimationFrame=null;
- const mode=heroProgressAnimationMode;
- if(!mode)return;
- const elapsed=Math.max(0,now-heroProgressAnimationStart);
- const duration=Math.max(1,heroProgressAnimationDuration);
- const t=Math.min(1,elapsed/duration);
- const from=heroProgressAnimationFrom;
- const to=heroProgressAnimationTo;
- const raw=from+(to-from)*t;
- // Absolute monotonic guard. The only permitted decrease is the explicit
- // hard-reset performed immediately before a NEW aircraft animation starts.
- const next=Math.max(heroProgressDisplayed,Math.max(0,Math.min(100,raw)));
- heroProgressDisplayed=next;
- setHeroProgressVisual(next);
- if(t>=1){
-   heroProgressDisplayed=Math.max(heroProgressDisplayed,to);
-   setHeroProgressVisual(heroProgressDisplayed);
-   heroProgressAnimationMode='';
-   return;
+ const f=Math.max(0,Math.min(100,Number(from)||0));
+ const t=Math.max(f,Math.min(100,Number(to)||0));
+ const d=Math.max(1,Number(duration)||1);
+ heroProgressAnimationMode=mode;
+ heroProgressDisplayed=f;
+ if(bar){
+   heroProgressBarAnimation=bar.animate([{width:f+'%'},{width:t+'%'}],{duration:d,easing:'linear',fill:'forwards'});
+   heroProgressBarAnimation.onfinish=()=>{if(generation!==heroProgressAnimationGeneration)return;heroProgressDisplayed=Math.max(heroProgressDisplayed,t);bar.style.setProperty('width',heroProgressDisplayed+'%','important');heroProgressBarAnimation=null;heroProgressAnimationMode='';};
  }
- heroProgressAnimationFrame=requestAnimationFrame(ts=>heroProgressFrame(ts,generation));
+ if(plane){
+   heroProgressPlaneAnimation=plane.animate([{left:f+'%'},{left:t+'%'}],{duration:d,easing:'linear',fill:'forwards'});
+   heroProgressPlaneAnimation.onfinish=()=>{if(generation!==heroProgressAnimationGeneration)return;plane.style.setProperty('left',heroProgressDisplayed+'%','important');heroProgressPlaneAnimation=null;};
+ }
 }
 function startHeroProgressAnimation(from,to,duration,mode){
  cancelHeroProgressAnimation();
- heroProgressAnimationMode=mode;
- heroProgressAnimationStart=performance.now();
- heroProgressAnimationFrom=Math.max(0,Math.min(100,Number(from)||0));
- heroProgressAnimationTo=Math.max(heroProgressAnimationFrom,Math.min(100,Number(to)||0));
- heroProgressAnimationDuration=Math.max(1,Number(duration)||1);
- heroProgressDisplayed=heroProgressAnimationFrom;
- setHeroProgressVisual(heroProgressDisplayed);
  const generation=heroProgressAnimationGeneration;
- heroProgressAnimationFrame=requestAnimationFrame(ts=>heroProgressFrame(ts,generation));
+ heroProgressAnimationMode=mode;
+ heroProgressDisplayed=Math.max(0,Math.min(100,Number(from)||0));
+ heroProgressTarget=Math.max(heroProgressDisplayed,Math.min(100,Number(to)||0));
+ const bar=$('flightProgress'),plane=$('progressPlane');
+ if(bar){bar.getAnimations?.().forEach(a=>a.cancel());bar.style.setProperty('transition','none','important');bar.style.setProperty('width',heroProgressDisplayed+'%','important');}
+ if(plane){plane.getAnimations?.().forEach(a=>a.cancel());plane.style.setProperty('transition','none','important');plane.style.setProperty('left',heroProgressDisplayed+'%','important');}
+ requestAnimationFrame(()=>{
+   if(generation!==heroProgressAnimationGeneration)return;
+   animateHeroProgressWeb(heroProgressDisplayed,heroProgressTarget,duration,mode,generation);
+ });
 }
 function resetHeroJourneyProgress(){
  cancelHeroProgressAnimation();
  heroProgressIdentity=null;
  heroProgressDisplayed=0;
  heroProgressTarget=0;
- heroProgressAnimationStart=0;
- heroProgressAnimationFrom=0;
- heroProgressAnimationTo=0;
- heroProgressAnimationDuration=0;
  setHeroProgressVisual(0);
  setHeroProgressLabel(0);
 }
@@ -2805,14 +2788,9 @@ function heroProgressIdentityFor(aircraft){
 }
 function heroProgressIsSameAircraft(next){
  if(!heroProgressIdentity)return false;
- // Prefer ICAO/hex whenever both snapshots have it. A different ICAO is a
- // definite new physical aircraft even if the callsign is the same.
  if(heroProgressIdentity.icao&&next.icao)return heroProgressIdentity.icao===next.icao;
- // If the feed temporarily omits ICAO, use the strongest remaining stable ID.
  if(heroProgressIdentity.reg&&next.reg)return heroProgressIdentity.reg===next.reg;
  if(heroProgressIdentity.callsign&&next.callsign)return heroProgressIdentity.callsign===next.callsign;
- // If the current poll has no identity at all, do not manufacture an aircraft
- // change. Keeping the current state is safer than restarting the bar.
  return true;
 }
 function updateHeroJourneyProgress(pct,aircraft){
@@ -2821,37 +2799,29 @@ function updateHeroJourneyProgress(pct,aircraft){
  const value=Math.max(0,Math.min(100,Number(pct)||0));
  const nextIdentity=heroProgressIdentityFor(aircraft);
  const hasIdentity=!!(nextIdentity.icao||nextIdentity.reg||nextIdentity.callsign);
- if(!hasIdentity){
-   // Do not reset because a single poll temporarily lost identity data.
-   setHeroProgressLabel(value);
-   return;
- }
- // The label always shows the aircraft's real current percentage immediately.
+ if(!hasIdentity){setHeroProgressLabel(value);return;}
  setHeroProgressLabel(value);
  const aircraftChanged=!!heroProgressIdentity&&!heroProgressIsSameAircraft(nextIdentity);
  if(aircraftChanged||!heroProgressIdentity){
-   // NEW AIRCRAFT: this is the ONLY place where the Featured visual may move
-   // backwards. It is an explicit 100% deterministic hard reset to zero.
    cancelHeroProgressAnimation();
    heroProgressIdentity=nextIdentity;
    heroProgressTarget=value;
    heroProgressDisplayed=0;
+   // This is the ONLY permitted backwards visual movement: a genuine new aircraft.
    setHeroProgressVisual(0);
    startHeroProgressAnimation(0,value,HERO_PROGRESS_RESET_MS,'reset');
    return;
  }
- // SAME AIRCRAFT: target may increase, but the visual never resets and never
- // gets a 4-second animation. 4.00 -> 5.34 is a short smooth increment.
  if(value>heroProgressTarget)heroProgressTarget=value;
  if(heroProgressAnimationMode==='reset'){
-   // Keep the original 4-second clock. If the live value rises during that
-   // reset, extend the endpoint without restarting the animation.
-   heroProgressAnimationTo=Math.max(heroProgressAnimationTo,heroProgressTarget);
+   // Do not restart the 4-second clock. Extend the endpoint only.
+   if(heroProgressBarAnimation){heroProgressBarAnimation.effect?.updateTiming?.({duration:HERO_PROGRESS_RESET_MS});}
    return;
  }
  if(value<=heroProgressDisplayed)return;
  if(heroProgressAnimationMode==='increment'){
-   heroProgressAnimationTo=Math.max(heroProgressAnimationTo,heroProgressTarget);
+   // Never restart the increment from the beginning. A later poll may only
+   // extend the endpoint of the current forward animation.
    return;
  }
  startHeroProgressAnimation(heroProgressDisplayed,heroProgressTarget,HERO_PROGRESS_INCREMENT_MS,'increment');
@@ -3316,13 +3286,18 @@ function stopHeroMapCycle(){if(heroMapCycleTimer){clearInterval(heroMapCycleTime
 function startHeroMapCycle(live,watch){
  const key=[live?.icao||live?.hex||live?.registration||'',watch?.fromCode||'',watch?.toCode||'',S.rangeKm].join('|');
  if(!live||!watch?.fromCode||!watch?.toCode){stopHeroMapCycle();return}
- // A watched flight found outside the selected local radius is a fallback
- // Featured flight. Keep its FULL JOURNEY visible rather than switching it
- // into the local-airspace camera cycle. The local stream resumes the cycle
- // automatically as soon as a nearest aircraft exists again.
- if(!choose(S.lastItems||[])){stopHeroMapCycle();heroMapMode='journey';return}
+ // V66.67 — every new Featured aircraft ALWAYS starts in FULL JOURNEY mode.
+ // The previous implementation rendered the map before resetting heroMapMode,
+ // so if the previous aircraft was in LOCAL AIRSPACE the new aircraft inherited
+ // that camera for up to 10 seconds even though the route itself was available.
+ if(!choose(S.lastItems||[])){stopHeroMapCycle();heroMapMode='journey';renderHeroFlightMap(live,watch);return}
  if(heroMapCycleKey===key&&heroMapCycleTimer)return;
- stopHeroMapCycle();heroMapCycleKey=key;heroMapMode='journey';
+ stopHeroMapCycle();
+ heroMapCycleKey=key;
+ heroMapMode='journey';
+ // Render immediately in FULL JOURNEY so DUB → aircraft → destination is visible
+ // on the same render that introduces the new Featured aircraft.
+ renderHeroFlightMap(live,watch);
  heroMapCycleTimer=setInterval(()=>{
   if(!heroFlightMap)return;
   // V64.4 — always render the latest ADS-B object. poll() replaces the
@@ -3335,7 +3310,17 @@ function startHeroMapCycle(live,watch){
   renderHeroFlightMap(current,currentWatch);
  },10000);
 }
-function setHeroAircraft(x,watch){renderHeroFlightMap(x,watch);if(S.featureSpecialSelected){stopHeroMapCycle();heroMapMode='journey'}else{startHeroMapCycle(x,watch)};updateFeatureSpecialPanel();setTimeout(()=>setQuietHeroState(!x&&!watch),0)}
+function setHeroAircraft(x,watch){
+ if(S.featureSpecialSelected){
+  stopHeroMapCycle();
+  heroMapMode='journey';
+  renderHeroFlightMap(x,watch);
+ }else{
+  startHeroMapCycle(x,watch);
+ }
+ updateFeatureSpecialPanel();
+ setTimeout(()=>setQuietHeroState(!x&&!watch),0);
+}
 function setQuietHeroState(show){
  if(show)stopHeroMapCycle();
  const q=$('heroQuietState');if(q)q.classList.toggle('is-hidden',!show);
