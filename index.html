@@ -2702,20 +2702,23 @@ let heroMapMode='journey';
 let heroMapCycleTimer=null;
 let heroMapCycleKey='';
 
-// V66.53 — single-owner deterministic Featured Journey progress controller.
-// The Featured bar/plane are driven ONLY by requestAnimationFrame. CSS transitions
-// are deliberately disabled so a new telemetry poll can never fight an existing
-// animation and make the aircraft appear to travel backwards.
+// V66.54 — Featured Journey progress: one stable aircraft identity, one animation owner.
+// The Featured progress must not restart because route metadata is refreshed or
+// because ADS-B position causes the calculated percentage to jitter. Only a
+// genuinely different aircraft resets the journey visual.
+//
+// The animation uses the RAF timestamp (not callback count) so the duration is
+// deterministic even when the browser drops frames. See MDN's requestAnimationFrame
+// guidance: the callback timestamp should be used to calculate elapsed time.
 function normalProgressKey(value){return String(value||'').trim().toLowerCase();}
 
 const HERO_PROGRESS_RESET_MS=4000;
-const HERO_PROGRESS_INCREMENT_MS=300;
+const HERO_PROGRESS_INCREMENT_MS=350;
 
 let heroProgressAircraftKey='';
 let heroProgressRouteKey='';
 let heroProgressDisplayed=0;
 let heroProgressTarget=0;
-let heroProgressResetToken=0;
 let heroProgressAnimationFrame=null;
 let heroProgressAnimationMode='';
 let heroProgressAnimationStart=0;
@@ -2723,18 +2726,9 @@ let heroProgressAnimationFrom=0;
 let heroProgressAnimationTo=0;
 let heroProgressAnimationDuration=0;
 
-function setProgressVisual(bar,plane,value,animated=false,durationMs=300){
- const v=Math.max(0,Math.min(100,Number(value)||0));
- const ms=Math.max(0,Number(durationMs)||0);
- if(bar){bar.style.transition=animated?`width ${ms}ms linear`:'none';bar.style.width=v+'%';}
- if(plane){plane.style.transition=animated?`left ${ms}ms linear, transform ${ms}ms linear`:'none';plane.style.left=v+'%';}
-}
-
 function setHeroProgressVisual(value){
  const v=Math.max(0,Math.min(100,Number(value)||0));
  const bar=$('flightProgress'),plane=$('progressPlane');
- // The Featured controller owns these two elements completely. CSS transitions
- // are always disabled so no browser interpolation can fight the RAF loop.
  if(bar){bar.style.transition='none';bar.style.width=v+'%';}
  if(plane){plane.style.transition='none';plane.style.left=v+'%';}
 }
@@ -2746,40 +2740,22 @@ function cancelHeroProgressAnimation(){
 
 function heroProgressFrame(now){
  heroProgressAnimationFrame=null;
- const token=heroProgressResetToken;
- if(!heroProgressAnimationMode)return;
- if(token!==heroProgressResetToken)return;
-
- if(heroProgressAnimationMode==='reset'){
-   const elapsed=Math.max(0,now-heroProgressAnimationStart);
-   const t=Math.min(1,elapsed/heroProgressAnimationDuration);
-   const v=heroProgressAnimationFrom+(heroProgressAnimationTo-heroProgressAnimationFrom)*t;
-   heroProgressDisplayed=Math.max(heroProgressDisplayed,v);
+ const mode=heroProgressAnimationMode;
+ if(!mode)return;
+ const elapsed=Math.max(0,now-heroProgressAnimationStart);
+ const t=Math.min(1,elapsed/heroProgressAnimationDuration);
+ const from=heroProgressAnimationFrom;
+ const to=Math.max(from,heroProgressAnimationTo,heroProgressTarget);
+ const v=from+(to-from)*t;
+ heroProgressDisplayed=Math.max(heroProgressDisplayed,v);
+ setHeroProgressVisual(heroProgressDisplayed);
+ if(t>=1){
+   heroProgressDisplayed=Math.max(heroProgressDisplayed,to,heroProgressTarget);
    setHeroProgressVisual(heroProgressDisplayed);
-   if(t>=1){
-     heroProgressDisplayed=Math.max(heroProgressDisplayed,heroProgressTarget);
-     setHeroProgressVisual(heroProgressDisplayed);
-     heroProgressAnimationMode='';
-     return;
-   }
-   heroProgressAnimationFrame=requestAnimationFrame(heroProgressFrame);
+   heroProgressAnimationMode='';
    return;
  }
-
- if(heroProgressAnimationMode==='increment'){
-   const elapsed=Math.max(0,now-heroProgressAnimationStart);
-   const t=Math.min(1,elapsed/heroProgressAnimationDuration);
-   const v=heroProgressAnimationFrom+(heroProgressAnimationTo-heroProgressAnimationFrom)*t;
-   heroProgressDisplayed=Math.max(heroProgressDisplayed,v);
-   setHeroProgressVisual(heroProgressDisplayed);
-   if(t>=1){
-     heroProgressDisplayed=Math.max(heroProgressDisplayed,heroProgressTarget);
-     setHeroProgressVisual(heroProgressDisplayed);
-     heroProgressAnimationMode='';
-     return;
-   }
-   heroProgressAnimationFrame=requestAnimationFrame(heroProgressFrame);
- }
+ heroProgressAnimationFrame=requestAnimationFrame(heroProgressFrame);
 }
 
 function startHeroProgressAnimation(from,to,duration,mode){
@@ -2793,9 +2769,8 @@ function startHeroProgressAnimation(from,to,duration,mode){
  heroProgressAnimationFrame=requestAnimationFrame(heroProgressFrame);
 }
 
-function resetHeroJourneyProgress(nextKey=''){
+function resetHeroJourneyProgress(){
  cancelHeroProgressAnimation();
- ++heroProgressResetToken;
  heroProgressAircraftKey='';
  heroProgressRouteKey='';
  heroProgressDisplayed=0;
@@ -2810,22 +2785,17 @@ function updateHeroJourneyProgress(pct,aircraft){
  const key=normalProgressKey(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||'');
  const routeSource=aircraft?.watchRef||aircraft||{};
  const routeKey=String(routeSource?.fromCode||routeSource?.from||routeSource?.routeFrom||'')+'>'+String(routeSource?.toCode||routeSource?.to||routeSource?.routeTo||'');
- const identityKey=key+'|'+normalProgressKey(routeKey);
 
- if(!key){
-   resetHeroJourneyProgress();
-   return;
- }
+ if(!key){resetHeroJourneyProgress();return;}
 
- const identityChanged=!!heroProgressAircraftKey&&identityKey!==heroProgressAircraftKey;
+ // IMPORTANT: aircraft identity is deliberately the reset key. Route metadata
+ // can be enriched/refreshed several times for the same aircraft and must not
+ // restart the 4-second animation.
+ const aircraftChanged=!!heroProgressAircraftKey&&key!==heroProgressAircraftKey;
 
- // A new aircraft or route is the ONLY reason the Featured progress may reset.
- // The reset is committed at 0% first, then one uninterrupted 4-second RAF
- // animation runs to the latest target. Incoming polls cannot restart it.
- if(identityChanged||!heroProgressAircraftKey){
+ if(aircraftChanged||!heroProgressAircraftKey){
    cancelHeroProgressAnimation();
-   ++heroProgressResetToken;
-   heroProgressAircraftKey=identityKey;
+   heroProgressAircraftKey=key;
    heroProgressRouteKey=routeKey;
    heroProgressDisplayed=0;
    heroProgressTarget=value;
@@ -2835,22 +2805,21 @@ function updateHeroJourneyProgress(pct,aircraft){
  }
 
  heroProgressRouteKey=routeKey;
- // Same aircraft/route: progress is strictly monotonic. A lower telemetry
- // value is stale/jitter and is ignored completely.
- if(value<=heroProgressTarget && heroProgressAnimationMode==='reset')return;
- if(value<=heroProgressDisplayed && heroProgressAnimationMode!=='reset')return;
- heroProgressTarget=Math.max(heroProgressTarget,value);
 
- // During the initial 4-second reset animation, only raise the target. Do not
- // restart the animation or move its start point backwards.
+ // Never allow telemetry jitter to move the Featured aircraft backwards.
+ // While the initial 4-second animation is running, only a HIGHER target is
+ // accepted; the clock is never restarted.
+ if(value>heroProgressTarget)heroProgressTarget=value;
  if(heroProgressAnimationMode==='reset'){
    heroProgressAnimationTo=heroProgressTarget;
    return;
  }
-
- if(heroProgressTarget>heroProgressDisplayed){
-   startHeroProgressAnimation(heroProgressDisplayed,heroProgressTarget,HERO_PROGRESS_INCREMENT_MS,'increment');
+ if(value<=heroProgressDisplayed)return;
+ if(heroProgressAnimationMode==='increment'){
+   heroProgressAnimationTo=Math.max(heroProgressAnimationTo,heroProgressTarget);
+   return;
  }
+ startHeroProgressAnimation(heroProgressDisplayed,heroProgressTarget,HERO_PROGRESS_INCREMENT_MS,'increment');
 }
 const AIRPORT_DISPLAY_NAMES={
  LHR:'London Heathrow',LGW:'London Gatwick',STN:'London Stansted',MAN:'Manchester',BHX:'Birmingham',BRS:'Bristol',
@@ -3502,7 +3471,6 @@ function renderQuietScheduledHero(next){
  }
 }
 function renderScheduledHome(){
- resetHeroJourneyProgress();
  const hero=$('hero');if(hero){hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);hero.classList.remove('hero-is-quiet');}
  const next=getNextWatchedFlight();
  const live=next&&watchHasLive(next)?S.watchLive:null;
@@ -3514,6 +3482,7 @@ function renderScheduledHome(){
  }
  const searching=next&&flightState(next)==='SEARCHING';
  if(searching){
+   resetHeroJourneyProgress();
    setQuietHeroState(true);
    const hero=$('hero');if(hero)hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
    setTextSafe('homeEyebrow','WATCHED FLIGHT · SIGNAL SEARCHING');
@@ -3533,9 +3502,10 @@ function renderScheduledHome(){
    ['m1','m2','m3','m4'].forEach(id=>$(id).textContent='—');
    ['m1s','m2s','m3s','m4s'].forEach(id=>$(id).textContent='');
    $('mLabel1').textContent='DISTANCE TO GO';$('mLabel2').textContent='ALTITUDE';$('mLabel3').textContent='SPEED';$('mLabel4').textContent='HEADING';
-   const ji=$('journeyInfo');if(ji){ji.hidden=false;$('journeyFrom').textContent=next.fromCode||'—';$('journeyFromName').textContent=airportDisplayName(next.fromCode,next.from);$('journeyTo').textContent=next.toCode||'—';$('journeyToName').textContent=airportDisplayName(next.toCode,next.to);$('journeyPercent').textContent='SEARCHING';$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%';}
+   const ji=$('journeyInfo');if(ji){ji.hidden=false;$('journeyFrom').textContent=next.fromCode||'—';$('journeyFromName').textContent=airportDisplayName(next.fromCode,next.from);$('journeyTo').textContent=next.toCode||'—';$('journeyToName').textContent=airportDisplayName(next.toCode,next.to);$('journeyPercent').textContent='SEARCHING';}
    return;
  }
+ resetHeroJourneyProgress();
  setHeroAircraft(null,null);
  if(next){
    renderQuietScheduledHero(next);
@@ -3543,7 +3513,7 @@ function renderScheduledHome(){
    setQuietHeroState(true);
    renderQuietScheduledHero(null);
  }
- $('flightProgress').style.width='0%';if(!next&&$('journeyInfo'))$('journeyInfo').hidden=true;
+ if(!next&&$('journeyInfo'))$('journeyInfo').hidden=true;
 }
 function normalFlightCode(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'')}
 
