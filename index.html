@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
-<!-- Sky Around Me V66.63 — Featured progress: 4s only on new aircraft; same-aircraft increments are short and monotonic -->
+<!-- Sky Around Me V66.65 — fix legacy 40s !important hero transition overriding deterministic progress reset -->
+<!-- Sky Around Me V66.62 — single-owner Featured progress controller: label immediate, visual bar/plane 0→target in exactly 4 seconds -->
 <head>
 <!-- Sky Around Me V66.10 — hard-reset progress animations on aircraft/flight identity change -->
 <!-- Sky Around Me V66.5 — navigation regression fix: restore the proven V64.8 nav event path; no map/aircraft/backend logic changed. -->
@@ -1656,11 +1657,11 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   .hero .journey-center .progress i{
     background:#176f8b!important;
     opacity:1!important;
-    transition:width 40s linear!important;
+    transition:none!important;
   }
 
   .hero .journey-progress .progress-plane{
-    transition:left 40s linear!important;
+    transition:none!important;
   }
 }
 </style>
@@ -2307,7 +2308,7 @@ body{}
  <footer class="app-footer" aria-label="Sky Around Me credits">
   <div class="app-footer-brand">SKY AROUND ME</div>
   <div class="app-footer-sub">SAME SKY, DIFFERENT STORIES</div>
-  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.63 · BACKEND V66.51</span></div>
+  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.65 · BACKEND V66.51</span></div>
  </footer>
 </section>
 </main></div>
@@ -2729,8 +2730,8 @@ let heroProgressAnimationDuration=0;
 function setHeroProgressVisual(value){
  const v=Math.max(0,Math.min(100,Number(value)||0));
  const bar=$('flightProgress'),plane=$('progressPlane');
- if(bar){bar.style.transition='none';bar.style.width=v+'%';}
- if(plane){plane.style.transition='none';plane.style.left=v+'%';}
+ if(bar){bar.style.setProperty('transition','none','important');bar.style.width=v+'%';}
+ if(plane){plane.style.setProperty('transition','none','important');plane.style.left=v+'%';}
 }
 function setProgressVisual(bar,plane,value,animated=false,durationMs=350){
  const v=Math.max(0,Math.min(100,Number(value)||0));
