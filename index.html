@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- Sky Around Me V66.61 — rebuilt Featured progress controller: label immediate, bar/plane 0→target in exactly 4 seconds -->
+<!-- Sky Around Me V66.63 — Featured progress: 4s only on new aircraft; same-aircraft increments are short and monotonic -->
 <head>
 <!-- Sky Around Me V66.10 — hard-reset progress animations on aircraft/flight identity change -->
 <!-- Sky Around Me V66.5 — navigation regression fix: restore the proven V64.8 nav event path; no map/aircraft/backend logic changed. -->
@@ -2307,7 +2307,7 @@ body{}
  <footer class="app-footer" aria-label="Sky Around Me credits">
   <div class="app-footer-brand">SKY AROUND ME</div>
   <div class="app-footer-sub">SAME SKY, DIFFERENT STORIES</div>
-  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.61 · BACKEND V66.51</span></div>
+  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.63 · BACKEND V66.51</span></div>
  </footer>
 </section>
 </main></div>
@@ -2703,25 +2703,28 @@ let heroMapMode='journey';
 let heroMapCycleTimer=null;
 let heroMapCycleKey='';
 
-// V66.60 — deterministic Featured Journey progress controller.
-// Exactly one animation owns the Featured bar/plane. A new aircraft resets to
-// 0% and animates to its current percentage over exactly 4 seconds. Polling,
-// route enrichment and telemetry jitter cannot restart or reverse that motion.
+// V66.63 — Featured Journey progress controller.
+// NON-NEGOTIABLE RULES:
+// 1. NEW physical aircraft: label jumps immediately to its real percentage;
+//    ONLY the visual bar + plane reset to 0 and animate 0 -> target in exactly 4s.
+// 2. SAME physical aircraft: NEVER use the 4s animation. A normal increase is
+//    a short smooth 350ms move (e.g. 4.00 -> 5.34).
+// 3. The visual can NEVER move backwards. Lower/stale telemetry is ignored.
+// 4. Missing/intermittent identity fields must not make the same aircraft look
+//    like a new aircraft and restart the 4s animation.
 function normalProgressKey(value){return String(value||'').trim().toLowerCase();}
-// New aircraft: ALWAYS 0% -> current target over exactly 4000ms, regardless of target.
 const HERO_PROGRESS_RESET_MS=4000;
 const HERO_PROGRESS_INCREMENT_MS=350;
-let heroProgressAircraftKey='';
-let heroProgressRouteKey='';
+let heroProgressIdentity=null;
 let heroProgressDisplayed=0;
 let heroProgressTarget=0;
 let heroProgressAnimationFrame=null;
 let heroProgressAnimationMode='';
+let heroProgressAnimationGeneration=0;
 let heroProgressAnimationStart=0;
 let heroProgressAnimationFrom=0;
 let heroProgressAnimationTo=0;
 let heroProgressAnimationDuration=0;
-let heroProgressAnimationGeneration=0;
 
 function setHeroProgressVisual(value){
  const v=Math.max(0,Math.min(100,Number(value)||0));
@@ -2729,22 +2732,20 @@ function setHeroProgressVisual(value){
  if(bar){bar.style.transition='none';bar.style.width=v+'%';}
  if(plane){plane.style.transition='none';plane.style.left=v+'%';}
 }
-// Shared progress renderer for the smaller watched/live cards. This is deliberately
-// separate from the Featured Journey controller.
 function setProgressVisual(bar,plane,value,animated=false,durationMs=350){
  const v=Math.max(0,Math.min(100,Number(value)||0));
  const ms=Math.max(0,Number(durationMs)||0);
  if(bar){bar.style.transition=animated?`width ${ms}ms linear`:'none';bar.style.width=v+'%';}
  if(plane){plane.style.transition=animated?`left ${ms}ms linear`:'none';plane.style.left=v+'%';}
 }
+function setHeroProgressLabel(value){
+ const el=$('journeyPercent');
+ if(el)el.textContent=formatProgressPercent(value);
+}
 function cancelHeroProgressAnimation(){
  heroProgressAnimationGeneration++;
  if(heroProgressAnimationFrame!==null){cancelAnimationFrame(heroProgressAnimationFrame);heroProgressAnimationFrame=null;}
  heroProgressAnimationMode='';
-}
-function setHeroProgressLabel(value){
- const el=$('journeyPercent');
- if(el)el.textContent=formatProgressPercent(value);
 }
 function heroProgressFrame(now,generation){
  if(generation!==heroProgressAnimationGeneration)return;
@@ -2754,20 +2755,16 @@ function heroProgressFrame(now,generation){
  const elapsed=Math.max(0,now-heroProgressAnimationStart);
  const duration=Math.max(1,heroProgressAnimationDuration);
  const t=Math.min(1,elapsed/duration);
- let from=heroProgressAnimationFrom;
- let to=Math.max(from,heroProgressAnimationTo,heroProgressTarget);
- let v=from+(to-from)*t;
- if(mode==='reset'){
-   // New aircraft: the visual starts at 0 and reaches the aircraft's CURRENT
-   // percentage in exactly 4000ms. The label is never part of this animation.
-   v=Math.max(0,Math.min(100,to*t));
- }else{
-   v=from+(to-from)*t;
- }
- heroProgressDisplayed=Math.max(0,Math.min(100,v));
- setHeroProgressVisual(heroProgressDisplayed);
+ const from=heroProgressAnimationFrom;
+ const to=heroProgressAnimationTo;
+ const raw=from+(to-from)*t;
+ // Absolute monotonic guard. The only permitted decrease is the explicit
+ // hard-reset performed immediately before a NEW aircraft animation starts.
+ const next=Math.max(heroProgressDisplayed,Math.max(0,Math.min(100,raw)));
+ heroProgressDisplayed=next;
+ setHeroProgressVisual(next);
  if(t>=1){
-   heroProgressDisplayed=Math.max(heroProgressDisplayed,heroProgressTarget,heroProgressAnimationTo);
+   heroProgressDisplayed=Math.max(heroProgressDisplayed,to);
    setHeroProgressVisual(heroProgressDisplayed);
    heroProgressAnimationMode='';
    return;
@@ -2776,55 +2773,81 @@ function heroProgressFrame(now,generation){
 }
 function startHeroProgressAnimation(from,to,duration,mode){
  cancelHeroProgressAnimation();
- const generation=heroProgressAnimationGeneration;
  heroProgressAnimationMode=mode;
  heroProgressAnimationStart=performance.now();
  heroProgressAnimationFrom=Math.max(0,Math.min(100,Number(from)||0));
- heroProgressAnimationTo=Math.max(0,Math.min(100,Number(to)||0));
+ heroProgressAnimationTo=Math.max(heroProgressAnimationFrom,Math.min(100,Number(to)||0));
  heroProgressAnimationDuration=Math.max(1,Number(duration)||1);
  heroProgressDisplayed=heroProgressAnimationFrom;
  setHeroProgressVisual(heroProgressDisplayed);
+ const generation=heroProgressAnimationGeneration;
  heroProgressAnimationFrame=requestAnimationFrame(ts=>heroProgressFrame(ts,generation));
 }
 function resetHeroJourneyProgress(){
  cancelHeroProgressAnimation();
- heroProgressAircraftKey='';heroProgressRouteKey='';heroProgressDisplayed=0;heroProgressTarget=0;
- heroProgressAnimationStart=0;heroProgressAnimationFrom=0;heroProgressAnimationTo=0;heroProgressAnimationDuration=0;
+ heroProgressIdentity=null;
+ heroProgressDisplayed=0;
+ heroProgressTarget=0;
+ heroProgressAnimationStart=0;
+ heroProgressAnimationFrom=0;
+ heroProgressAnimationTo=0;
+ heroProgressAnimationDuration=0;
  setHeroProgressVisual(0);
  setHeroProgressLabel(0);
 }
-function heroProgressAircraftKeyFor(aircraft){
- // ICAO/hex is the physical-aircraft identity. Registration is only the fallback.
- const icao=normalProgressKey(aircraft?.icao||aircraft?.hex||'');
- if(icao)return 'ICAO:'+icao;
- const reg=normalProgressKey(aircraft?.registration||aircraft?.r||'');
- if(reg)return 'REG:'+reg;
- return normalProgressKey(aircraft?.callsign||'')?('CS:'+normalProgressKey(aircraft?.callsign||'')):'';
+function heroProgressIdentityFor(aircraft){
+ return {
+   icao:normalProgressKey(aircraft?.icao||aircraft?.hex||''),
+   reg:normalProgressKey(aircraft?.registration||aircraft?.r||''),
+   callsign:normalProgressKey(aircraft?.callsign||aircraft?.flightIcao||'')
+ };
+}
+function heroProgressIsSameAircraft(next){
+ if(!heroProgressIdentity)return false;
+ // Prefer ICAO/hex whenever both snapshots have it. A different ICAO is a
+ // definite new physical aircraft even if the callsign is the same.
+ if(heroProgressIdentity.icao&&next.icao)return heroProgressIdentity.icao===next.icao;
+ // If the feed temporarily omits ICAO, use the strongest remaining stable ID.
+ if(heroProgressIdentity.reg&&next.reg)return heroProgressIdentity.reg===next.reg;
+ if(heroProgressIdentity.callsign&&next.callsign)return heroProgressIdentity.callsign===next.callsign;
+ // If the current poll has no identity at all, do not manufacture an aircraft
+ // change. Keeping the current state is safer than restarting the bar.
+ return true;
 }
 function updateHeroJourneyProgress(pct,aircraft){
  const bar=$('flightProgress'),plane=$('progressPlane');
  if(!bar&&!plane)return;
  const value=Math.max(0,Math.min(100,Number(pct)||0));
- // The label is ALWAYS the real/current aircraft value. It is never animated.
+ const nextIdentity=heroProgressIdentityFor(aircraft);
+ const hasIdentity=!!(nextIdentity.icao||nextIdentity.reg||nextIdentity.callsign);
+ if(!hasIdentity){
+   // Do not reset because a single poll temporarily lost identity data.
+   setHeroProgressLabel(value);
+   return;
+ }
+ // The label always shows the aircraft's real current percentage immediately.
  setHeroProgressLabel(value);
- const key=heroProgressAircraftKeyFor(aircraft);
- const routeSource=aircraft?.watchRef||aircraft||{};
- const routeKey=String(routeSource?.fromCode||routeSource?.from||routeSource?.routeFrom||'')+'>'+String(routeSource?.toCode||routeSource?.to||routeSource?.routeTo||'');
- if(!key){resetHeroJourneyProgress();return;}
- const aircraftChanged=!!heroProgressAircraftKey&&key!==heroProgressAircraftKey;
- if(aircraftChanged||!heroProgressAircraftKey){
-   // NEW AIRCRAFT: label jumps immediately to the real percentage, while ONLY
-   // the bar + plane are hard-reset to 0 and animated to that percentage.
-   heroProgressAircraftKey=key;
-   heroProgressRouteKey=routeKey;
-   heroProgressDisplayed=0;
+ const aircraftChanged=!!heroProgressIdentity&&!heroProgressIsSameAircraft(nextIdentity);
+ if(aircraftChanged||!heroProgressIdentity){
+   // NEW AIRCRAFT: this is the ONLY place where the Featured visual may move
+   // backwards. It is an explicit 100% deterministic hard reset to zero.
+   cancelHeroProgressAnimation();
+   heroProgressIdentity=nextIdentity;
    heroProgressTarget=value;
+   heroProgressDisplayed=0;
+   setHeroProgressVisual(0);
    startHeroProgressAnimation(0,value,HERO_PROGRESS_RESET_MS,'reset');
    return;
  }
- heroProgressRouteKey=routeKey;
+ // SAME AIRCRAFT: target may increase, but the visual never resets and never
+ // gets a 4-second animation. 4.00 -> 5.34 is a short smooth increment.
  if(value>heroProgressTarget)heroProgressTarget=value;
- if(heroProgressAnimationMode==='reset')return;
+ if(heroProgressAnimationMode==='reset'){
+   // Keep the original 4-second clock. If the live value rises during that
+   // reset, extend the endpoint without restarting the animation.
+   heroProgressAnimationTo=Math.max(heroProgressAnimationTo,heroProgressTarget);
+   return;
+ }
  if(value<=heroProgressDisplayed)return;
  if(heroProgressAnimationMode==='increment'){
    heroProgressAnimationTo=Math.max(heroProgressAnimationTo,heroProgressTarget);
@@ -5065,7 +5088,6 @@ async function poll(){
   const f=choose((items||[]).filter(x=>x&&!x.specialOnly));
   const previousFeatured=S.featured;
   S.featured=f?.icao||null;
-  if(previousFeatured!==S.featured){ resetHeroJourneyProgress(S.featured||''); }
   render(items);
   const selectedAircraft=S.mapSelected?specialAircraftForSelection(S.mapSelected):null;
   if(f){
@@ -5096,7 +5118,6 @@ function refreshHomeDisplay(){
  if(f){
    const previousFeatured=S.featured;
    S.featured=f.icao;
-   if(previousFeatured!==S.featured) resetHeroJourneyProgress(S.featured||'');
    renderLiveHome(f);
  }else{
    const watched= getNextWatchedFlight();
