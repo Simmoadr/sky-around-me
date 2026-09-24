@@ -3105,13 +3105,32 @@ function renderHeroFlightMap(live,watch){
       if(item.icao===S.featured)return;
       L.marker([Number(item.lat),Number(item.lon)],{icon:icon(item,false),interactive:false,zIndexOffset:0}).addTo(heroFlightLayer);
     });
-    // Plot worldwide specials only when they are actually inside the local
-    // radius. They never participate in the Local Airspace camera calculation.
-    const localSpecials=specialSquawkItems().filter(item=>Number.isFinite(Number(item?.d))&&Number(item.d)<=S.rangeKm);
+    // V66.47 — Local Airspace also shows nearby worldwide Special Squawks
+    // that are outside the selected radius.  Inside the radius they use the
+    // normal local aircraft treatment; outside it they use the standalone
+    // red/orange special treatment with no local circle.  They NEVER affect
+    // the Local Airspace camera framing.
+    //
+    // Keep the draw window deliberately bounded for performance.  The user
+    // can see specials near the local zone without asking Leaflet to create
+    // markers for the entire worldwide special feed.
+    const localSpecialDisplayKm=Math.max(Number(S.rangeKm||0),100);
+    const localSpecials=specialSquawkItems().filter(item=>{
+      if(!Number.isFinite(Number(item?.lat))||!Number.isFinite(Number(item?.lon)))return false;
+      const d=Number(item?.d);
+      return Number.isFinite(d)&&d<=localSpecialDisplayKm;
+    });
     localSpecials.forEach(item=>{
       if(item.icao===S.featured||localItems.some(x=>x.icao===item.icao))return;
       if(!Number.isFinite(Number(item?.lat))||!Number.isFinite(Number(item?.lon)))return;
-      L.marker([Number(item.lat),Number(item.lon)],{icon:icon(item,false),interactive:false,zIndexOffset:350}).addTo(heroFlightLayer);
+      const insideLocalRadius=Number(item.d)<=Number(S.rangeKm);
+      const marker=L.marker([Number(item.lat),Number(item.lon)],{
+        icon:insideLocalRadius?icon(item,false):globalSpecialIcon(item),
+        interactive:true,
+        bubblingMouseEvents:false,
+        zIndexOffset:insideLocalRadius?350:650
+      }).addTo(heroFlightLayer);
+      marker.on('click',()=>selectFeatureSpecialAircraft(item.icao));
     });
     const nextPoint=greatCirclePoint(a,b,Math.min(1,progress+.015));
     const angle=Number.isFinite(live?.heading)?live.heading:heroBearing(pos,progress<.99?nextPoint:b);
