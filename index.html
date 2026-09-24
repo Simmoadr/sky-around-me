@@ -2355,14 +2355,14 @@ function specialRegionEnabled(code,region){
   if(SPECIAL_REGION_KEYS.every(r=>selected.includes(r)))return true;
   return !!selected.includes(region);
 }
-const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],mapSelected:null,featureSpecialSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,specialFilterRevision:0,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
+const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],globalSpecialLastGoodItems:[],globalSpecialLastGoodAt:0,mapSelected:null,featureSpecialSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,specialFilterRevision:0,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
 const $=id=>document.getElementById(id);
 function setTextSafe(id,value){const el=$(id);if(el)el.textContent=value??'';}
 function updateRefreshUsage(){const perHour=Math.round(3600/S.refreshSec);const el=$('refreshUsage');if(el)el.textContent=`SESSION REQUESTS: ${S.livePollCount.toLocaleString()} · ~${perHour.toLocaleString()} / HOUR AT ${S.refreshSec} SEC`;}
 function saveSkySettings(){localStorage.setItem('skyAroundMeSettings',JSON.stringify({rangeKm:S.rangeKm,location:S.locationMode,locationName:S.locationName,lat:S.lat,lon:S.lon,extendedAirspace:!!S.extendedAirspace,specialSquawks:S.specialSquawkCodes.length>0,specialSquawkCodes:S.specialSquawkCodes.slice(),specialSquawkRegions:normalizeSpecialRegionSettings(S.specialSquawkRegions),specialSquawkLabels:!!S.specialSquawkLabels,refreshSec:S.refreshSec,rotationDeg:S.rotationDeg,rotationLocked:!!S.rotationLocked}))}
 function updateSpecialRegionSummaries(){SPECIAL_CODES.forEach(c=>{const selected=S.specialSquawkRegions?.[c]||[];const all=SPECIAL_REGION_KEYS.every(r=>selected.includes(r));const label=all?'WORLDWIDE':selected.length?selected.map(r=>r.toUpperCase()).join(' · '):'NO REGIONS';const el=$('specialRegionSummary'+c);if(el){el.textContent=label;el.classList.toggle('worldwide',all);el.classList.toggle('none',!selected.length);}SPECIAL_REGION_KEYS.forEach(r=>{const re=$(`specialRegion${c}${r}`);if(re){const active=selected.includes(r);re.classList.toggle('active',active);re.setAttribute('aria-pressed',active?'true':'false');}});});}
 function updateSkySettingsUI(){updateRefreshUsage();if($('rangeInput'))$('rangeInput').value=S.rangeKm;if($('rangeNumber'))$('rangeNumber').value=S.rangeKm;if($('rangeValue'))$('rangeValue').textContent=S.rangeKm+' KM';if($('rangePill'))$('rangePill').textContent=S.rangeKm+' KM AIRSPACE RADIUS';if($('extendedPill'))$('extendedPill').hidden=!(S.extendedAirspace&&S.rangeKm<100);if($('mapLocation'))$('mapLocation').textContent=S.locationName.toUpperCase();if($('locationSelect'))$('locationSelect').value=S.locationMode==='device'?'device':(places[S.locationMode]?S.locationMode:'custom');if($('currentLocation'))$('currentLocation').textContent=S.locationName;if($('customLocation'))$('customLocation').hidden=S.locationMode!=='custom';if($('extendedAirspaceToggle'))$('extendedAirspaceToggle').checked=!!S.extendedAirspace;['7700','7600','7500','7000','1200'].forEach(c=>{const el=$('specialCode'+c);if(el)el.checked=S.specialSquawkCodes.includes(c);});updateSpecialRegionSummaries();if($('specialSquawkLabelsToggle'))$('specialSquawkLabelsToggle').checked=!!S.specialSquawkLabels;if($('refreshInput'))$('refreshInput').value=S.refreshSec;if($('refreshNumber'))$('refreshNumber').value=S.refreshSec;if($('locationSelect')&&S.locationMode==='device')$('locationSelect').value='device';S.specialSquawks=S.specialSquawkCodes.length>0}
-function applyLocation(lat,lon,name,mode){S.lat=Number(lat);S.lon=Number(lon);S.locationName=name;S.locationMode=mode;saveSkySettings();updateSkySettingsUI();if(typeof me!=='undefined'){me.setLatLng([S.lat,S.lon]);rangeCircle.setLatLng([S.lat,S.lon]);if(typeof extendedCircle!=='undefined'&&extendedCircle)extendedCircle.setLatLng([S.lat,S.lon]);map.setView([S.lat,S.lon],8)};S.lastItems=[];S.lastAllItems=[];S.globalSpecialItems=[];S.specialMarkers.forEach(x=>map.removeLayer(x));S.specialMarkers.clear();S.tracks.clear();S.trails.forEach(x=>map.removeLayer(x));S.trails.clear();S.markers.forEach(x=>map.removeLayer(x));S.markers.clear();S.extendedMarkers.forEach(x=>map.removeLayer(x));S.extendedMarkers.clear();poll()}
+function applyLocation(lat,lon,name,mode){S.lat=Number(lat);S.lon=Number(lon);S.locationName=name;S.locationMode=mode;saveSkySettings();updateSkySettingsUI();if(typeof me!=='undefined'){me.setLatLng([S.lat,S.lon]);rangeCircle.setLatLng([S.lat,S.lon]);if(typeof extendedCircle!=='undefined'&&extendedCircle)extendedCircle.setLatLng([S.lat,S.lon]);map.setView([S.lat,S.lon],8)};S.lastItems=[];S.lastAllItems=[];S.globalSpecialItems=[];S.globalSpecialLastGoodItems=[];S.globalSpecialLastGoodAt=0;S.specialMarkers.forEach(x=>map.removeLayer(x));S.specialMarkers.clear();S.tracks.clear();S.trails.forEach(x=>map.removeLayer(x));S.trails.clear();S.markers.forEach(x=>map.removeLayer(x));S.markers.clear();S.extendedMarkers.forEach(x=>map.removeLayer(x));S.extendedMarkers.clear();poll()}
 async function reverseGeocodeDevice(lat,lon){try{const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon)+'&zoom=10&addressdetails=1',{headers:{Accept:'application/json'}});if(!r.ok)throw new Error('Reverse geocode failed');const j=await r.json();const a=j?.address||{};const place=a.city||a.town||a.village||a.municipality||a.county||'Device Location';const region=a.state||a.region||'';const country=a.country||'';return [place,region,country].filter(Boolean).slice(0,3).join(', ')}catch(e){return 'Device Location'}}
 async function useDeviceLocation(){if(!navigator.geolocation){$('locationMessage').textContent='Device location is not available in this browser.';return}$('locationMessage').textContent='Requesting device location…';navigator.geolocation.getCurrentPosition(async pos=>{const name=await reverseGeocodeDevice(pos.coords.latitude,pos.coords.longitude);applyLocation(pos.coords.latitude,pos.coords.longitude,name,'device');$('locationMessage').textContent='Using the iPad device location.'},err=>{if(S.locationMode==='device'){const p=places.lusk;applyLocation(p.lat,p.lon,p.name,'lusk');$('locationMessage').textContent='Device location unavailable; using Lusk as the saved fallback.'}else{$('locationMessage').textContent='Location unavailable. Choose a named place instead.'}},{enableHighAccuracy:true,maximumAge:300000,timeout:10000})}
 async function searchPlace(){const q=$('placeSearch').value.trim();if(!q){$('locationMessage').textContent='Enter a place name first.';return}$('locationMessage').textContent='Searching…';try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(q),{headers:{Accept:'application/json'}});if(!r.ok)throw new Error('Place search failed');const a=await r.json();if(!a.length)throw new Error('Place not found');const label=a[0].display_name.split(',').slice(0,3).join(', ');applyLocation(a[0].lat,a[0].lon,label,'custom');$('locationMessage').textContent='Location set to '+label+'.'}catch(e){$('locationMessage').textContent=e.message||'Could not find that place.'}}
@@ -2437,10 +2437,10 @@ function setRefreshRate(v){const n=Math.min(60,Math.max(2,Math.round(Number(v)||
 function setRange(v){const n=Math.min(250,Math.max(1,Math.round(Number(v)||100)));S.rangeKm=n;saveSkySettings();updateSkySettingsUI();if(typeof rangeCircle!=='undefined')rangeCircle.setRadius(n*1000);if(typeof extendedCircle!=='undefined'&&extendedCircle)extendedCircle.setStyle({opacity:S.extendedAirspace&&n<100?1:0,fillOpacity:0}).setRadius(100000);
  // A range change invalidates the current Featured aircraft immediately. Do not
  // let the previous aircraft survive while the new airspace scan is in flight.
- S.lastItems=[];S.lastAllItems=[];S.globalSpecialItems=[];S.featured=null;S.mapSelected=null;S.specialMarkers.forEach(x=>map.removeLayer(x));S.specialMarkers.clear();
+ S.lastItems=[];S.lastAllItems=[];S.globalSpecialItems=[];S.globalSpecialLastGoodItems=[];S.globalSpecialLastGoodAt=0;S.featured=null;S.mapSelected=null;S.specialMarkers.forEach(x=>map.removeLayer(x));S.specialMarkers.clear();
  if($('home')?.classList.contains('active'))renderScheduledHome();
  poll()}
-$('rangeInput').addEventListener('input',e=>setRange(e.target.value));$('rangeNumber').addEventListener('change',e=>setRange(e.target.value));$('refreshInput').addEventListener('input',e=>setRefreshRate(e.target.value));$('refreshNumber').addEventListener('change',e=>setRefreshRate(e.target.value));$('extendedAirspaceToggle').addEventListener('change',e=>{S.extendedAirspace=!!e.target.checked;saveSkySettings();updateSkySettingsUI();S.lastItems=[];S.lastAllItems=[];S.globalSpecialItems=[];S.featured=null;S.mapSelected=null;S.specialMarkers.forEach(x=>map.removeLayer(x));S.specialMarkers.clear();S.extendedMarkers.forEach(x=>map.removeLayer(x));S.extendedMarkers.clear();if(typeof extendedCircle!=='undefined'&&extendedCircle)extendedCircle.setStyle({opacity:S.extendedAirspace&&S.rangeKm<100?1:0});if($('mapPage')?.classList.contains('active')&&S.extendedAirspace)fitLiveSkyExtended();if($('home')?.classList.contains('active'))renderScheduledHome();poll()});
+$('rangeInput').addEventListener('input',e=>setRange(e.target.value));$('rangeNumber').addEventListener('change',e=>setRange(e.target.value));$('refreshInput').addEventListener('input',e=>setRefreshRate(e.target.value));$('refreshNumber').addEventListener('change',e=>setRefreshRate(e.target.value));$('extendedAirspaceToggle').addEventListener('change',e=>{S.extendedAirspace=!!e.target.checked;saveSkySettings();updateSkySettingsUI();S.lastItems=[];S.lastAllItems=[];S.globalSpecialItems=[];S.globalSpecialLastGoodItems=[];S.globalSpecialLastGoodAt=0;S.featured=null;S.mapSelected=null;S.specialMarkers.forEach(x=>map.removeLayer(x));S.specialMarkers.clear();S.extendedMarkers.forEach(x=>map.removeLayer(x));S.extendedMarkers.clear();if(typeof extendedCircle!=='undefined'&&extendedCircle)extendedCircle.setStyle({opacity:S.extendedAirspace&&S.rangeKm<100?1:0});if($('mapPage')?.classList.contains('active')&&S.extendedAirspace)fitLiveSkyExtended();if($('home')?.classList.contains('active'))renderScheduledHome();poll()});
 $('locationSelect').addEventListener('change',e=>{const v=e.target.value;if(v==='device'){useDeviceLocation();return}if(v==='custom'){S.locationMode='custom';updateSkySettingsUI();$('placeSearch').focus();return}const p=places[v];if(p)applyLocation(p.lat,p.lon,p.name,v)});$('useDeviceLocation').addEventListener('click',useDeviceLocation);$('findPlace').addEventListener('click',searchPlace);$('placeSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchPlace()});
 
 function tickClock(){$('clock').textContent=new Date().toLocaleString([], {weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).toUpperCase()}tickClock();setInterval(tickClock,30000);
@@ -2989,7 +2989,30 @@ function renderHeroFlightMap(live,watch){
    const hp=$('heroSpecialCountPill');if(hp){hp.hidden=!(S.specialSquawks&&sc.total>0);hp.classList.toggle('has-emergency',sc.emergency>0)}
    const ht=$('heroSpecialCountText');if(ht)ht.textContent=`SPECIAL ${sc.total}`;
  }
- if(!pos){heroFlightMap.setView([S.lat,S.lon],6);setTimeout(()=>heroFlightMap.invalidateSize(),50);return;}
+ if(!pos){
+  // V66.43 — the Featured "Skies are quiet" state still needs to show the
+  // worldwide Special Squawk feed. There is no live featured aircraft to give
+  // us a route position, so keep the camera on the device/map and plot the
+  // special aircraft independently. They never participate in camera framing.
+  heroFlightMap.setView([S.lat,S.lon],6,{animate:false});
+  L.circleMarker([S.lat,S.lon],{radius:6,color:'#3d805e',weight:3,fillColor:'#3d805e',fillOpacity:1,opacity:1,interactive:false}).addTo(heroFlightLayer);
+  const quietSpecials=specialSquawkItems();
+  quietSpecials.forEach(item=>{
+    if(!Number.isFinite(Number(item?.lat))||!Number.isFinite(Number(item?.lon)))return;
+    const local=Number.isFinite(Number(item?.d))&&Number(item.d)<=S.rangeKm;
+    const marker=L.marker([Number(item.lat),Number(item.lon)],{
+      icon:local?icon(item,false):globalSpecialIcon(item),
+      interactive:true,
+      bubblingMouseEvents:false,
+      zIndexOffset:650
+    }).addTo(heroFlightLayer);
+    marker.on('click',()=>selectFeatureSpecialAircraft(item.icao));
+  });
+  const hp=$('heroSpecialCountPill');
+  if(hp)hp.hidden=true;
+  setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(),50);
+  return;
+ }
  if(hasRoute){
    const pts=heroCurvedRoutePoints(a,pos,b,120);
    // V60.4 adds an ambient two-view cycle on the Featured map:
@@ -3239,7 +3262,27 @@ function startHeroMapCycle(live,watch){
  },10000);
 }
 function setHeroAircraft(x,watch){renderHeroFlightMap(x,watch);if(S.featureSpecialSelected){stopHeroMapCycle();heroMapMode='journey'}else{startHeroMapCycle(x,watch)};updateFeatureSpecialPanel();setTimeout(()=>setQuietHeroState(!x&&!watch),0)}
-function setQuietHeroState(show){if(show)stopHeroMapCycle();const q=$('heroQuietState');if(q)q.classList.toggle('is-hidden',!show);const hero=$('hero');if(hero)hero.classList.toggle('hero-is-quiet',!!show);const brand=$('heroMapBrand');const status=$('heroMapStatus');const rec=$('heroMapRecenter');if(show){if(brand)brand.style.display='none';if(status)status.style.display='none';if(rec)rec.style.display='none'}else{if(brand)brand.style.display='';if(status)status.style.display='';if(rec)rec.style.display=''}}
+function setQuietHeroState(show){
+ if(show)stopHeroMapCycle();
+ const q=$('heroQuietState');if(q)q.classList.toggle('is-hidden',!show);
+ const hero=$('hero');if(hero)hero.classList.toggle('hero-is-quiet',!!show);
+ const brand=$('heroMapBrand'),status=$('heroMapStatus'),rec=$('heroMapRecenter'),pill=$('heroSpecialCountPill');
+ if(show){
+  if(brand)brand.style.display='none';
+  const counter=specialCounterHtml(specialSquawkCounts());
+  // Keep the compact status HUD visible on the quiet screen when Special
+  // Squawk monitoring is enabled. This is the same counter used elsewhere in
+  // Featured/Live Sky; only the distance line is absent because there is no
+  // selected live aircraft.
+  if(status){status.style.display=counter?'':'none';}
+  if(rec)rec.style.display='none';
+  if(pill)pill.hidden=true;
+ }else{
+  if(brand)brand.style.display='';
+  if(status)status.style.display='';
+  if(rec)rec.style.display='';
+ }
+}
 function recenterHeroMap(){
  if(!heroFlightMap)return;
  const live=(S.lastItems||[]).find(x=>x.icao===S.featured)||choose(S.lastItems||[])||S.watchLive||null;
@@ -4887,6 +4930,7 @@ function isRawSpecialSquawk(a){
  const region=specialRegionForPoint(a?.lat,a?.lon);
  return !!s&&S.specialSquawkCodes.includes(s)&&specialRegionEnabled(s,region);
 }
+// V66.42 — special-squawk feed treats upstream failure as unavailable, not zero.
 async function poll(){
  if(!document.getElementById('map')||S.pollInFlight)return;
  const pollRevision=S.specialFilterRevision||0;
@@ -4918,7 +4962,21 @@ async function poll(){
     return x;
   });
   const specialRaw=Array.isArray(j.specialAc)?j.specialAc:[];
-  S.globalSpecialItems=specialRaw.map(a=>({icao:String(a.hex||'').toLowerCase(),callsign:String(a.flight||'').trim(),registration:String(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||j._skySpecialProvider||'GLOBAL ADS-B',category:a.category||'',squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600||a.emergency_squawk),_specialRegion:specialRegionForPoint(a.lat,a.lon),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon))&&specialSquawkKind(x)).map(x=>({...x,d:hav(S.lat,S.lon,Number(x.lat),Number(x.lon))}));
+  const specialStatus=String(j._skySpecialStatus||'LIVE').toUpperCase();
+  const parsedSpecialItems=specialRaw.map(a=>({icao:String(a.hex||'').toLowerCase(),callsign:String(a.flight||'').trim(),registration:String(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||j._skySpecialProvider||'GLOBAL ADS-B',category:a.category||'',squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600||a.emergency_squawk),_specialRegion:specialRegionForPoint(a.lat,a.lon),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon))&&specialSquawkKind(x)).map(x=>({...x,d:hav(S.lat,S.lon,Number(x.lat),Number(x.lon))}));
+  // V66.42: distinguish a genuine empty feed from an unavailable upstream.
+  // If every special-squawk provider fails on a poll, keep the last good set
+  // rather than flashing SPECIAL 6 -> SPECIAL 0 -> SPECIAL 6. A successful
+  // empty response remains authoritative and correctly clears the count.
+  if(specialStatus==='UNAVAILABLE'&&S.globalSpecialLastGoodItems.length&&Date.now()-Number(S.globalSpecialLastGoodAt||0)<=60000){
+    S.globalSpecialItems=S.globalSpecialLastGoodItems.map(x=>({...x}));
+  }else{
+    S.globalSpecialItems=parsedSpecialItems;
+    if(specialStatus==='LIVE'||specialStatus==='PARTIAL'){
+      S.globalSpecialLastGoodItems=parsedSpecialItems.map(x=>({...x}));
+      S.globalSpecialLastGoodAt=Date.now();
+    }
+  }
   S.lastAllItems=allItems;S.lastItems=items;
   updateSpecialSquawkCounter();
   // STREAM A ONLY: local aircraft determine Featured and Live Sky.
