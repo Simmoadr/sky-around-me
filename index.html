@@ -4494,6 +4494,59 @@ async function lookupWatchedSchedule(flight,date){
  return null;
 }
 
+async function repairNextWatchedFlightSchedule(){
+ const target=getNextWatchedFlight();
+ if(!target||!target.flight||!target.date)return;
+ const complete=!!(target.departureTime&&(target.departureUtc||target.fromCode)&&target.fromCode&&target.toCode&&(target.arrivalTime||target.arrivalUtc));
+ if(complete)return;
+ const now=Date.now();
+ const last=Number(target.scheduleRepairAt||0);
+ // Avoid repeatedly spending schedule-lookup credits for a bad/incomplete record.
+ // Retry at most once every 30 minutes until the record is complete.
+ if(last&&now-last<30*60*1000)return;
+ target.scheduleRepairAt=now;
+ target.lookupStatus='LOOKING UP';
+ saveState();
+ if(SKY_DEBUG_ENABLED)skyDebug('OK','WATCHED FLIGHT SCHEDULE REPAIR',{flight:target.flight,date:target.date,reason:'incomplete stored schedule'});
+ try{
+  const schedule=await lookupWatchedSchedule(target.flight,target.date);
+  if(schedule&&(schedule.status==='FOUND'||schedule.status==='ROUTE_FOUND')){
+   if(schedule.departureTime)target.departureTime=schedule.departureTime;
+   if(schedule.departureUtc)target.departureUtc=schedule.departureUtc;
+   if(schedule.arrivalUtc)target.arrivalUtc=schedule.arrivalUtc;
+   if(schedule.arrivalTime)target.arrivalTime=schedule.arrivalTime;
+   if(schedule.fromCode)target.fromCode=schedule.fromCode;
+   if(schedule.toCode)target.toCode=schedule.toCode;
+   if(schedule.fromLat!=null)target.fromLat=Number(schedule.fromLat);
+   if(schedule.fromLon!=null)target.fromLon=Number(schedule.fromLon);
+   if(schedule.toLat!=null)target.toLat=Number(schedule.toLat);
+   if(schedule.toLon!=null)target.toLon=Number(schedule.toLon);
+   if(schedule.from)target.from=schedule.from;
+   if(schedule.to)target.to=schedule.to;
+   if(schedule.airlineName)target.airlineName=schedule.airlineName;
+   if(schedule.airlineCode)target.airlineCode=schedule.airlineCode;
+   if(schedule.airlineIcao)target.airlineIcao=schedule.airlineIcao;
+   if(schedule.flightIcao)target.flightIcao=schedule.flightIcao;
+   if(schedule.aircraftDesc)target.aircraftDesc=schedule.aircraftDesc;
+   if(schedule.registration)target.registration=schedule.registration;
+   if(schedule.hex)target.hex=schedule.hex;
+   target.scheduleSource=schedule.source||'AirLabs';
+   target.lookupStatus='ROUTE FOUND';
+   target.scheduleRepairAt=0;
+   saveState();
+   renderWatchlist();renderHomeWatch();renderScheduledHome();
+   if(SKY_DEBUG_ENABLED)skyDebug('OK','WATCHED FLIGHT SCHEDULE REPAIRED',{flight:target.flight,date:target.date,departure:target.departureTime,arrival:target.arrivalTime,departureUtc:target.departureUtc,arrivalUtc:target.arrivalUtc,from:target.fromCode,to:target.toCode,source:target.scheduleSource});
+  }else{
+   target.lookupStatus='LOOKUP FAILED';
+   saveState();
+  }
+ }catch(e){
+  target.lookupStatus='LOOKUP FAILED';
+  saveState();
+  if(SKY_DEBUG_ENABLED)skyDebug('ERROR','WATCHED FLIGHT SCHEDULE REPAIR FAILED',{flight:target.flight,date:target.date,error:String(e?.message||e)});
+ }
+}
+
 async function addWatchedFlight(flight,date,name){
  const cleanFlight=normalFlightCode(flight),cleanDate=String(date||'');
  const existing=watchlist.find(x=>normalFlightCode(x.flight||x.flightNumber)===cleanFlight&&String(x.date||'')===cleanDate);
@@ -5363,7 +5416,7 @@ document.querySelectorAll('[data-special-region]').forEach(el=>el.addEventListen
 }));
 if($('specialSquawkLabelsToggle'))$('specialSquawkLabelsToggle').addEventListener('change',()=>{S.specialSquawkLabels=!!$('specialSquawkLabelsToggle').checked;saveSkySettings();updateSkySettingsUI();render(S.lastItems||[]);renderGlobalSpecialMarkers();if(typeof renderHeroFlightMap==='function'&&S.featured){const f=(S.lastItems||[]).find(a=>a.icao===S.featured);if(f)renderLiveHome(f)}});
 window.addEventListener('resize',()=>{if(typeof positionHeroRecenterButton==='function')positionHeroRecenterButton()});
-updateSkySettingsUI();updateSpecialSquawkCounter();if(S.extendedAirspace&&S.rangeKm<100)setTimeout(fitLiveSkyExtended,180);enforceFutureDateInputs();loadRouteCache();loadIdentityCache();loadAirportDatabase();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);refreshWatchStream();restartWatchTimer();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);refreshScheduledHeroCountdown();const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='LIVE'?'LIVE TRACKING':s.textContent==='LANDED'?'FLIGHT ENDED':'';}},1000);restartPollTimer();
+updateSkySettingsUI();updateSpecialSquawkCounter();if(S.extendedAirspace&&S.rangeKm<100)setTimeout(fitLiveSkyExtended,180);enforceFutureDateInputs();loadRouteCache();loadIdentityCache();loadAirportDatabase();renderScheduledHome();updateMapCard(null);renderWatchlist();renderHomeWatch(S.lastItems);setTimeout(repairNextWatchedFlightSchedule,250);refreshWatchStream();restartWatchTimer();if(S.locationMode==='device'&&!savedSkySettings.locationName)setTimeout(useDeviceLocation,350);poll();setInterval(()=>{renderWatchlist();renderHomeWatch(S.lastItems);refreshScheduledHeroCountdown();const s=$('homeWatchState'),sub=$('homeWatchStateSub');if(s&&sub){sub.textContent=s.textContent==='LIVE'?'LIVE TRACKING':s.textContent==='LANDED'?'FLIGHT ENDED':'';}},1000);restartPollTimer();
 </script>
 
 
