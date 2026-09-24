@@ -3108,6 +3108,10 @@ function renderHeroFlightMap(live,watch){
     });
     localItems.forEach(item=>{
       if(!Number.isFinite(Number(item?.lat))||!Number.isFinite(Number(item?.lon)))return;
+      // Special-squawk aircraft get their own interactive layer below. Do not
+      // paint them here as ordinary non-interactive local aircraft, otherwise
+      // the later special marker is suppressed and cannot be selected.
+      if(specialSquawkKind(item))return;
       // Featured aircraft is rendered once below with the locked white/green marker.
       if(item.icao===S.featured)return;
       L.marker([Number(item.lat),Number(item.lon)],{icon:icon(item,false),interactive:false,zIndexOffset:0}).addTo(heroFlightLayer);
@@ -3128,7 +3132,10 @@ function renderHeroFlightMap(live,watch){
       return Number.isFinite(d)&&d<=localSpecialDisplayKm;
     });
     localSpecials.forEach(item=>{
-      if(item.icao===S.featured||localItems.some(x=>x.icao===item.icao))return;
+      // Special aircraft must remain selectable even when the same ICAO also
+      // appears in the ordinary local feed. It is intentionally rendered here
+      // as the interactive special marker, not the non-interactive local marker.
+      if(item.icao===S.featured)return;
       if(!Number.isFinite(Number(item?.lat))||!Number.isFinite(Number(item?.lon)))return;
       const insideLocalRadius=Number(item.d)<=Number(S.rangeKm);
       const marker=L.marker([Number(item.lat),Number(item.lon)],{
@@ -4999,14 +5006,27 @@ async function poll(){
   // If every special-squawk provider fails on a poll, keep the last good set
   // rather than flashing SPECIAL 6 -> SPECIAL 0 -> SPECIAL 6. A successful
   // empty response remains authoritative and correctly clears the count.
-  if(specialStatus==='UNAVAILABLE'&&S.globalSpecialLastGoodItems.length&&Date.now()-Number(S.globalSpecialLastGoodAt||0)<=60000){
+  const specialLastGoodFresh=S.globalSpecialLastGoodItems.length&&Date.now()-Number(S.globalSpecialLastGoodAt||0)<=60000;
+  if(specialStatus==='LIVE'){
+    // Only a fully healthy upstream response becomes the new authoritative
+    // snapshot. PARTIAL must never replace a healthy 70-aircraft snapshot
+    // with a transient 1-aircraft provider result.
+    S.globalSpecialItems=parsedSpecialItems;
+    S.globalSpecialLastGoodItems=parsedSpecialItems.map(x=>({...x}));
+    S.globalSpecialLastGoodAt=Date.now();
+  }else if(specialStatus==='PARTIAL'){
+    // Backend V66.48 already merges its cached complete snapshot with fresh
+    // partial data. Keep the frontend equally defensive: if a partial response
+    // is unexpectedly smaller, merge it with the last complete frontend copy
+    // for up to 60 seconds rather than allowing 70 -> 1 -> 70 flicker.
+    const merged=new Map();
+    if(specialLastGoodFresh)S.globalSpecialLastGoodItems.forEach(x=>{if(x?.icao)merged.set(x.icao,{...x});});
+    parsedSpecialItems.forEach(x=>{if(x?.icao)merged.set(x.icao,{...(merged.get(x.icao)||{}),...x});});
+    S.globalSpecialItems=[...merged.values()];
+  }else if(specialStatus==='UNAVAILABLE'&&specialLastGoodFresh){
     S.globalSpecialItems=S.globalSpecialLastGoodItems.map(x=>({...x}));
   }else{
     S.globalSpecialItems=parsedSpecialItems;
-    if(specialStatus==='LIVE'||specialStatus==='PARTIAL'){
-      S.globalSpecialLastGoodItems=parsedSpecialItems.map(x=>({...x}));
-      S.globalSpecialLastGoodAt=Date.now();
-    }
   }
   S.lastAllItems=allItems;S.lastItems=items;
   updateSpecialSquawkCounter();
