@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<!-- Sky Around Me V66.39 — hard 0% paint before new-aircraft progress animation -->
+<!-- Sky Around Me V66.57 — hard 0% paint before new-aircraft progress animation -->
 <head>
 <!-- Sky Around Me V66.10 — hard-reset progress animations on aircraft/flight identity change -->
 <!-- Sky Around Me V66.5 — navigation regression fix: restore the proven V64.8 nav event path; no map/aircraft/backend logic changed. -->
@@ -2356,6 +2356,7 @@ function specialRegionEnabled(code,region){
   return !!selected.includes(region);
 }
 const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],globalSpecialLastGoodItems:[],globalSpecialLastGoodAt:0,mapSelected:null,featureSpecialSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,specialFilterRevision:0,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
+S.specialSquawks=S.specialSquawkCodes.length>0;
 const $=id=>document.getElementById(id);
 function setTextSafe(id,value){const el=$(id);if(el)el.textContent=value??'';}
 function updateRefreshUsage(){const perHour=Math.round(3600/S.refreshSec);const el=$('refreshUsage');if(el)el.textContent=`SESSION REQUESTS: ${S.livePollCount.toLocaleString()} · ~${perHour.toLocaleString()} / HOUR AT ${S.refreshSec} SEC`;}
@@ -2702,19 +2703,13 @@ let heroMapMode='journey';
 let heroMapCycleTimer=null;
 let heroMapCycleKey='';
 
-// V66.54 — Featured Journey progress: one stable aircraft identity, one animation owner.
-// The Featured progress must not restart because route metadata is refreshed or
-// because ADS-B position causes the calculated percentage to jitter. Only a
-// genuinely different aircraft resets the journey visual.
-//
-// The animation uses the RAF timestamp (not callback count) so the duration is
-// deterministic even when the browser drops frames. See MDN's requestAnimationFrame
-// guidance: the callback timestamp should be used to calculate elapsed time.
+// V66.57 — deterministic Featured Journey progress controller.
+// Exactly one animation owns the Featured bar/plane. A new aircraft resets to
+// 0% and animates to its current percentage over exactly 4 seconds. Polling,
+// route enrichment and telemetry jitter cannot restart or reverse that motion.
 function normalProgressKey(value){return String(value||'').trim().toLowerCase();}
-
 const HERO_PROGRESS_RESET_MS=4000;
 const HERO_PROGRESS_INCREMENT_MS=350;
-
 let heroProgressAircraftKey='';
 let heroProgressRouteKey='';
 let heroProgressDisplayed=0;
@@ -2725,19 +2720,16 @@ let heroProgressAnimationStart=0;
 let heroProgressAnimationFrom=0;
 let heroProgressAnimationTo=0;
 let heroProgressAnimationDuration=0;
-
-function setHeroProgressVisual(value){
+function setProgressVisual(value){
  const v=Math.max(0,Math.min(100,Number(value)||0));
  const bar=$('flightProgress'),plane=$('progressPlane');
  if(bar){bar.style.transition='none';bar.style.width=v+'%';}
  if(plane){plane.style.transition='none';plane.style.left=v+'%';}
 }
-
 function cancelHeroProgressAnimation(){
  if(heroProgressAnimationFrame!==null){cancelAnimationFrame(heroProgressAnimationFrame);heroProgressAnimationFrame=null;}
  heroProgressAnimationMode='';
 }
-
 function heroProgressFrame(now){
  heroProgressAnimationFrame=null;
  const mode=heroProgressAnimationMode;
@@ -2748,16 +2740,15 @@ function heroProgressFrame(now){
  const to=Math.max(from,heroProgressAnimationTo,heroProgressTarget);
  const v=from+(to-from)*t;
  heroProgressDisplayed=Math.max(heroProgressDisplayed,v);
- setHeroProgressVisual(heroProgressDisplayed);
+ setProgressVisual(heroProgressDisplayed);
  if(t>=1){
-   heroProgressDisplayed=Math.max(heroProgressDisplayed,to,heroProgressTarget);
-   setHeroProgressVisual(heroProgressDisplayed);
-   heroProgressAnimationMode='';
-   return;
+  heroProgressDisplayed=Math.max(heroProgressDisplayed,to,heroProgressTarget);
+  setProgressVisual(heroProgressDisplayed);
+  heroProgressAnimationMode='';
+  return;
  }
  heroProgressAnimationFrame=requestAnimationFrame(heroProgressFrame);
 }
-
 function startHeroProgressAnimation(from,to,duration,mode){
  cancelHeroProgressAnimation();
  heroProgressAnimationMode=mode;
@@ -2765,19 +2756,14 @@ function startHeroProgressAnimation(from,to,duration,mode){
  heroProgressAnimationFrom=Math.max(0,Math.min(100,Number(from)||0));
  heroProgressAnimationTo=Math.max(heroProgressAnimationFrom,Math.min(100,Number(to)||0));
  heroProgressAnimationDuration=Math.max(1,Number(duration)||1);
- setHeroProgressVisual(heroProgressAnimationFrom);
+ setProgressVisual(heroProgressAnimationFrom);
  heroProgressAnimationFrame=requestAnimationFrame(heroProgressFrame);
 }
-
 function resetHeroJourneyProgress(){
  cancelHeroProgressAnimation();
- heroProgressAircraftKey='';
- heroProgressRouteKey='';
- heroProgressDisplayed=0;
- heroProgressTarget=0;
- setHeroProgressVisual(0);
+ heroProgressAircraftKey='';heroProgressRouteKey='';heroProgressDisplayed=0;heroProgressTarget=0;
+ setProgressVisual(0);
 }
-
 function updateHeroJourneyProgress(pct,aircraft){
  const bar=$('flightProgress'),plane=$('progressPlane');
  if(!bar&&!plane)return;
@@ -2785,39 +2771,25 @@ function updateHeroJourneyProgress(pct,aircraft){
  const key=normalProgressKey(aircraft?.icao||aircraft?.hex||aircraft?.registration||aircraft?.r||'');
  const routeSource=aircraft?.watchRef||aircraft||{};
  const routeKey=String(routeSource?.fromCode||routeSource?.from||routeSource?.routeFrom||'')+'>'+String(routeSource?.toCode||routeSource?.to||routeSource?.routeTo||'');
-
  if(!key){resetHeroJourneyProgress();return;}
-
- // IMPORTANT: aircraft identity is deliberately the reset key. Route metadata
- // can be enriched/refreshed several times for the same aircraft and must not
- // restart the 4-second animation.
  const aircraftChanged=!!heroProgressAircraftKey&&key!==heroProgressAircraftKey;
-
  if(aircraftChanged||!heroProgressAircraftKey){
-   cancelHeroProgressAnimation();
-   heroProgressAircraftKey=key;
-   heroProgressRouteKey=routeKey;
-   heroProgressDisplayed=0;
-   heroProgressTarget=value;
-   setHeroProgressVisual(0);
-   startHeroProgressAnimation(0,value,HERO_PROGRESS_RESET_MS,'reset');
-   return;
+  cancelHeroProgressAnimation();
+  heroProgressAircraftKey=key;heroProgressRouteKey=routeKey;heroProgressDisplayed=0;heroProgressTarget=value;
+  setProgressVisual(0);
+  startHeroProgressAnimation(0,value,HERO_PROGRESS_RESET_MS,'reset');
+  return;
  }
-
  heroProgressRouteKey=routeKey;
-
- // Never allow telemetry jitter to move the Featured aircraft backwards.
- // While the initial 4-second animation is running, only a HIGHER target is
- // accepted; the clock is never restarted.
  if(value>heroProgressTarget)heroProgressTarget=value;
  if(heroProgressAnimationMode==='reset'){
-   heroProgressAnimationTo=heroProgressTarget;
-   return;
+  heroProgressAnimationTo=heroProgressTarget;
+  return;
  }
  if(value<=heroProgressDisplayed)return;
  if(heroProgressAnimationMode==='increment'){
-   heroProgressAnimationTo=Math.max(heroProgressAnimationTo,heroProgressTarget);
-   return;
+  heroProgressAnimationTo=Math.max(heroProgressAnimationTo,heroProgressTarget);
+  return;
  }
  startHeroProgressAnimation(heroProgressDisplayed,heroProgressTarget,HERO_PROGRESS_INCREMENT_MS,'increment');
 }
@@ -3118,9 +3090,6 @@ function renderHeroFlightMap(live,watch){
     });
     localItems.forEach(item=>{
       if(!Number.isFinite(Number(item?.lat))||!Number.isFinite(Number(item?.lon)))return;
-      // Special-squawk aircraft get their own interactive layer below. Do not
-      // paint them here as ordinary non-interactive local aircraft, otherwise
-      // the later special marker is suppressed and cannot be selected.
       if(specialSquawkKind(item))return;
       // Featured aircraft is rendered once below with the locked white/green marker.
       if(item.icao===S.featured)return;
@@ -3142,11 +3111,10 @@ function renderHeroFlightMap(live,watch){
       return Number.isFinite(d)&&d<=localSpecialDisplayKm;
     });
     localSpecials.forEach(item=>{
-      // Special aircraft must remain selectable even when the same ICAO also
-      // appears in the ordinary local feed. It is intentionally rendered here
-      // as the interactive special marker, not the non-interactive local marker.
-      if(item.icao===S.featured)return;
       if(!Number.isFinite(Number(item?.lat))||!Number.isFinite(Number(item?.lon)))return;
+      // Special aircraft are always rendered by this interactive layer, even
+      // when the same ICAO also exists in S.lastItems.
+      if(item.icao===S.featured)return;
       const insideLocalRadius=Number(item.d)<=Number(S.rangeKm);
       const marker=L.marker([Number(item.lat),Number(item.lon)],{
         icon:insideLocalRadius?icon(item,false):globalSpecialIcon(item),
@@ -3471,6 +3439,7 @@ function renderQuietScheduledHero(next){
  }
 }
 function renderScheduledHome(){
+ resetHeroJourneyProgress();
  const hero=$('hero');if(hero){hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);hero.classList.remove('hero-is-quiet');}
  const next=getNextWatchedFlight();
  const live=next&&watchHasLive(next)?S.watchLive:null;
@@ -3482,7 +3451,6 @@ function renderScheduledHome(){
  }
  const searching=next&&flightState(next)==='SEARCHING';
  if(searching){
-   resetHeroJourneyProgress();
    setQuietHeroState(true);
    const hero=$('hero');if(hero)hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);
    setTextSafe('homeEyebrow','WATCHED FLIGHT · SIGNAL SEARCHING');
@@ -3502,10 +3470,9 @@ function renderScheduledHome(){
    ['m1','m2','m3','m4'].forEach(id=>$(id).textContent='—');
    ['m1s','m2s','m3s','m4s'].forEach(id=>$(id).textContent='');
    $('mLabel1').textContent='DISTANCE TO GO';$('mLabel2').textContent='ALTITUDE';$('mLabel3').textContent='SPEED';$('mLabel4').textContent='HEADING';
-   const ji=$('journeyInfo');if(ji){ji.hidden=false;$('journeyFrom').textContent=next.fromCode||'—';$('journeyFromName').textContent=airportDisplayName(next.fromCode,next.from);$('journeyTo').textContent=next.toCode||'—';$('journeyToName').textContent=airportDisplayName(next.toCode,next.to);$('journeyPercent').textContent='SEARCHING';}
+   const ji=$('journeyInfo');if(ji){ji.hidden=false;$('journeyFrom').textContent=next.fromCode||'—';$('journeyFromName').textContent=airportDisplayName(next.fromCode,next.from);$('journeyTo').textContent=next.toCode||'—';$('journeyToName').textContent=airportDisplayName(next.toCode,next.to);$('journeyPercent').textContent='SEARCHING';$('flightProgress').style.width='0%';const pp=$('progressPlane');if(pp)pp.style.left='0%';}
    return;
  }
- resetHeroJourneyProgress();
  setHeroAircraft(null,null);
  if(next){
    renderQuietScheduledHero(next);
@@ -3513,7 +3480,7 @@ function renderScheduledHome(){
    setQuietHeroState(true);
    renderQuietScheduledHero(null);
  }
- if(!next&&$('journeyInfo'))$('journeyInfo').hidden=true;
+ $('flightProgress').style.width='0%';if(!next&&$('journeyInfo'))$('journeyInfo').hidden=true;
 }
 function normalFlightCode(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'')}
 
@@ -5019,17 +4986,10 @@ async function poll(){
   // empty response remains authoritative and correctly clears the count.
   const specialLastGoodFresh=S.globalSpecialLastGoodItems.length&&Date.now()-Number(S.globalSpecialLastGoodAt||0)<=60000;
   if(specialStatus==='LIVE'){
-    // Only a fully healthy upstream response becomes the new authoritative
-    // snapshot. PARTIAL must never replace a healthy 70-aircraft snapshot
-    // with a transient 1-aircraft provider result.
     S.globalSpecialItems=parsedSpecialItems;
     S.globalSpecialLastGoodItems=parsedSpecialItems.map(x=>({...x}));
     S.globalSpecialLastGoodAt=Date.now();
   }else if(specialStatus==='PARTIAL'){
-    // Backend V66.48 already merges its cached complete snapshot with fresh
-    // partial data. Keep the frontend equally defensive: if a partial response
-    // is unexpectedly smaller, merge it with the last complete frontend copy
-    // for up to 60 seconds rather than allowing 70 -> 1 -> 70 flicker.
     const merged=new Map();
     if(specialLastGoodFresh)S.globalSpecialLastGoodItems.forEach(x=>{if(x?.icao)merged.set(x.icao,{...x});});
     parsedSpecialItems.forEach(x=>{if(x?.icao)merged.set(x.icao,{...(merged.get(x.icao)||{}),...x});});
@@ -5042,7 +5002,7 @@ async function poll(){
   S.lastAllItems=allItems;S.lastItems=items;
   updateSpecialSquawkCounter();
   // STREAM A ONLY: local aircraft determine Featured and Live Sky.
-  const f=choose(items);
+  const f=choose((items||[]).filter(x=>x&&!x.specialOnly));
   const previousFeatured=S.featured;
   S.featured=f?.icao||null;
   if(previousFeatured!==S.featured){ resetHeroJourneyProgress(S.featured||''); }
