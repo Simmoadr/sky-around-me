@@ -1697,6 +1697,12 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .global-special-aircraft-marker{position:relative;width:30px;height:30px;display:grid;place-items:center;transform-origin:center;overflow:visible;}
 .global-special-aircraft-shape{position:absolute;left:4px;top:4px;width:22px;height:22px;display:grid;place-items:center;color:var(--special-squawk,#d97706);filter:drop-shadow(0 1px 2px rgba(0,0,0,.24));z-index:40;pointer-events:none;}
 .global-special-aircraft-shape svg{width:22px;height:22px;display:block;}
+.global-special-aircraft-marker .special-class-private{transform:scale(.92);}
+.global-special-aircraft-marker .special-class-military{transform:scale(.98);}
+.global-special-aircraft-shape.special-class-private svg,.global-special-aircraft-shape.special-class-military svg{width:23px;height:23px;}
+.live-aircraft-marker .live-aircraft-shape svg,.outer-aircraft-marker .live-aircraft-shape svg,.hero-aircraft-shape svg{width:20px;height:20px;}
+.feature-special-plane.class-private,.feature-special-plane.class-military{display:grid;place-items:center;}
+.feature-special-plane.class-private svg,.feature-special-plane.class-military svg{width:22px;height:22px;}
 .global-special-aircraft-marker.special-emergency .global-special-aircraft-shape{color:#d62f2f;}
 .global-special-aircraft-marker.special-vfr .global-special-aircraft-shape{color:#d97706;}
 .global-special-aircraft-marker .special-squawk-map-bubble{bottom:calc(100% + 6px);}
@@ -2308,7 +2314,7 @@ body{}
  <footer class="app-footer" aria-label="Sky Around Me credits">
   <div class="app-footer-brand">SKY AROUND ME</div>
   <div class="app-footer-sub">SAME SKY, DIFFERENT STORIES</div>
-  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.73 · BACKEND V66.73</span></div>
+  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.81 · BACKEND V66.81</span></div>
  </footer>
 </section>
 </main></div>
@@ -2358,6 +2364,40 @@ function specialRegionEnabled(code,region){
 }
 const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],globalSpecialLastGoodItems:[],globalSpecialLastGoodAt:0,mapSelected:null,featureSpecialSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,specialFilterRevision:0,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false};
 S.specialSquawks=S.specialSquawkCodes.length>0;
+
+// V66.74 — persist the last healthy Special Squawk snapshot in the browser.
+// Netlify Functions are stateless, so an instance recycle/deployment can erase
+// the backend in-memory last-good cache and allow a transient 300 -> 16 poll
+// to become authoritative. This browser snapshot survives that cold start.
+const SPECIAL_CLIENT_SNAPSHOT_KEY='skyAroundMeSpecialSnapshotV3';
+const SPECIAL_CLIENT_SNAPSHOT_TTL=10*60*1000;
+function specialSnapshotSignature(){
+ const codes=(S.specialSquawkCodes||[]).slice().sort().join(',');
+ const regions=S.specialSquawkRegions||{};
+ const regionSig=(S.specialSquawkCodes||[]).slice().sort().map(c=>`${c}:${(regions[c]||[]).slice().sort().join(',')}`).join(';');
+ return `${codes}|${regionSig}`;
+}
+function loadSpecialClientSnapshot(){
+ try{
+  const raw=JSON.parse(localStorage.getItem(SPECIAL_CLIENT_SNAPSHOT_KEY)||'null');
+  if(!raw||raw.signature!==specialSnapshotSignature()||!Array.isArray(raw.items))return;
+  const age=Date.now()-Number(raw.savedAt||0);
+  if(age<0||age>SPECIAL_CLIENT_SNAPSHOT_TTL)return;
+  const items=raw.items.filter(x=>x&&x.icao&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon)));
+  if(!items.length)return;
+  S.globalSpecialLastGoodItems=items.map(x=>({...x}));
+  S.globalSpecialLastGoodAt=Number(raw.savedAt||Date.now());
+  S.globalSpecialItems=items.map(x=>({...x}));
+ }catch(e){}
+}
+function saveSpecialClientSnapshot(items){
+ try{
+  const clean=(Array.isArray(items)?items:[]).filter(x=>x&&x.icao&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon)));
+  if(!clean.length)return;
+  localStorage.setItem(SPECIAL_CLIENT_SNAPSHOT_KEY,JSON.stringify({signature:specialSnapshotSignature(),savedAt:Date.now(),items:clean}));
+ }catch(e){}
+}
+loadSpecialClientSnapshot();
 const $=id=>document.getElementById(id);
 function setTextSafe(id,value){const el=$(id);if(el)el.textContent=value??'';}
 function updateRefreshUsage(){const perHour=Math.round(3600/S.refreshSec);const el=$('refreshUsage');if(el)el.textContent=`SESSION REQUESTS: ${S.livePollCount.toLocaleString()} · ~${perHour.toLocaleString()} / HOUR AT ${S.refreshSec} SEC`;}
@@ -2917,6 +2957,33 @@ function heroMapAirportIcon(code,name,side){
  return L.divIcon({className:'hero-airport-icon',iconSize:[0,0],iconAnchor:[0,0],html:`<div class="hero-airport-label ${side||''}"><span>${c}</span><small>${n}</small></div><div class="hero-airport-dot"></div>`});
 }
 function miniAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"/></svg>'}
+function specialCommercialAircraftSvg(white=false){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"/></svg>'}
+const APPROVED_PRIVATE_FILLED='data:image/png;base64,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';
+const APPROVED_PRIVATE_WHITE='data:image/png;base64,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';
+const APPROVED_MILITARY_FILLED='data:image/png;base64,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';
+const APPROVED_MILITARY_WHITE='data:image/png;base64,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';
+function approvedAircraftArt(kind,white=false){
+ const cls=String(kind||'').toLowerCase();
+ const src=cls==='military'?(white?APPROVED_MILITARY_WHITE:APPROVED_MILITARY_FILLED):(white?APPROVED_PRIVATE_WHITE:APPROVED_PRIVATE_FILLED);
+ return `<img class="sam-approved-aircraft-art" src="${src}" alt="" aria-hidden="true">`;
+}
+function privateAircraftSvg(white=false){return approvedAircraftArt('private',white)}
+function militaryAircraftSvg(white=false){return approvedAircraftArt('military',white)}
+function specialAircraftClass(x){
+ const explicit=String(x?.specialClass||x?._skySpecialClass||'').trim().toLowerCase();
+ if(explicit==='military'||explicit==='private'||explicit==='commercial')return explicit;
+ if(isMilitaryAircraft(x))return 'military';
+ if(isCommercialAircraft(x))return 'commercial';
+ return 'private';
+}
+function specialAircraftIconSvg(x,white=false){
+ const c=specialAircraftClass(x);
+ return c==='military'?militaryAircraftSvg(white):c==='private'?privateAircraftSvg(white):specialCommercialAircraftSvg(white);
+}
+function specialAircraftClassLabel(x){
+ const c=specialAircraftClass(x);
+ return c.charAt(0).toUpperCase()+c.slice(1);
+}
 function specialCounterHtml(c){
  const state=specialCounterState(c);
  if(!state.visible)return '';
@@ -2947,7 +3014,7 @@ function heroAircraftIcon(angle,x=null){
  const kind=specialSquawkKind(x),colour=specialSquawkColour(x);
  const cls=kind?`hero-aircraft-marker special-${kind}`:'hero-aircraft-marker';
  const style=colour?`transform:rotate(${a}deg);--special-squawk:${colour}`:`transform:rotate(${a}deg)`;
- return L.divIcon({className:'hero-aircraft-icon',iconSize:[42,42],iconAnchor:[21,21],html:`<div class="${cls}" style="${style}">${specialSquawkBubble(x,a)}<div class="hero-aircraft-halo"></div><div class="hero-aircraft-shape">${miniAircraftSvg()}</div></div>`});
+ return L.divIcon({className:'hero-aircraft-icon',iconSize:[42,42],iconAnchor:[21,21],html:`<div class="${cls}" style="${style}">${specialSquawkBubble(x,a)}<div class="hero-aircraft-halo"></div><div class="hero-aircraft-shape">${specialSquawkKind(x)?specialAircraftIconSvg(x):miniAircraftSvg()}</div></div>`});
 }
 function heroRoutePoints(a,b,count=80){const pts=[];for(let i=0;i<=count;i++)pts.push(greatCirclePoint(a,b,i/count));return pts}
 function heroCurvedRoutePoints(a,p,b,count=160){
@@ -3013,13 +3080,6 @@ function renderHeroFlightMap(live,watch){
  heroFlightMap.on('click',()=>{if(S.featureSpecialSelected)clearFeatureSpecialSelection()});
   heroFlightMap._skyMapKey=mapKey;
   heroFlightLayer=L.layerGroup().addTo(heroFlightMap);
-  // V66.70 — dedicated route pane so the Featured flight path is always
-  // above the washed map tiles and cannot disappear behind another Leaflet pane.
-  if(!heroFlightMap.getPane('heroRoutePane')){
-   const routePane=heroFlightMap.createPane('heroRoutePane');
-   routePane.style.zIndex='450';
-   routePane.style.pointerEvents='none';
-  }
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(heroFlightMap);
  }else{
   heroFlightLayer.clearLayers();
@@ -3092,16 +3152,16 @@ function renderHeroFlightMap(live,watch){
 
    // The route remains visible in both modes. In LOCAL AIRSPACE the map simply
    // zooms into the user's radius, so only the relevant local section is visible.
-   // V66.73 — route semantics are strict:
+   // V66.74 — route semantics are strict:
    // SOLID = completed; DASHED = remaining. Do NOT draw the full route as a
    // solid underlay, otherwise the remaining leg can never appear dashed.
    // Use matching white under-strokes only on each respective segment so the
    // teal route stays visible against the light map without changing semantics.
-   L.polyline(completed,{pane:'heroRoutePane',color:'#ffffff',weight:8,opacity:.96,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
-   L.polyline(completed,{pane:'heroRoutePane',color:WATCH_ROUTE_COLOR,weight:5,opacity:1,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
+   L.polyline(completed,{color:'#ffffff',weight:8,opacity:.96,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
+   L.polyline(completed,{color:WATCH_ROUTE_COLOR,weight:5,opacity:1,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
    if(remaining.length>1){
-     L.polyline(remaining,{pane:'heroRoutePane',color:'#ffffff',weight:7,dashArray:'7 8',opacity:.96,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
-     L.polyline(remaining,{pane:'heroRoutePane',color:WATCH_ROUTE_COLOR,weight:3,dashArray:'7 8',opacity:1,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
+     L.polyline(remaining,{color:'#ffffff',weight:7,dashArray:'7 8',opacity:.96,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
+     L.polyline(remaining,{color:WATCH_ROUTE_COLOR,weight:3,dashArray:'7 8',opacity:1,lineCap:'round',lineJoin:'round',interactive:false}).addTo(heroFlightLayer);
    }
 
    // Airport endpoints/labels belong to the route, not to a particular camera mode.
@@ -3115,6 +3175,24 @@ function renderHeroFlightMap(live,watch){
    L.marker(b,{icon:heroMapAirportIcon(watch.toCode,watch.to,'to'),interactive:false}).addTo(heroFlightLayer);
 
    if(heroMapMode==='journey'){
+    // V66.74 — deterministic FULL JOURNEY camera. A reused Leaflet map can
+    // retain a LOCAL AIRSPACE viewport even when the mode is switched back to
+    // journey. Fit once per aircraft/route/position state so the full route is
+    // always visible without repeatedly fighting user panning.
+    const journeyFitKey=`${mapKey}|${Math.round(Number(pos[0])*10)/10}|${Math.round(Number(pos[1])*10)/10}`;
+    if(heroFlightMap._skyJourneyFitKey!==journeyFitKey || modeChanged || !canReuse){
+      const fitPoints=pts.concat([pos]);
+      const fitJourneyToVisibleMap=()=>{
+       if(!heroFlightMap||heroMapMode!=='journey')return;
+       heroFlightMap.invalidateSize(true);
+       heroFlightMap.fitBounds(L.latLngBounds(fitPoints),{paddingTopLeft:[65,42],paddingBottomRight:[65,110],maxZoom:18,animate:false});
+       heroFlightMap._skyJourneyFitKey=journeyFitKey;
+      };
+      fitJourneyToVisibleMap();
+      setTimeout(fitJourneyToVisibleMap,80);
+      setTimeout(fitJourneyToVisibleMap,250);
+      setTimeout(fitJourneyToVisibleMap,700);
+    }
     // Special-squawk aircraft are shown on Featured as well as Live Sky.
     // Keep the normal featured aircraft marker separate, then add the other
     // special aircraft from the same live ADS-B dataset.
@@ -3129,31 +3207,6 @@ function renderHeroFlightMap(live,watch){
     const nextPoint=greatCirclePoint(a,b,Math.min(1,progress+.015));
     const angle=Number.isFinite(live?.heading)?live.heading:heroBearing(pos,progress<.99?nextPoint:b);
     L.marker(pos,{icon:heroAircraftIcon(angle,live),interactive:false}).addTo(heroFlightLayer);
-    if((!canReuse || modeChanged) && !S.featureSpecialSelected){
-     const fitPoints=pts.concat([pos]);
-     const fitJourneyToVisibleMap=()=>{
-      if(!heroFlightMap||heroMapMode!=='journey')return;
-      heroFlightMap.invalidateSize(true);
-      const mapEl=document.getElementById('heroFlightMap');
-      const infoBox=document.querySelector('.hero-bottom');
-      const mapRect=mapEl?.getBoundingClientRect();
-      const infoRect=infoBox?.getBoundingClientRect();
-      let bottomPad=42;
-      if(mapRect&&infoRect&&infoRect.top>mapRect.top){
-       bottomPad=Math.max(42,Math.ceil(mapRect.bottom-infoRect.top+28));
-      }
-      heroFlightMap.fitBounds(L.latLngBounds(fitPoints),{
-       paddingTopLeft:[65,42],
-       paddingBottomRight:[65,bottomPad],
-       maxZoom:18,
-       animate:false
-      });
-     };
-     fitJourneyToVisibleMap();
-     setTimeout(fitJourneyToVisibleMap,80);
-     setTimeout(fitJourneyToVisibleMap,250);
-     setTimeout(fitJourneyToVisibleMap,700);
-    }
    }else{
     // Local airspace view: show every commercial aircraft currently inside the
     // selected radius, with the Featured aircraft visually highlighted.
@@ -4430,7 +4483,7 @@ function specialSquawkColour(x){const k=specialSquawkKind(x);return k==='emergen
 function globalSpecialIcon(x){
  const heading=Number.isFinite(x?.heading)?x.heading:0,kind=specialSquawkKind(x),colour=specialSquawkColour(x)||'#d97706';
  const style=`transform:rotate(${heading}deg);--special-squawk:${colour}`;
- return L.divIcon({className:'global-special-aircraft-icon',html:`<div class="global-special-aircraft-marker ${kind?'special-'+kind:''}" style="${style}">${specialSquawkBubble(x,heading)}<div class="global-special-aircraft-shape">${miniAircraftSvg()}</div></div>`,iconSize:[30,30],iconAnchor:[15,15]})
+ return L.divIcon({className:'global-special-aircraft-icon',html:`<div class="global-special-aircraft-marker ${kind?'special-'+kind:''}" style="${style}">${specialSquawkBubble(x,heading)}<div class="global-special-aircraft-shape special-class-${specialAircraftClass(x)}">${specialAircraftIconSvg(x)}</div></div>`,iconSize:[30,30],iconAnchor:[15,15]})
 }
 function specialAircraftForSelection(icao){
  const id=String(icao||'').toLowerCase();
@@ -4494,7 +4547,7 @@ function updateFeatureSpecialPanel(){
  const vs=x.vs==null?'—':(Number(x.vs)*196.850394).toFixed(0)+' ft/min';
  const region=String(x._specialRegion||'').toUpperCase()||'WORLDWIDE';
  panel.hidden=false;
- panel.innerHTML=`<div class="feature-special-head"><div class="feature-special-title"><span class="feature-special-plane ${kind}" style="--special-colour:${colour}">${miniAircraftSvg()}</span><div><div class="feature-special-kicker" style="color:${colour}">${kind==='emergency'?'EMERGENCY':'SPECIAL'} · SQUAWK ${escapeHtml(code)}</div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(specialSquawkReason(code))}</small></div></div><button type="button" class="feature-special-close" id="featureSpecialClose" aria-label="Close special aircraft selection"><span class="feature-close-flight" aria-hidden="true"><span class="feature-close-plane">${miniAircraftSvg()}</span><span class="feature-close-route"></span><span class="feature-close-x">×</span></span></button></div><div class="feature-special-grid"><div><label>OPERATOR</label><b>${escapeHtml(operator||'—')}</b></div><div><label>AIRCRAFT</label><b>${escapeHtml(model)}</b></div><div><label>REGISTRATION</label><b>${escapeHtml(reg)}</b></div><div><label>ICAO</label><b>${escapeHtml(icao)}</b></div><div><label>DISTANCE</label><b>${Number.isFinite(d)?d.toFixed(1)+' km':'—'}</b></div><div><label>ALTITUDE</label><b>${escapeHtml(alt)}</b></div><div><label>SPEED</label><b>${escapeHtml(speed)}</b></div><div><label>HEADING</label><b>${escapeHtml(heading)}</b></div><div><label>VERTICAL SPEED</label><b>${escapeHtml(vs)}</b></div><div><label>REGION</label><b>${escapeHtml(region)}</b></div><div><label>DATA SOURCE</label><b>${escapeHtml(x.source||'ADS-B')}</b></div></div><div class="feature-special-hint">SELECTED AIRCRAFT · LIVE DATA CONTINUES TO REFRESH · AUTO ROTATION PAUSED</div>`;
+ panel.innerHTML=`<div class="feature-special-head"><div class="feature-special-title"><span class="feature-special-plane ${kind} class-${specialAircraftClass(x)}" style="--special-colour:${colour}">${specialAircraftIconSvg(x)}</span><div><div class="feature-special-kicker" style="color:${colour}">${kind==='emergency'?'EMERGENCY':'SPECIAL'} · SQUAWK ${escapeHtml(code)}</div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(specialSquawkReason(code))}</small></div></div><button type="button" class="feature-special-close" id="featureSpecialClose" aria-label="Close special aircraft selection"><span class="feature-close-flight" aria-hidden="true"><span class="feature-close-plane">${miniAircraftSvg()}</span><span class="feature-close-route"></span><span class="feature-close-x">×</span></span></button></div><div class="feature-special-grid"><div><label>CLASSIFICATION</label><b>${escapeHtml(specialAircraftClassLabel(x))}</b></div><div><label>OPERATOR</label><b>${escapeHtml(operator||'—')}</b></div><div><label>AIRCRAFT</label><b>${escapeHtml(model)}</b></div><div><label>REGISTRATION</label><b>${escapeHtml(reg)}</b></div><div><label>ICAO</label><b>${escapeHtml(icao)}</b></div><div><label>DISTANCE</label><b>${Number.isFinite(d)?d.toFixed(1)+' km':'—'}</b></div><div><label>ALTITUDE</label><b>${escapeHtml(alt)}</b></div><div><label>SPEED</label><b>${escapeHtml(speed)}</b></div><div><label>HEADING</label><b>${escapeHtml(heading)}</b></div><div><label>VERTICAL SPEED</label><b>${escapeHtml(vs)}</b></div><div><label>REGION</label><b>${escapeHtml(region)}</b></div><div><label>DATA SOURCE</label><b>${escapeHtml(x.source||'ADS-B')}</b></div></div><div class="feature-special-hint">SELECTED AIRCRAFT · LIVE DATA CONTINUES TO REFRESH · AUTO ROTATION PAUSED</div>`;
  const close=$('featureSpecialClose');if(close)close.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(close.classList.contains('is-closing'))return;close.classList.add('is-closing');setTimeout(()=>clearFeatureSpecialSelection(),430)});
  const heroBottom=panel.closest('.hero-bottom');if(heroBottom)heroBottom.classList.add('feature-special-selected');
 }
@@ -4516,13 +4569,25 @@ function selectSpecialAircraft(icao){
 
 function outerIcon(x){
  const heading=Number.isFinite(x?.heading)?x.heading:0,kind=specialSquawkKind(x),colour=specialSquawkColour(x);
+ const cls=specialAircraftClass(x);
  const style=colour?`style="transform:rotate(${heading}deg);--special-squawk:${colour}"`:`style="transform:rotate(${heading}deg)"`;
- return L.divIcon({className:'outer-aircraft-icon',html:`<div class="outer-aircraft-marker ${kind?'special-'+kind:''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${miniAircraftSvg()}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})
+ const art=kind?specialAircraftIconSvg(x,false):miniAircraftSvg();
+ return L.divIcon({className:'outer-aircraft-icon',html:`<div class="outer-aircraft-marker ${kind?'special-'+kind:''} special-class-${cls}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-shape">${art}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})
 }
 function icon(x,featured){
- const tracked=!!featured,heading=Number.isFinite(x.heading)?x.heading:0,kind=specialSquawkKind(x),colour=specialSquawkColour(x);
+ const tracked=!!featured,heading=Number.isFinite(x.heading)?x.heading:0,kind=specialSquawkKind(x),colour=specialSquawkColour(x),cls=specialAircraftClass(x);
  const style=colour?`style="transform:rotate(${heading}deg);--special-squawk:${colour}"`:`style="transform:rotate(${heading}deg)"`;
- return L.divIcon({className:tracked?'featured-icon':'aircraft-icon',html:`<div class="live-aircraft-marker ${tracked?'tracked':''} ${kind?'special-'+kind:''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${miniAircraftSvg()}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})
+ let html;
+ if(kind && cls!=='commercial'){
+   // Private and military Special/Emergency aircraft are standalone coloured silhouettes.
+   html=`<div class="live-aircraft-marker special-plain special-class-${cls} ${kind?'special-'+kind:''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-shape">${specialAircraftIconSvg(x,false)}</div></div>`;
+ }else if(kind){
+   // Commercial Special/Emergency aircraft retain the established circle treatment, with a white aircraft.
+   html=`<div class="live-aircraft-marker ${tracked?'tracked':''} special-class-commercial ${kind?'special-'+kind:''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-ring"></div><div class="live-aircraft-shape special-white-art">${specialAircraftIconSvg(x,true)}</div></div>`;
+ }else{
+   html=`<div class="live-aircraft-marker ${tracked?'tracked':''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${miniAircraftSvg()}</div></div>`;
+ }
+ return L.divIcon({className:tracked?'featured-icon':'aircraft-icon',html,iconSize:[34,34],iconAnchor:[17,17]})
 }
 function choose(items){if(!items.length)return null;const airborne=items.filter(x=>(x.alt!=null&&x.alt>140)||(x.speed!=null&&x.speed>80));return (airborne.length?airborne:items).slice().sort((a,b)=>a.d-b.d)[0]}
 const map=L.map('map',{zoomControl:false,attributionControl:true,rotate:true,bearing:S.rotationDeg,dragRotate:false,touchRotate:false,shiftKeyRotate:false}).setView([S.lat,S.lon],8);
@@ -4639,7 +4704,7 @@ function updateMapCard(x){
      const reason=specialSquawkReason(specialCode);
      const d=Number.isFinite(Number(x.d))?Number(x.d):null;
      specialInfo.hidden=false;
-     specialInfo.innerHTML=`<div class="special-info-code" style="color:${specialSquawkColour(x)}"><span class="special-info-dot"></span><b>${specialCode}</b><span>${escapeHtml(reason)}</span></div><div class="special-info-meta"><span>${d!=null?d.toFixed(1)+' km from device':'GLOBAL'}</span><span>${x.source||'ADS-B'}</span></div>`;
+     specialInfo.innerHTML=`<div class="special-info-code" style="color:${specialSquawkColour(x)}"><span class="special-info-dot"></span><b>${specialCode}</b><span>${escapeHtml(reason)}</span></div><div class="special-info-meta"><span>${escapeHtml(specialAircraftClassLabel(x))}</span><span>${d!=null?d.toFixed(1)+' km from device':'GLOBAL'}</span><span>${x.source||'ADS-B'}</span></div>`;
    }else{specialInfo.hidden=true;specialInfo.innerHTML='';}
  }
  const route=x.liveRoute&&x.liveRoute.status==='FOUND'?x.liveRoute:null;
@@ -4720,6 +4785,23 @@ async function fetchJson(url,label){
   return await r.json();
 }
 
+
+function isMilitaryAircraft(a){
+  if(!a || typeof a!=='object') return false;
+  const mil=a.mil;
+  if(mil===true || mil===1 || String(mil).trim()==='1' || String(mil).toLowerCase()==='true') return true;
+  const flight=String(a.flight||'').trim().toUpperCase();
+  const desc=String(a.desc||'').trim().toUpperCase();
+  const op=String(a.ownOp||a.operator||'').trim().toUpperCase();
+  const type=String(a.t||'').trim().toUpperCase();
+  const text=[flight,desc,op,type].join(' ');
+  const militaryWords=[
+    'MILITARY','ARMY','AIR FORCE','NAVY','MARINES','COAST GUARD','USAF','RAF','RCAF','RNLAF','GAF','BAF',
+    'ROYAL AIR FORCE','ROYAL NAVY','ROYAL AUSTRALIAN AIR FORCE','DEFENCE','DEFENSE','MINISTRY OF DEFENCE','MINISTRY OF DEFENSE',
+    'GOVERNMENT FLIGHT','STATE FLIGHT','AIR FORCE ONE','NATO','USN','USMC'
+  ];
+  return militaryWords.some(w=>text.includes(w));
+}
 
 function isCommercialAircraft(a){
   if(!a || typeof a!=='object') return false;
@@ -5053,7 +5135,7 @@ async function poll(){
     return;
   }
   const raw=(Array.isArray(j.ac)?j.ac:[]).filter(a=>isCommercialAircraft(a)||(S.specialSquawks&&isRawSpecialSquawk(a)));
-  const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600),_specialRegion:specialRegionForPoint(a.lat,a.lon),specialOnly:!!(S.specialSquawks&&!isCommercialAircraft(a)&&isRawSpecialSquawk(a)),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));
+  const allItems=raw.map(a=>({icao:(a.hex||'').toLowerCase(),callsign:(a.flight||'').trim(),registration:(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||'',category:a.category||'',specialClass:(isRawSpecialSquawk(a)?specialAircraftClass(a):''),squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600),_specialRegion:specialRegionForPoint(a.lat,a.lon),specialOnly:!!(S.specialSquawks&&!isCommercialAircraft(a)&&isRawSpecialSquawk(a)),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&x.lat!=null&&x.lon!=null).map(x=>({...x,d:hav(S.lat,S.lon,x.lat,x.lon)}));
   const previousItems=Array.isArray(S.lastItems)?S.lastItems:[];
   allItems.forEach(x=>{if(!x.specialOnly)hydrateCachedLiveRoute(x,previousItems);});
   const activeRaw=allItems.filter(x=>x.d<=S.rangeKm);
@@ -5067,7 +5149,7 @@ async function poll(){
   });
   const specialRaw=Array.isArray(j.specialAc)?j.specialAc:[];
   const specialStatus=String(j._skySpecialStatus||'LIVE').toUpperCase();
-  const parsedSpecialItems=specialRaw.map(a=>({icao:String(a.hex||'').toLowerCase(),callsign:String(a.flight||'').trim(),registration:String(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||j._skySpecialProvider||'GLOBAL ADS-B',category:a.category||'',squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600||a.emergency_squawk),_specialRegion:specialRegionForPoint(a.lat,a.lon),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon))&&specialSquawkKind(x)).map(x=>({...x,d:hav(S.lat,S.lon,Number(x.lat),Number(x.lon))}));
+  const parsedSpecialItems=specialRaw.map(a=>({icao:String(a.hex||'').toLowerCase(),callsign:String(a.flight||'').trim(),registration:String(a.r||'').trim(),lon:a.lon,lat:a.lat,alt:typeof a.alt_baro==='number'?a.alt_baro*.3048:null,speed:typeof a.gs==='number'?a.gs*.514444:null,heading:typeof a.track==='number'?a.track:null,vs:typeof a.baro_rate==='number'?a.baro_rate*.00508:null,type:a.t||'',desc:a.desc||a.t||'',operator:a.ownOp||a.operator||'',source:a.type||j._skySpecialProvider||'GLOBAL ADS-B',category:a.category||'',specialClass:specialAircraftClass(a),squawk:normalSquawk(a.squawk||a.squawk_code||a.code_7600||a.emergency_squawk),_specialRegion:specialRegionForPoint(a.lat,a.lon),flightNumber:'',airlineCode:'',airlineName:''})).filter(x=>x.icao&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon))&&specialSquawkKind(x)).map(x=>({...x,d:hav(S.lat,S.lon,Number(x.lat),Number(x.lon))}));
   // V66.42: distinguish a genuine empty feed from an unavailable upstream.
   // If every special-squawk provider fails on a poll, keep the last good set
   // rather than flashing SPECIAL 6 -> SPECIAL 0 -> SPECIAL 6. A successful
@@ -5087,25 +5169,31 @@ async function poll(){
         S.globalSpecialLastGoodItems.forEach(x=>{if(x?.icao)merged.set(x.icao,{...x});});
         parsedSpecialItems.forEach(x=>{if(x?.icao)merged.set(x.icao,{...(merged.get(x.icao)||{}),...x});});
         S.globalSpecialItems=[...merged.values()];
+        saveSpecialClientSnapshot(S.globalSpecialItems);
       }else{
         S.globalSpecialItems=parsedSpecialItems;
         S.globalSpecialLastGoodItems=parsedSpecialItems.map(x=>({...x}));
         S.globalSpecialLastGoodAt=Date.now();
+        saveSpecialClientSnapshot(S.globalSpecialItems);
       }
     }else{
       S.globalSpecialItems=parsedSpecialItems;
       S.globalSpecialLastGoodItems=parsedSpecialItems.map(x=>({...x}));
       S.globalSpecialLastGoodAt=Date.now();
+      saveSpecialClientSnapshot(S.globalSpecialItems);
     }
   }else if(specialStatus==='PARTIAL'){
     const merged=new Map();
     if(specialLastGoodFresh)S.globalSpecialLastGoodItems.forEach(x=>{if(x?.icao)merged.set(x.icao,{...x});});
     parsedSpecialItems.forEach(x=>{if(x?.icao)merged.set(x.icao,{...(merged.get(x.icao)||{}),...x});});
     S.globalSpecialItems=[...merged.values()];
+    if(S.globalSpecialItems.length)saveSpecialClientSnapshot(S.globalSpecialItems);
   }else if(specialStatus==='UNAVAILABLE'&&specialLastGoodFresh){
     S.globalSpecialItems=S.globalSpecialLastGoodItems.map(x=>({...x}));
+    if(S.globalSpecialItems.length)saveSpecialClientSnapshot(S.globalSpecialItems);
   }else{
     S.globalSpecialItems=parsedSpecialItems;
+    if(S.globalSpecialItems.length)saveSpecialClientSnapshot(S.globalSpecialItems);
   }
   S.lastAllItems=allItems;S.lastItems=items;
   updateSpecialSquawkCounter();
@@ -5209,9 +5297,9 @@ updateSkySettingsUI();updateSpecialSquawkCounter();if(S.extendedAirspace&&S.rang
 .special-squawk-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:9px}
 .special-squawk-copy{min-width:0}.special-squawk-copy strong{display:block;font-size:10px;letter-spacing:.06em}.special-squawk-copy small{display:block;color:var(--muted);font-size:8px;line-height:1.45;margin-top:4px;max-width:520px}
 .special-squawk-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:9px;font-size:7px;font-weight:900;letter-spacing:.08em}.sq-legend.emergency{color:#d62f2f}.sq-legend.vfr{color:#d97706}
-.live-aircraft-marker.special-emergency .live-aircraft-ring{background:var(--special-squawk)!important;border-color:var(--special-squawk)!important;box-shadow:0 0 0 3px rgba(214,47,47,.13),0 4px 12px rgba(214,47,47,.28)!important}.live-aircraft-marker.special-emergency .live-aircraft-shape{color:#fff!important}
-.live-aircraft-marker.special-vfr .live-aircraft-ring{background:var(--special-squawk)!important;border-color:var(--special-squawk)!important;box-shadow:0 0 0 3px rgba(217,119,6,.12),0 4px 12px rgba(217,119,6,.24)!important}.live-aircraft-marker.special-vfr .live-aircraft-shape{color:#fff!important}
-.outer-aircraft-marker.special-emergency,.outer-aircraft-marker.special-vfr{opacity:1!important;filter:none!important}.outer-aircraft-marker.special-emergency .live-aircraft-ring,.outer-aircraft-marker.special-vfr .live-aircraft-ring{background:var(--special-squawk)!important;border-color:var(--special-squawk)!important;box-shadow:0 3px 10px rgba(0,0,0,.18)!important}.outer-aircraft-marker.special-emergency .live-aircraft-shape,.outer-aircraft-marker.special-vfr .live-aircraft-shape{color:#fff!important}
+.live-aircraft-marker.special-emergency .live-aircraft-ring{background:var(--special-squawk)!important;border-color:var(--special-squawk)!important;box-shadow:0 0 0 3px rgba(214,47,47,.13),0 4px 12px rgba(214,47,47,.28)!important}.live-aircraft-marker.special-emergency .live-aircraft-shape{color:var(--special-squawk,#d62f2f)!important}
+.live-aircraft-marker.special-vfr .live-aircraft-ring{background:var(--special-squawk)!important;border-color:var(--special-squawk)!important;box-shadow:0 0 0 3px rgba(217,119,6,.12),0 4px 12px rgba(217,119,6,.24)!important}.live-aircraft-marker.special-vfr .live-aircraft-shape{color:var(--special-squawk,#d97706)!important}
+.outer-aircraft-marker.special-emergency,.outer-aircraft-marker.special-vfr{opacity:1!important;filter:none!important}.outer-aircraft-marker.special-emergency .live-aircraft-ring,.outer-aircraft-marker.special-vfr .live-aircraft-ring{background:var(--special-squawk)!important;border-color:var(--special-squawk)!important;box-shadow:0 3px 10px rgba(0,0,0,.18)!important}.outer-aircraft-marker.special-emergency .live-aircraft-shape,.outer-aircraft-marker.special-vfr .live-aircraft-shape{color:var(--special-squawk,#d97706)!important}
 .squawk-badge{display:inline-flex;align-items:center;gap:6px;margin-left:8px;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:950;letter-spacing:.08em;vertical-align:middle;color:#fff;background:var(--special-squawk)}
 .hero-aircraft-marker.special-emergency .hero-aircraft-shape{color:#d62f2f!important}.hero-aircraft-marker.special-vfr .hero-aircraft-shape{color:#d97706!important}.hero-aircraft-marker.special-emergency .hero-aircraft-halo{border-color:rgba(214,47,47,.32)!important;box-shadow:0 0 0 4px rgba(214,47,47,.10)!important}.hero-aircraft-marker.special-vfr .hero-aircraft-halo{border-color:rgba(217,119,6,.32)!important;box-shadow:0 0 0 4px rgba(217,119,6,.10)!important}.world-hero-plane.special-emergency .route-plane path{fill:#d62f2f!important;stroke:#fff!important}.world-hero-plane.special-vfr .route-plane path{fill:#d97706!important;stroke:#fff!important}
 .progress-plane.special-emergency{color:#d62f2f!important}.progress-plane.special-vfr{color:#d97706!important}
@@ -6136,4 +6224,18 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
 @media(max-width:1050px){.feature-special-grid{grid-template-columns:repeat(4,minmax(0,1fr));}}
 @media(max-width:800px){body .feature-special-panel{padding:11px 16px 10px}.feature-special-grid{grid-template-columns:repeat(3,minmax(0,1fr));}.feature-special-title strong{font-size:18px;}.feature-special-hint{display:none;}}
 @media(max-width:560px){.feature-special-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* V66.81 — approved Private/Military aircraft artwork and nine-state icon rules */
+.sam-approved-aircraft-art{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;}
+.live-aircraft-shape .sam-approved-aircraft-art{width:24px;height:24px;}
+.global-special-aircraft-shape .sam-approved-aircraft-art{width:25px;height:25px;}
+.outer-aircraft-marker .live-aircraft-shape .sam-approved-aircraft-art{width:22px;height:22px;}
+.live-aircraft-marker.special-plain .live-aircraft-ring{display:none!important;}
+.live-aircraft-marker.special-plain .live-aircraft-shape{width:24px!important;height:24px!important;color:var(--special-squawk)!important;}
+.live-aircraft-marker.special-class-commercial.special-vfr .live-aircraft-ring{background:#d97706!important;border-color:#d97706!important;}
+.live-aircraft-marker.special-class-commercial.special-emergency .live-aircraft-ring{background:#d62f2f!important;border-color:#d62f2f!important;}
+.live-aircraft-marker.special-class-commercial .live-aircraft-shape{color:#fff!important;}
+.live-aircraft-marker.special-class-commercial .live-aircraft-shape .sam-approved-aircraft-art{width:23px;height:23px;}
+.outer-aircraft-marker.special-vfr .live-aircraft-shape,.outer-aircraft-marker.special-emergency .live-aircraft-shape{color:var(--special-squawk)!important;}
+.outer-aircraft-marker.special-class-commercial .live-aircraft-shape{color:var(--special-squawk)!important;}
 </style>
