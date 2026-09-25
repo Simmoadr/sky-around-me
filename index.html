@@ -2600,6 +2600,178 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
   .watch-bottom-compact{padding:12px!important;}
 }
 </style>
+<style id="v1-mobile-top-aircraft-compact">
+/* V1.0 — iPhone: make LIVE AIRCRAFT card use the same compact visual language
+   as NEXT WATCHED FLIGHT. Desktop is untouched. */
+@media (max-width:700px){
+  .hero .hero-bottom{
+    padding:14px 14px 15px!important;
+    background:var(--paper)!important;
+    border-top:1px solid rgba(217,219,214,.65)!important;
+  }
+
+  /* Compact identity header */
+  .hero .identity-primary{
+    margin:0 0 10px!important;
+  }
+  .hero .airline-brand{
+    min-height:18px!important;
+    gap:7px!important;
+  }
+  .hero .airline-badge{
+    min-width:30px!important;height:20px!important;
+    padding:0 7px!important;font-size:7px!important;
+  }
+  .hero .operator{font-size:7px!important;letter-spacing:.14em!important;}
+  .hero .flight-name{
+    font-size:27px!important;
+    line-height:1!important;
+    margin:4px 0 0!important;
+  }
+  .hero .aircraft-type{
+    font-size:8px!important;
+    line-height:1.15!important;
+    margin:4px 0 0!important;
+  }
+
+  /* Registration / callsign / telemetry becomes the same compact 2-column
+     card pattern used by Next Watched Flight. */
+  .hero .telemetry{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:0!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    border-top:1px solid var(--line)!important;
+    border-bottom:1px solid var(--line)!important;
+  }
+  .hero .telemetry .metric{
+    min-width:0!important;
+    min-height:58px!important;
+    padding:9px 10px 8px!important;
+    margin:0!important;
+    overflow:hidden!important;
+    text-align:left!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+  }
+  .hero .telemetry .metric:nth-child(odd){
+    border-right:1px solid var(--line)!important;
+  }
+  .hero .telemetry .metric:nth-child(n+3){
+    border-top:1px solid var(--line)!important;
+  }
+  .hero .telemetry .metric label{
+    font-size:5.5px!important;
+    line-height:1!important;
+    letter-spacing:.14em!important;
+    margin:0!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .hero .telemetry .metric b{
+    font-size:15px!important;
+    line-height:1!important;
+    margin:4px 0 0!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .hero .telemetry .metric small{
+    font-size:6.5px!important;
+    line-height:1!important;
+    margin:3px 0 0!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* Compact route row, matching the watched-flight card. */
+  .hero .journey-info{
+    display:grid!important;
+    grid-template-columns:58px minmax(0,1fr) 58px!important;
+    gap:7px!important;
+    width:100%!important;
+    min-height:54px!important;
+    height:54px!important;
+    margin:0!important;
+    padding:9px 4px 0!important;
+    border-top:0!important;
+    border-bottom:0!important;
+    align-items:center!important;
+  }
+  .hero .journey-info .journey-end,
+  .hero .journey-info .journey-end-right{
+    min-width:0!important;
+    width:100%!important;
+    height:45px!important;
+    margin:0!important;
+    padding:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+    text-align:center!important;
+  }
+  .hero .journey-end span{
+    font-size:5.5px!important;
+    line-height:1!important;
+    letter-spacing:.15em!important;
+  }
+  .hero .journey-end b{
+    font-size:14px!important;
+    line-height:1!important;
+    margin:3px 0 0!important;
+  }
+  .hero .journey-end small{
+    font-size:5.5px!important;
+    line-height:1!important;
+    margin:3px 0 0!important;
+    width:100%!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .hero .journey-center{
+    min-width:0!important;
+    width:100%!important;
+    height:45px!important;
+    padding:0 4px!important;
+    margin:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+  }
+  .hero .journey-percent{
+    font-size:5.5px!important;
+    line-height:1!important;
+    margin:0 0 5px!important;
+    text-align:center!important;
+  }
+  .hero .journey-center .progress{
+    width:100%!important;
+    height:4px!important;
+    min-height:4px!important;
+    margin:0!important;
+  }
+
+  /* Quiet state has no journey, so give it a little less dead space. */
+  .hero.hero-is-quiet .hero-bottom{
+    padding-bottom:13px!important;
+  }
+}
+
+@media (max-width:390px){
+  .hero .hero-bottom{padding-left:12px!important;padding-right:12px!important;}
+  .hero .flight-name{font-size:25px!important;}
+  .hero .telemetry .metric{min-height:55px!important;padding-left:8px!important;padding-right:8px!important;}
+  .hero .telemetry .metric b{font-size:14px!important;}
+  .hero .journey-info{grid-template-columns:53px minmax(0,1fr) 53px!important;}
+}
+</style>
 </head>
 <body>
 
