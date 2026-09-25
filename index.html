@@ -1705,6 +1705,7 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
 .global-special-aircraft-marker{position:relative;width:30px;height:30px;display:grid;place-items:center;transform-origin:center;overflow:visible;}
 .global-special-aircraft-shape{position:absolute;left:4px;top:4px;width:22px;height:22px;display:grid;place-items:center;color:var(--special-squawk,#d97706);filter:drop-shadow(0 1px 2px rgba(0,0,0,.24));z-index:40;pointer-events:none;}
 .global-special-aircraft-shape svg{width:22px;height:22px;display:block;}
+/* V1.0 — special aircraft use filled silhouettes on the map; colour comes from the active squawk/class. */
 .global-special-aircraft-marker .special-class-private{transform:scale(.92);}
 .global-special-aircraft-marker .special-class-military{transform:scale(.98);}
 .global-special-aircraft-shape.special-class-private svg,.global-special-aircraft-shape.special-class-military svg{width:23px;height:23px;}
@@ -3094,9 +3095,9 @@ function heroMapAirportIcon(code,name,side){
  return L.divIcon({className:'hero-airport-icon',iconSize:[0,0],iconAnchor:[0,0],html:`<div class="hero-airport-label ${side||''}"><span>${c}</span><small>${n}</small></div><div class="hero-airport-dot"></div>`});
 }
 function miniAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"/></svg>'}
-function specialCommercialAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg>'}
-function privateAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M32 3.5 C34.1 3.5 35.2 5.4 35.3 8.2 L36.1 23.8 L54.5 31.7 L54.5 35.7 L36.1 32.7 L36.1 47.8 L42.2 55.1 L42.2 58.2 L32 53.4 L21.8 58.2 L21.8 55.1 L27.9 47.8 L27.9 32.7 L9.5 35.7 L9.5 31.7 L27.9 23.8 L28.7 8.2 C28.8 5.4 29.9 3.5 32 3.5 Z"/><path d="M28.3 25.1 L18.2 29.4 L18.2 32.1 L28.2 30.8"/><path d="M35.7 25.1 L45.8 29.4 L45.8 32.1 L35.8 30.8"/><ellipse cx="25.5" cy="26.9" rx="3.1" ry="2.1"/><ellipse cx="38.5" cy="26.9" rx="3.1" ry="2.1"/><path d="M29.5 10.2 L34.5 10.2"/><path d="M30 15.1 L34 15.1"/><path d="M30.2 20 L33.8 20"/></g></svg>'}
-function militaryAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M32 2.5 L35.8 16.6 L52.7 27.4 L48.8 31.2 L38.2 29.1 L42.6 49.6 L37.1 47.1 L32 39.4 L26.9 47.1 L21.4 49.6 L25.8 29.1 L15.2 31.2 L11.3 27.4 L28.2 16.6 Z"/><path d="M32 4.8 L33.8 17.9 L40.7 23.8 L37.3 25.7 L36.2 37.8 L32 34.6 L27.8 37.8 L26.7 25.7 L23.3 23.8 L30.2 17.9 Z"/><path d="M25 28.5 L18.5 35.2 L21.8 36.1 L27 32.5"/><path d="M39 28.5 L45.5 35.2 L42.2 36.1 L37 32.5"/><ellipse cx="32" cy="12.5" rx="2.6" ry="6.2"/><path d="M29.2 43.2 L27.2 51.2 L30.1 49.8"/><path d="M34.8 43.2 L36.8 51.2 L33.9 49.8"/></g></svg>'}
+function specialCommercialAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M31.57 0 L29.01 4.44 L28.16 20.44 L22.19 24 L19.63 23.11 L19.63 24.89 L15.36 28.44 L12.8 27.56 L9.39 32 L2.56 35.56 L0 38.22 L0 40.89 L20.48 33.78 L27.31 32.89 L29.01 39.11 L29.01 50.67 L29.87 53.33 L26.45 56.89 L23.04 58.67 L21.33 61.33 L22.19 62.22 L29.87 59.56 L31.57 63.11 L33.28 60.44 L37.55 60.44 L41.81 62.22 L41.81 60.44 L33.28 53.33 L34.13 51.56 L34.13 44.44 L34.99 43.56 L34.99 33.78 L35.84 32.89 L39.25 32.89 L63.15 40.89 L63.15 37.33 L53.76 32 L50.35 27.56 L47.79 28.44 L43.52 24.89 L43.52 23.11 L40.96 24 L34.99 20.44 L34.99 6.22 L33.28 1.78 Z" fill="currentColor"/></svg>'}
+function privateAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M31.58 0 L28.26 2.29 L26.6 9.14 L24.1 9.14 L25.77 9.14 L27.43 11.43 L27.43 17.14 L24.94 19.43 L2.49 19.43 L0 21.71 L0 26.29 L0.83 27.43 L26.6 32 L28.26 34.29 L29.09 51.43 L25.77 53.71 L20.78 54.86 L19.95 58.29 L22.44 60.57 L29.92 60.57 L31.58 62.86 L33.25 60.57 L39.9 60.57 L42.39 59.43 L42.39 54.86 L34.08 52.57 L33.25 51.43 L34.91 33.14 L35.74 32 L51.53 29.71 L52.36 28.57 L62.34 27.43 L63.17 26.29 L62.34 20.57 L60.68 19.43 L40.73 19.43 L39.9 18.29 L36.57 18.29 L35.74 17.14 L35.74 10.29 L38.23 9.14 L36.57 9.14 L34.91 3.43 Z" fill="currentColor"/></svg>'}
+function militaryAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 L28.8 7.68 L27.73 16.21 L24.53 18.77 L21.33 27.31 L5.33 40.96 L3.2 40.11 L2.13 35.84 L2.13 42.67 L0 45.23 L0 48.64 L1.07 50.35 L18.13 49.49 L21.33 46.08 L22.4 46.93 L21.33 50.35 L23.47 52.91 L16 59.73 L17.07 62.29 L21.33 62.29 L25.6 59.73 L26.67 60.59 L27.73 58.88 L29.87 58.88 L28.8 57.17 L29.87 56.32 L29.87 46.08 L30.93 45.23 L33.07 47.79 L33.07 58.88 L35.2 58.03 L36.27 60.59 L38.4 60.59 L43.73 63.15 L45.87 61.44 L45.87 59.73 L38.4 52.91 L40.53 51.2 L40.53 47.79 L41.6 46.93 L43.73 49.49 L61.87 50.35 L62.93 48.64 L61.87 36.69 L60.8 35.84 L60.8 40.96 L58.67 41.81 L41.6 27.31 L40.53 22.19 L35.2 13.65 L35.2 9.39 L34.13 8.53 L34.13 5.12 Z" fill="currentColor"/></svg>'}
 function specialAircraftClass(x){
  const explicit=String(x?.specialClass||x?._skySpecialClass||'').trim().toLowerCase();
  if(explicit==='military'||explicit==='private'||explicit==='commercial')return explicit;
@@ -3104,6 +3105,7 @@ function specialAircraftClass(x){
  if(isCommercialAircraft(x))return 'commercial';
  return 'private';
 }
+// V1.0: classification is unchanged; icons follow the established Commercial / Cessna-style Private / Fighter-style Military visual mapping.
 function specialAircraftIconSvg(x){
  const c=specialAircraftClass(x);
  return c==='military'?militaryAircraftSvg():c==='private'?privateAircraftSvg():specialCommercialAircraftSvg();
@@ -5030,12 +5032,17 @@ function isCommercialAircraft(a){
 
   // Common business-jet / private-aircraft ICAO type families.
   const privateTypes=[
-    /^GLF[1-6]$/,/^G[12]$/, /^CL3[05]$/, /^C56[0-9]$/,
-    /^C550$/, /^C560$/, /^C680$/, /^C700$/, /^C750$/,
+    // Business / private jets and common Cessna Citation families.
+    // Keep these ahead of the commercial-airliner test so a private
+    // Citation can never fall through to the generic commercial silhouette.
+    /^GLF[1-6]$/, /^G[12]$/, /^CL3[05]$/,
+    /^C25[A-Z0-9]*$/, /^C510$/, /^C525[A-Z0-9]*$/, /^C56[0-9]$/,
+    /^C550$/, /^C560$/, /^C650$/, /^C680$/, /^C700$/, /^C750$/,
     /^HA4T$/, /^E35L$/, /^E55P$/, /^FA[0-9]{2}$/,
     /^PC12$/, /^PC24$/, /^BE[0-9]{2}$/
   ];
   if(privateTypes.some(rx=>rx.test(type))) return false;
+  if(/CESSNA|CITATION/.test(desc) && !/^C[0-9]{3}$/.test(type)) return false;
 
   // Helicopters, light aircraft and most small GA types.
   const nonAirlinerTypes=[
