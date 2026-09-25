@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
-<!-- Sky Around Me V66.85 — nearest-aircraft radar sound restored.
+<!-- Sky Around Me V1.0 — audited/stabilised frontend baseline. -->
+<!-- V1.0 is based on V66.85. Functional behaviour is preserved except for defensive stability fixes. -->
 <!-- Sky Around Me V66.80 — scheduled watched-flight Feature hero: departure/arrival local + device times and live countdown. -->
 <!-- Sky Around Me V66.82 — scheduled/quiet Featured layout pass; preserve proven V66.65 Featured progress controller; force new Featured aircraft into FULL JOURNEY before map render. -->
 <!-- Sky Around Me V66.62 — single-owner Featured progress controller: label immediate, visual bar/plane 0→target in exactly 4 seconds -->
@@ -2229,7 +2230,7 @@ body{}
 }
 </style>
 <style id="v66-85-nearest-sound">
-/* V66.85 — nearest-aircraft radar sound. */
+/* V1.0 — nearest-aircraft radar sound. */
 .sound-setting{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
 .sound-setting>label{font-size:8px;color:var(--muted);font-weight:900;letter-spacing:.13em;display:block;margin-bottom:7px;}
 .sound-setting .extended-row{display:flex;align-items:center;justify-content:space-between;gap:14px;}
@@ -2403,7 +2404,7 @@ body{}
  <footer class="app-footer" aria-label="Sky Around Me credits">
   <div class="app-footer-brand">SKY AROUND ME</div>
   <div class="app-footer-sub">SAME SKY, DIFFERENT STORIES</div>
-  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V66.85 · BACKEND V66.80</span></div>
+  <div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V1.0 · BACKEND V66.80</span></div>
  </footer>
 </section>
 </main></div>
@@ -2421,7 +2422,11 @@ body{}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/@tomickigrzegorz/leaflet-rotate@0.2.3/dist/leaflet-rotate.umd.min.js"></script>
 <script>
-const savedSkySettings=JSON.parse(localStorage.getItem('skyAroundMeSettings')||'null')||{};
+function storageGet(key){try{return localStorage.getItem(key)}catch(e){return null}}
+function storageSet(key,value){try{localStorage.setItem(key,value);return true}catch(e){return false}}
+function storageRemove(key){try{localStorage.removeItem(key);return true}catch(e){return false}}
+function storageJsonGet(key,fallback){try{const raw=storageGet(key);return raw?JSON.parse(raw):fallback}catch(e){return fallback}}
+const savedSkySettings=storageJsonGet('skyAroundMeSettings',{})||{};
 const places={lusk:{name:'Lusk, Ireland',lat:53.52558,lon:-6.16581},martock:{name:'Martock, UK',lat:50.9732,lon:-2.7667},lhr:{name:'London Heathrow, UK',lat:51.4700,lon:-0.4543}};
 const savedPlace=savedSkySettings.location&&places[savedSkySettings.location]?savedSkySettings.location:'lusk';
 const initialPlace=places[savedPlace];
@@ -2468,7 +2473,7 @@ function specialSnapshotSignature(){
 }
 function loadSpecialClientSnapshot(){
  try{
-  const raw=JSON.parse(localStorage.getItem(SPECIAL_CLIENT_SNAPSHOT_KEY)||'null');
+  const raw=JSON.parse(storageGet(SPECIAL_CLIENT_SNAPSHOT_KEY)||'null');
   if(!raw||raw.signature!==specialSnapshotSignature()||!Array.isArray(raw.items))return;
   const age=Date.now()-Number(raw.savedAt||0);
   if(age<0||age>SPECIAL_CLIENT_SNAPSHOT_TTL)return;
@@ -2483,14 +2488,14 @@ function saveSpecialClientSnapshot(items){
  try{
   const clean=(Array.isArray(items)?items:[]).filter(x=>x&&x.icao&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon)));
   if(!clean.length)return;
-  localStorage.setItem(SPECIAL_CLIENT_SNAPSHOT_KEY,JSON.stringify({signature:specialSnapshotSignature(),savedAt:Date.now(),items:clean}));
+  storageSet(SPECIAL_CLIENT_SNAPSHOT_KEY,JSON.stringify({signature:specialSnapshotSignature(),savedAt:Date.now(),items:clean}));
  }catch(e){}
 }
 loadSpecialClientSnapshot();
 const $=id=>document.getElementById(id);
 function setTextSafe(id,value){const el=$(id);if(el)el.textContent=value??'';}
 
-/* V66.85 — browser-safe radar sound engine.
+/* V1.0 — browser-safe radar sound engine.
    The Web Audio context is created lazily because iPad/Safari requires a user
    gesture before audio may be started. A page interaction unlocks it when the
    user has left RADAR PING enabled. */
@@ -2534,7 +2539,7 @@ function bindNearestSoundUnlock(){
 
 bindNearestSoundUnlock();
 function updateRefreshUsage(){const perHour=Math.round(3600/S.refreshSec);const el=$('refreshUsage');if(el)el.textContent=`SESSION REQUESTS: ${S.livePollCount.toLocaleString()} · ~${perHour.toLocaleString()} / HOUR AT ${S.refreshSec} SEC`;}
-function saveSkySettings(){localStorage.setItem('skyAroundMeSettings',JSON.stringify({rangeKm:S.rangeKm,location:S.locationMode,locationName:S.locationName,lat:S.lat,lon:S.lon,extendedAirspace:!!S.extendedAirspace,specialSquawks:S.specialSquawkCodes.length>0,specialSquawkCodes:S.specialSquawkCodes.slice(),specialSquawkRegions:normalizeSpecialRegionSettings(S.specialSquawkRegions),specialSquawkLabels:!!S.specialSquawkLabels,refreshSec:S.refreshSec,rotationDeg:S.rotationDeg,rotationLocked:!!S.rotationLocked,nearestSound:!!S.nearestSound}))}
+function saveSkySettings(){storageSet('skyAroundMeSettings',JSON.stringify({rangeKm:S.rangeKm,location:S.locationMode,locationName:S.locationName,lat:S.lat,lon:S.lon,extendedAirspace:!!S.extendedAirspace,specialSquawks:S.specialSquawkCodes.length>0,specialSquawkCodes:S.specialSquawkCodes.slice(),specialSquawkRegions:normalizeSpecialRegionSettings(S.specialSquawkRegions),specialSquawkLabels:!!S.specialSquawkLabels,refreshSec:S.refreshSec,rotationDeg:S.rotationDeg,rotationLocked:!!S.rotationLocked,nearestSound:!!S.nearestSound}))}
 function updateSpecialRegionSummaries(){SPECIAL_CODES.forEach(c=>{const selected=S.specialSquawkRegions?.[c]||[];const all=SPECIAL_REGION_KEYS.every(r=>selected.includes(r));const label=all?'WORLDWIDE':selected.length?selected.map(r=>r.toUpperCase()).join(' · '):'NO REGIONS';const el=$('specialRegionSummary'+c);if(el){el.textContent=label;el.classList.toggle('worldwide',all);el.classList.toggle('none',!selected.length);}SPECIAL_REGION_KEYS.forEach(r=>{const re=$(`specialRegion${c}${r}`);if(re){const active=selected.includes(r);re.classList.toggle('active',active);re.setAttribute('aria-pressed',active?'true':'false');}});});}
 function updateSkySettingsUI(){updateRefreshUsage();if($('rangeInput'))$('rangeInput').value=S.rangeKm;if($('rangeNumber'))$('rangeNumber').value=S.rangeKm;if($('rangeValue'))$('rangeValue').textContent=S.rangeKm+' KM';if($('rangePill'))$('rangePill').textContent=S.rangeKm+' KM AIRSPACE RADIUS';if($('extendedPill'))$('extendedPill').hidden=!(S.extendedAirspace&&S.rangeKm<100);if($('mapLocation'))$('mapLocation').textContent=S.locationName.toUpperCase();if($('locationSelect'))$('locationSelect').value=S.locationMode==='device'?'device':(places[S.locationMode]?S.locationMode:'custom');if($('currentLocation'))$('currentLocation').textContent=S.locationName;if($('customLocation'))$('customLocation').hidden=S.locationMode!=='custom';if($('extendedAirspaceToggle'))$('extendedAirspaceToggle').checked=!!S.extendedAirspace;['7700','7600','7500','7000','1200'].forEach(c=>{const el=$('specialCode'+c);if(el)el.checked=S.specialSquawkCodes.includes(c);});updateSpecialRegionSummaries();if($('specialSquawkLabelsToggle'))$('specialSquawkLabelsToggle').checked=!!S.specialSquawkLabels;if($('nearestSoundToggle'))$('nearestSoundToggle').checked=!!S.nearestSound;if($('refreshInput'))$('refreshInput').value=S.refreshSec;if($('refreshNumber'))$('refreshNumber').value=S.refreshSec;if($('locationSelect')&&S.locationMode==='device')$('locationSelect').value='device';S.specialSquawks=S.specialSquawkCodes.length>0}
 function applyLocation(lat,lon,name,mode){S.lat=Number(lat);S.lon=Number(lon);S.locationName=name;S.locationMode=mode;saveSkySettings();updateSkySettingsUI();if(typeof me!=='undefined'){me.setLatLng([S.lat,S.lon]);rangeCircle.setLatLng([S.lat,S.lon]);if(typeof extendedCircle!=='undefined'&&extendedCircle)extendedCircle.setLatLng([S.lat,S.lon]);map.setView([S.lat,S.lon],8)};S.lastItems=[];S.lastAllItems=[];S.globalSpecialItems=[];S.globalSpecialLastGoodItems=[];S.globalSpecialLastGoodAt=0;S.specialMarkers.forEach(x=>map.removeLayer(x));S.specialMarkers.clear();S.tracks.clear();S.trails.forEach(x=>map.removeLayer(x));S.trails.clear();S.markers.forEach(x=>map.removeLayer(x));S.markers.clear();S.extendedMarkers.forEach(x=>map.removeLayer(x));S.extendedMarkers.clear();poll()}
@@ -2620,24 +2625,24 @@ $('rangeInput').addEventListener('input',e=>setRange(e.target.value));$('rangeNu
 $('locationSelect').addEventListener('change',e=>{const v=e.target.value;if(v==='device'){useDeviceLocation();return}if(v==='custom'){S.locationMode='custom';updateSkySettingsUI();$('placeSearch').focus();return}const p=places[v];if(p)applyLocation(p.lat,p.lon,p.name,v)});$('useDeviceLocation').addEventListener('click',useDeviceLocation);$('findPlace').addEventListener('click',searchPlace);$('placeSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchPlace()});
 
 function tickClock(){$('clock').textContent=new Date().toLocaleString([], {weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).toUpperCase()}tickClock();setInterval(tickClock,30000);
-let watch=JSON.parse(localStorage.getItem('skyAroundMeWatch')||'null');
-let watchlist=JSON.parse(localStorage.getItem('skyAroundMeWatchlist')||'null');
+let watch=storageJsonGet('skyAroundMeWatch',null);
+let watchlist=storageJsonGet('skyAroundMeWatchlist',null);
 if(!Array.isArray(watchlist))watchlist=[];
 const oldDefaultWatch=watchlist.length===1&&watchlist[0]&&watchlist[0].name==="Mariana's flight"&&watchlist[0].flight===''&&watchlist[0].from==='Singapore'&&watchlist[0].to==='New York JFK';
-if(oldDefaultWatch || (watch&&watch.name==="Mariana's flight"&&watch.flight===''&&watch.from==='Singapore'&&watch.to==='New York JFK')){watch=null;watchlist=[];localStorage.removeItem('skyAroundMeWatch');localStorage.removeItem('skyAroundMeWatchlist')}
+if(oldDefaultWatch || (watch&&watch.name==="Mariana's flight"&&watch.flight===''&&watch.from==='Singapore'&&watch.to==='New York JFK')){watch=null;watchlist=[];storageRemove('skyAroundMeWatch');storageRemove('skyAroundMeWatchlist')}
 if(!watch)watch={};
 const WATCH_LIVE_STORAGE_KEY='skyAroundMeWatchLive';
-function clearPersistedWatchLive(){try{localStorage.removeItem(WATCH_LIVE_STORAGE_KEY)}catch(e){}}
+function clearPersistedWatchLive(){try{storageRemove(WATCH_LIVE_STORAGE_KEY)}catch(e){}}
 function persistWatchLive(live){
  try{
   if(!live||!live.watchKey||!live.icao){clearPersistedWatchLive();return}
   const snapshot={watchKey:live.watchKey,lastSeenAt:Number(live.lastSeenAt||0),staleSince:Number(live.staleSince||0),icao:String(live.icao||''),callsign:String(live.callsign||''),registration:String(live.registration||''),lon:live.lon,lat:live.lat,alt:live.alt,speed:live.speed,heading:live.heading,vs:live.vs,type:live.type||'',desc:live.desc||'',operator:live.operator||'',source:live.source||'ADS-B',category:live.category||'',flightNumber:live.flightNumber||'',airlineCode:live.airlineCode||'',airlineName:live.airlineName||'',watchKnown:true,watchGlobal:true};
-  localStorage.setItem(WATCH_LIVE_STORAGE_KEY,JSON.stringify(snapshot));
+  storageSet(WATCH_LIVE_STORAGE_KEY,JSON.stringify(snapshot));
  }catch(e){}
 }
 function restorePersistedWatchLive(){
  try{
-  const raw=JSON.parse(localStorage.getItem(WATCH_LIVE_STORAGE_KEY)||'null');
+  const raw=JSON.parse(storageGet(WATCH_LIVE_STORAGE_KEY)||'null');
   const key=watchKey(watch);
   if(!raw||!raw.watchKey||!key||raw.watchKey!==key||!raw.icao||!raw.lastSeenAt)return false;
   const live={...raw,watchKey:raw.watchKey,icao:String(raw.icao).toLowerCase(),callsign:String(raw.callsign||''),registration:String(raw.registration||''),source:raw.source||'ADS-B',watchGlobal:true,watchRef:watch};
@@ -2656,7 +2661,7 @@ function restorePersistedWatchLive(){
  }catch(e){return false}
 }
 restorePersistedWatchLive();
-function saveState(){localStorage.setItem('skyAroundMeWatch',JSON.stringify(watch));localStorage.setItem('skyAroundMeWatchlist',JSON.stringify(watchlist));renderWatchlist();renderHomeWatch(S.lastItems);if($('home')?.classList.contains('active'))refreshHomeDisplay()}
+function saveState(){storageSet('skyAroundMeWatch',JSON.stringify(watch));storageSet('skyAroundMeWatchlist',JSON.stringify(watchlist));renderWatchlist();renderHomeWatch(S.lastItems);if($('home')?.classList.contains('active'))refreshHomeDisplay()}
 function localDateOnly(f){
  if(!f?.date)return null;
  const d=new Date(f.date+'T00:00:00');
@@ -3798,7 +3803,7 @@ function identityCacheRecordValid(record){
 }
 function loadIdentityCache(){
  try{
-  const raw=JSON.parse(localStorage.getItem(IDENTITY_STORAGE_KEY)||'{}');
+  const raw=JSON.parse(storageGet(IDENTITY_STORAGE_KEY)||'{}');
   Object.entries(raw).forEach(([key,record])=>{
    if(identityCacheRecordValid(record))S.identityCache.set(key,record);
   });
@@ -3808,7 +3813,7 @@ function identityCachePut(key,value){
  const record={savedAt:Date.now(),value};
  S.identityCache.set(key,record);
  try{
-  const raw=JSON.parse(localStorage.getItem(IDENTITY_STORAGE_KEY)||'{}');
+  const raw=JSON.parse(storageGet(IDENTITY_STORAGE_KEY)||'{}');
   raw[key]=record;
   // Keep localStorage bounded. Expired entries are harmless, but there is no
   // reason to retain an unlimited history of aircraft seen on previous days.
@@ -3816,7 +3821,7 @@ function identityCachePut(key,value){
   Object.entries(raw).forEach(([k,v])=>{
    if(!identityCacheRecordValid(v)||!k.startsWith(IDENTITY_CACHE_VERSION+'|'))delete raw[k];
   });
-  localStorage.setItem(IDENTITY_STORAGE_KEY,JSON.stringify(raw));
+  storageSet(IDENTITY_STORAGE_KEY,JSON.stringify(raw));
  }catch(e){}
 }
 function getIdentityCacheValue(key){
@@ -3963,11 +3968,11 @@ function skyDebug(level,message,data){
 }
 const AIRLABS_USAGE_KEY='skyAroundMeAirLabsUsageV1';
 function airLabsUsageLoad(){
- try{const today=new Date().toISOString().slice(0,10);const raw=JSON.parse(localStorage.getItem(AIRLABS_USAGE_KEY)||'{}');if(raw.date!==today)return {date:today,total:0,byType:{},events:[]};return {date:today,total:Number(raw.total)||0,byType:raw.byType&&typeof raw.byType==='object'?raw.byType:{},events:Array.isArray(raw.events)?raw.events:[]};}
+ try{const today=new Date().toISOString().slice(0,10);const raw=JSON.parse(storageGet(AIRLABS_USAGE_KEY)||'{}');if(raw.date!==today)return {date:today,total:0,byType:{},events:[]};return {date:today,total:Number(raw.total)||0,byType:raw.byType&&typeof raw.byType==='object'?raw.byType:{},events:Array.isArray(raw.events)?raw.events:[]};}
  catch(e){return {date:new Date().toISOString().slice(0,10),total:0,byType:{},events:[]}}
 }
 let AIRLABS_USAGE=airLabsUsageLoad();
-function airLabsUsageSave(){try{localStorage.setItem(AIRLABS_USAGE_KEY,JSON.stringify(AIRLABS_USAGE))}catch(e){}}
+function airLabsUsageSave(){try{storageSet(AIRLABS_USAGE_KEY,JSON.stringify(AIRLABS_USAGE))}catch(e){}}
 function airLabsUsageRender(){const el=document.getElementById('skyAirLabsUsage');if(!el)return;const b=AIRLABS_USAGE.byType||{};el.innerHTML='<strong>AIRLABS CREDITS OBSERVED: '+AIRLABS_USAGE.total+' TODAY</strong><div class="airlabs-breakdown">Schedule '+(b.schedules||0)+' · Non-Schedule '+((b.callsign||0)+(b.flight||0)+(b.realtime||0)+(b.other||0))+'</div>';}
 function airLabsUsageRecord(response,requestLabel){
  if(!response||!response.headers)return;const calls=Number(response.headers.get('X-SkyAroundMe-AirLabs-Calls')||0);if(!Number.isFinite(calls)||calls<=0){airLabsUsageRender();return;}
@@ -4207,15 +4212,15 @@ async function lookupFlightRoute(callsign,date,registration,hex,lat,lon,heading)
  }finally{clearTimeout(timer)}
 }
 function loadRouteCache(){
- try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');const now=Date.now();Object.entries(raw).forEach(([k,v])=>{if(k.startsWith('route-v12|')&&v&&v.cachedAt&&now-v.cachedAt<ROUTE_CACHE_TTL){liveRouteCache.set(k,v.route||null)}})}catch(e){console.debug('Route cache load failed',e)}
+ try{const raw=JSON.parse(storageGet('skyAroundMeRouteCache')||'{}');const now=Date.now();Object.entries(raw).forEach(([k,v])=>{if(k.startsWith('route-v12|')&&v&&v.cachedAt&&now-v.cachedAt<ROUTE_CACHE_TTL){liveRouteCache.set(k,v.route||null)}})}catch(e){console.debug('Route cache load failed',e)}
 }
 function persistRouteCache(){
- try{const out={};liveRouteCache.forEach((route,key)=>{out[key]={route,cachedAt:Date.now()}});localStorage.setItem('skyAroundMeRouteCache',JSON.stringify(out))}catch(e){/* cache is optional */}
+ try{const out={};liveRouteCache.forEach((route,key)=>{out[key]={route,cachedAt:Date.now()}});storageSet('skyAroundMeRouteCache',JSON.stringify(out))}catch(e){/* cache is optional */}
 }
 function getCachedRoute(key){
- try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');const v=raw[key];if(!v||!v.cachedAt)return undefined;const age=Date.now()-v.cachedAt;const ttl=v.route?.status==='FOUND'||v.route?.status==='STALE'?ROUTE_CACHE_TTL:ROUTE_FAILURE_TTL;if(age>ttl)return undefined;return v.route||null}catch(e){return undefined}
+ try{const raw=JSON.parse(storageGet('skyAroundMeRouteCache')||'{}');const v=raw[key];if(!v||!v.cachedAt)return undefined;const age=Date.now()-v.cachedAt;const ttl=v.route?.status==='FOUND'||v.route?.status==='STALE'?ROUTE_CACHE_TTL:ROUTE_FAILURE_TTL;if(age>ttl)return undefined;return v.route||null}catch(e){return undefined}
 }
-function putCachedRoute(key,route){liveRouteCache.set(key,route);try{const raw=JSON.parse(localStorage.getItem('skyAroundMeRouteCache')||'{}');raw[key]={route,cachedAt:Date.now()};localStorage.setItem('skyAroundMeRouteCache',JSON.stringify(raw))}catch(e){/* optional */}}
+function putCachedRoute(key,route){liveRouteCache.set(key,route);try{const raw=JSON.parse(storageGet('skyAroundMeRouteCache')||'{}');raw[key]={route,cachedAt:Date.now()};storageSet('skyAroundMeRouteCache',JSON.stringify(raw))}catch(e){/* optional */}}
 async function enrichLiveRoute(x){
  const cs=normalFlightCode(x?.callsign);if(!cs)return;
  const date=utcDateKey(),reg=normalFlightCode(x?.registration||x?.r||''),hx=normalFlightCode(x?.icao||x?.hex||''),key=routeCacheKey(cs,date,reg,hx,x?.lat,x?.lon);
@@ -4455,7 +4460,7 @@ function renderHomeWatch(items){
  if(watchEyebrow)watchEyebrow.textContent=live?'WATCHED FLIGHT':'NEXT WATCHED FLIGHT';
  const future=dateKeyFromValue(next.date)>todayKeyLocal();
  if(live&&watchedFlightPhase(next,live)==='LANDED'){
-   if(!next.landedAt){next.landedAt=Date.now();localStorage.setItem('skyAroundMeWatch',JSON.stringify(watch));localStorage.setItem('skyAroundMeWatchlist',JSON.stringify(watchlist));}
+   if(!next.landedAt){next.landedAt=Date.now();storageSet('skyAroundMeWatch',JSON.stringify(watch));storageSet('skyAroundMeWatchlist',JSON.stringify(watchlist));}
    if(landedGraceExpired(next)){
      live=null;
      if(S.watchTarget&&watchKey(S.watchTarget)===watchKey(next)){S.watchTarget=null;S.watchLive=null;S.watchSearchAt=0;clearPersistedWatchLive();}
@@ -4764,7 +4769,7 @@ function selectSpecialAircraft(icao){
 function outerIcon(x){
  const heading=Number.isFinite(x?.heading)?x.heading:0,kind=specialSquawkKind(x),colour=specialSquawkColour(x);
  const style=colour?`style="transform:rotate(${heading}deg);--special-squawk:${colour}"`:`style="transform:rotate(${heading}deg)"`;
- return L.divIcon({className:'outer-aircraft-icon',html:`<div class="outer-aircraft-marker ${kind?'special-'+kind:''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${specialAircraftIconSvg(x)}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})
+ return L.divIcon({className:'outer-aircraft-icon',html:`<div class="outer-aircraft-marker ${kind?'special-'+kind:''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${kind?specialAircraftIconSvg(x):miniAircraftSvg()}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})
 }
 function icon(x,featured){
  const tracked=!!featured,heading=Number.isFinite(x.heading)?x.heading:0,kind=specialSquawkKind(x),colour=specialSquawkColour(x);
@@ -4861,7 +4866,6 @@ function updateLiveProgress(pct,aircraft,route){
 function updateMapCard(x){
  const card=$('mapCard');if(!card)return;
  const specialSummary=$('mapCardSpecialSummary');
- const specialSummaryText=$('mapCardSpecialSummaryText');
  if(specialSummary){const c=specialSquawkCounts();const counter=specialCounterHtml(c);specialSummary.hidden=!counter;specialSummary.classList.toggle('has-emergency',c.emergency>0);specialSummary.classList.toggle('has-special',c.vfr>0);specialSummary.innerHTML=counter;}
  const specialInfo=$('mapCardSpecialInfo');
  if(!x){
@@ -5242,8 +5246,8 @@ async function refreshWatchStream(){
      if(live.icao)target.hex=String(live.icao).toUpperCase();
      if(live.registration)target.registration=String(live.registration).toUpperCase();
      if(live.callsign)target.flightIcao=String(live.callsign).toUpperCase();
-     localStorage.setItem('skyAroundMeWatch',JSON.stringify(watch));
-     localStorage.setItem('skyAroundMeWatchlist',JSON.stringify(watchlist));
+     storageSet('skyAroundMeWatch',JSON.stringify(watch));
+     storageSet('skyAroundMeWatchlist',JSON.stringify(watchlist));
      persistWatchLive(S.watchLive);
    }else{
      // Keep the last known watched aircraft after a temporary ADS-B gap.
@@ -5268,8 +5272,8 @@ async function refreshWatchStream(){
        S.watchLive=null;
        S.watchSearchAt=searchedAt;
        clearPersistedWatchLive();
-       localStorage.setItem('skyAroundMeWatch',JSON.stringify(watch));
-       localStorage.setItem('skyAroundMeWatchlist',JSON.stringify(watchlist));
+       storageSet('skyAroundMeWatch',JSON.stringify(watch));
+       storageSet('skyAroundMeWatchlist',JSON.stringify(watchlist));
      }
    }
    // The watched ADS-B stream is independent of the local-radius stream.
