@@ -3,6 +3,7 @@
 <!-- Sky Around Me V1.0 — audited/stabilised frontend baseline. -->
 <!-- V1.0 is based on V66.85. Functional behaviour is preserved except for defensive stability fixes. -->
 <!-- Sky Around Me V66.80 — scheduled watched-flight Feature hero: departure/arrival local + device times and live countdown. -->
+<!-- Sky Around Me V1.0 — quiet-state journey clearing + live Last Scan elapsed timer. -->
 <!-- Sky Around Me V66.82 — scheduled/quiet Featured layout pass; preserve proven V66.65 Featured progress controller; force new Featured aircraft into FULL JOURNEY before map render. -->
 <!-- Sky Around Me V66.62 — single-owner Featured progress controller: label immediate, visual bar/plane 0→target in exactly 4 seconds -->
 <head>
@@ -1313,6 +1314,10 @@ body.sky-debug-enabled .debug-only-label{display:inline-flex}
   .watch-bottom .watch-bottom-name{font-size:8px!important;}
 }
 </style>
+<style id="v1-0-quiet-journey-fix">
+/* V1.0 stability fix — an empty journey strip must never reappear via later grid CSS. */
+#journeyInfo[hidden]{display:none!important;}
+</style>
 <style id="v626-unified-flight-cards">
 @media (min-width:701px) and (orientation:landscape){
 .hero .hero-bottom,.watch-bottom-compact{background:rgba(248,248,244,.96)!important;border:1px solid rgba(70,95,100,.18)!important;border-radius:16px!important;box-shadow:0 10px 30px rgba(23,30,30,.07)!important;overflow:hidden!important;backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important;}
@@ -2456,7 +2461,7 @@ function specialRegionEnabled(code,region){
   if(SPECIAL_REGION_KEYS.every(r=>selected.includes(r)))return true;
   return !!selected.includes(region);
 }
-const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],globalSpecialLastGoodItems:[],globalSpecialLastGoodAt:0,mapSelected:null,featureSpecialSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,specialFilterRevision:0,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false,nearestSound:savedSkySettings.nearestSound!==false};
+const S={lat:Number(savedSkySettings.lat)||initialPlace.lat,lon:Number(savedSkySettings.lon)||initialPlace.lon,locationName:savedSkySettings.locationName||(initialMode==='device'?'Device Location':initialPlace.name),locationMode:initialMode,timer:null,watchTimer:null,featured:null,recent:[],markers:new Map(),extendedMarkers:new Map(),specialMarkers:new Map(),trails:new Map(),tracks:new Map(),lastItems:[],lastAllItems:[],globalSpecialItems:[],globalSpecialLastGoodItems:[],globalSpecialLastGoodAt:0,mapSelected:null,featureSpecialSelected:null,rangeKm:Math.min(250,Math.max(1,Number(savedSkySettings.rangeKm)||100)),refreshSec:Math.min(60,Math.max(2,Number(savedSkySettings.refreshSec)||45)),pollInFlight:false,livePollCount:0,lastScanAt:0,identityCache:new Map(),identityPending:new Map(),watchLive:null,watchTarget:null,watchSearchAt:0,watchSearchPending:null,extendedAirspace:savedSkySettings.extendedAirspace!==false,specialSquawkCodes:Array.isArray(savedSkySettings.specialSquawkCodes)?savedSkySettings.specialSquawkCodes.filter(c=>['7700','7600','7500','7000','1200'].includes(String(c))):((savedSkySettings.specialSquawks===false)?[]:['7700','7600','7500']),specialSquawkRegions:(savedSkySettings.specialSquawkRegions&&typeof savedSkySettings.specialSquawkRegions==='object')?normalizeSpecialRegionSettings(savedSkySettings.specialSquawkRegions):defaultSpecialRegionSettings(),specialSquawkLabels:savedSkySettings.specialSquawkLabels===undefined?false:!!savedSkySettings.specialSquawkLabels,specialSquawks:false,specialFilterRevision:0,rotationDeg:Number.isFinite(Number(savedSkySettings.rotationDeg))?((Number(savedSkySettings.rotationDeg)%360)+360)%360:0,rotationLocked:savedSkySettings.rotationLocked!==false,nearestSound:savedSkySettings.nearestSound!==false};
 S.specialSquawks=S.specialSquawkCodes.length>0;
 
 // V66.74 — persist the last healthy Special Squawk snapshot in the browser.
@@ -2572,26 +2577,19 @@ document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',a
   showSkyPage(b.dataset.page);
 
   if(b.dataset.page==='mapPage'){
+    // Navigation must not trigger a new ADS-B scan. LAST SCAN represents the
+    // age of the most recent real feed refresh and must continue uninterrupted
+    // while the user moves between FEATURED and LIVE SKY.
     setTimeout(()=>{
       map.invalidateSize();
       if(S.extendedAirspace&&S.rangeKm<100)fitLiveSkyExtended();
     },60);
 
-    // LIVE SKY always gets a fresh ADS-B position when opened.
-    poll();
-
   }else if(b.dataset.page==='home'){
-
-    // V64.1 — FEATURED must use the same fresh ADS-B position as LIVE SKY.
-    // Previously FEATURED reused S.lastItems, which could be up to 45 seconds
-    // old. At 400+ kt that can put the aircraft several kilometres behind its
-    // actual position.
-    setTimeout(async()=>{
-      await poll();
-
-      // poll() has now refreshed S.lastItems and rendered the current
-      // Featured aircraft. Refresh the display once more so watched-flight
-      // state is also applied without changing the aircraft position source.
+    // Reuse the latest feed data when returning to FEATURED. The normal poll
+    // timer remains the sole background refresh mechanism, so changing views
+    // cannot reset LAST SCAN to 00:00.
+    setTimeout(()=>{
       refreshHomeDisplay();
 
       if(heroFlightMap){
@@ -3690,31 +3688,52 @@ function renderQuietScheduledHero(next){
  $('mLabel1').textContent='RANGE';$('m1').textContent=String(S.rangeKm)+' KM';$('m1s').textContent='SELECTED AIRSPACE';
  $('mLabel2').textContent='AIRSPACE';$('m2').textContent='QUIET';$('m2s').textContent='CLEAR';
  $('mLabel3').textContent='TRAFFIC';$('m3').textContent='NONE';$('m3s').textContent='0 AIRCRAFT IN RANGE';
- $('mLabel4').textContent='LAST SCAN';$('m4').textContent=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});$('m4s').textContent='LIVE FEED';
+ $('mLabel4').textContent='LAST SCAN';$('m4').textContent=formatScanElapsed();$('m4s').textContent='LIVE FEED';
 
  // No aircraft is being tracked in this state, so do not show a flight journey,
  // FROM/TO airports, completion percentage, or watched-flight countdown here.
  const ji=$('journeyInfo');
  if(ji)ji.hidden=true;
+ ['journeyFrom','journeyFromName','journeyTo','journeyToName'].forEach(id=>{const el=$(id);if(el)el.textContent='';});
+ const jp=$('journeyPercent');if(jp)jp.textContent='';
  const jc=$('journeyCountdown');if(jc)jc.textContent='';
  setHeroProgressVisual(0);
  setHeroProgressLabel(0);
 }
 function refreshScheduledHeroCountdown(){
+ // The Last Scan timer is independent of watched-flight scheduling.
+ // Keep it ticking once per second whenever the nearest-aircraft hero is quiet.
  const heroAircraft=choose(S.lastItems||[]);
  if(heroAircraft)return;
- const next=getNextWatchedFlight();
- if(!next||watchHasLive(next))return;
- const state=flightState(next);
- if(state!=='SCHEDULED')return;
  const m4=$('m4'),m4s=$('m4s');
- if(m4)m4.textContent=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+ if(m4){$('mLabel4').textContent='LAST SCAN';m4.textContent=formatScanElapsed();}
  if(m4s)m4s.textContent='LIVE FEED';
+
+ const next=getNextWatchedFlight();
+ if(!next||watchHasLive(next)){
+   const qc=$('quietCountdown');if(qc)qc.textContent='';
+   const jc=$('journeyCountdown');if(jc)jc.textContent='';
+   return;
+ }
+ const state=flightState(next);
+ if(state!=='SCHEDULED'){
+   const qc=$('quietCountdown');if(qc)qc.textContent='';
+   return;
+ }
  // The scheduled-flight countdown belongs to the NEXT WATCHED FLIGHT card,
  // never the quiet nearest-airspace card.
  const jc=$('journeyCountdown');if(jc)jc.textContent='';
  const qc=$('quietCountdown');if(qc)qc.textContent=`DEPARTS IN ${countdownText(next)}`;
 }
+function formatScanElapsed(){
+ const t=Number(S.lastScanAt||0);
+ if(!t)return '00:00';
+ const sec=Math.max(0,Math.floor((Date.now()-t)/1000));
+ const mm=String(Math.floor(sec/60)).padStart(2,'0');
+ const ss=String(sec%60).padStart(2,'0');
+ return mm+':'+ss;
+}
+
 function renderScheduledHome(){
  resetHeroJourneyProgress();
  const hero=$('hero');if(hero){hero.style.setProperty('--watch-route-color',WATCH_ROUTE_COLOR);hero.classList.remove('hero-is-quiet');}
@@ -5382,6 +5401,7 @@ async function poll(){
     if(S.globalSpecialItems.length)saveSpecialClientSnapshot(S.globalSpecialItems);
   }
   S.lastAllItems=allItems;S.lastItems=items;
+  S.lastScanAt=Date.now();
   updateSpecialSquawkCounter();
   // STREAM A ONLY: local aircraft determine Featured and Live Sky.
   const f=choose((items||[]).filter(x=>x&&!x.specialOnly));
