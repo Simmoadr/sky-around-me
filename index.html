@@ -3046,100 +3046,6 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
   .hero .journey-center{padding:0 5px!important;}
 }
 </style>
-
-<style id="v1-mobile-nearest-route-match">
-/* V1.0 — MOBILE NEAREST ROUTE MATCH
-   The Nearest Aircraft journey uses the exact same mobile geometry as the
-   Next Watched Flight route. Do not invent a second progress layout. */
-@media(max-width:700px){
-  /* Give the live-aircraft card enough internal room for the route + toggle. */
-  .hero{height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important;}
-  .hero .hero-bottom{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;padding-bottom:14px!important;}
-
-  /* Exact match to .watch-compact-route. */
-  .hero .journey-info{
-    display:grid!important;
-    grid-template-columns:58px minmax(0,1fr) 58px!important;
-    width:100%!important;
-    height:44px!important;
-    min-height:44px!important;
-    margin:12px 0 0!important;
-    padding:0!important;
-    gap:0!important;
-    align-items:center!important;
-    border:0!important;
-    overflow:visible!important;
-    box-sizing:border-box!important;
-  }
-  .hero .journey-end,
-  .hero .journey-end-right{
-    width:58px!important;
-    height:44px!important;
-    min-width:0!important;
-    margin:0!important;
-    padding:0!important;
-    display:flex!important;
-    flex-direction:column!important;
-    justify-content:center!important;
-    align-items:center!important;
-    text-align:center!important;
-    overflow:hidden!important;
-  }
-  .hero .journey-end span{
-    font-size:6px!important;line-height:1!important;letter-spacing:.16em!important;margin:0!important;
-  }
-  .hero .journey-end b{
-    font-size:16px!important;line-height:1!important;margin-top:3px!important;color:var(--watch-route-color,#176f8b)!important;
-  }
-  .hero .journey-end small{
-    font-size:5.5px!important;line-height:1!important;margin-top:3px!important;width:100%!important;
-    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-align:center!important;
-  }
-  .hero .journey-center{
-    grid-column:2!important;grid-row:1!important;
-    width:100%!important;height:44px!important;min-width:0!important;
-    margin:0!important;padding:0 7px!important;
-    display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:stretch!important;
-    position:relative!important;overflow:visible!important;box-sizing:border-box!important;
-  }
-  .hero .journey-percent{
-    display:block!important;font-size:6.5px!important;line-height:1!important;height:auto!important;
-    margin:0 0 5px!important;text-align:center!important;white-space:nowrap!important;overflow:visible!important;
-  }
-  .hero .journey-countdown{display:none!important;}
-  .hero .journey-center .progress{
-    position:relative!important;display:block!important;width:100%!important;height:5px!important;min-height:5px!important;
-    margin:0!important;padding:0!important;background:#dfe3e1!important;border-radius:999px!important;overflow:visible!important;
-    box-sizing:border-box!important;
-  }
-  .hero .journey-center .progress i{
-    display:block!important;height:100%!important;min-height:5px!important;border-radius:999px!important;
-    background:var(--watch-route-color,var(--accent))!important;
-  }
-  .hero .journey-progress .progress-plane{
-    position:absolute!important;top:50%!important;
-    width:19px!important;height:19px!important;min-width:19px!important;min-height:19px!important;
-    margin:0!important;transform:translate(-50%,-50%)!important;z-index:5!important;pointer-events:none!important;
-  }
-  .hero .journey-progress .progress-plane:before{width:22px!important;height:22px!important;}
-  .hero .journey-progress .progress-plane svg{width:100%!important;height:100%!important;display:block!important;}
-
-  /* The toggle belongs below the route, exactly like the watched card. */
-  .hero .mobile-expand-hint{
-    width:100%!important;height:auto!important;min-height:0!important;margin:10px 0 0!important;padding:7px 0 0!important;
-    border-top:1px solid #e3e5e2!important;box-sizing:border-box!important;
-  }
-
-  /* No separate edit control on the mobile Featured page. */
-  #editFlight,.home > div[style*="justify-content:flex-end"]{display:none!important;}
-}
-@media(max-width:390px){
-  .hero .journey-info{grid-template-columns:58px minmax(0,1fr) 58px!important;}
-  .hero .journey-end,.hero .journey-end-right{width:58px!important;}
-  .hero .journey-center{padding:0 7px!important;}
-}
-</style>
-
 </head>
 <body>
 
@@ -3726,40 +3632,93 @@ function localScheduledTimeToDevice(date,time,tz){
  const d=parseLocalDateTimeInZone(date,time,tz);
  return d?formatDeviceTimeFromUtc(d.toISOString()):null;
 }
+function deviceDateKeyFromDate(d){
+ if(!(d instanceof Date)||Number.isNaN(d.getTime()))return null;
+ try{
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+  const o={};parts.forEach(x=>o[x.type]=x.value);
+  return `${o.year}-${o.month}-${o.day}`;
+ }catch(e){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+ }
+}
+function dateKeyInZone(instant,tz){
+ if(!(instant instanceof Date)||Number.isNaN(instant.getTime())||!tz)return null;
+ try{
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(instant);
+  const o={};parts.forEach(x=>o[x.type]=x.value);
+  return `${o.year}-${o.month}-${o.day}`;
+ }catch(e){return null}
+}
+function dayOffsetBetweenKeys(fromKey,toKey){
+ if(!fromKey||!toKey)return null;
+ const [ay,am,ad]=fromKey.split('-').map(Number),[by,bm,bd]=toKey.split('-').map(Number);
+ if([ay,am,ad,by,bm,bd].some(Number.isNaN))return null;
+ return Math.round((Date.UTC(by,bm-1,bd)-Date.UTC(ay,am-1,ad))/86400000);
+}
+function dayShiftLabel(offset){
+ if(offset===null||offset===undefined)return '';
+ if(offset===0)return 'SAME DAY';
+ if(offset===1)return '+1 DAY';
+ if(offset===-1)return '−1 DAY';
+ if(offset>1)return `+${offset} DAYS`;
+ return `${offset} DAYS`;
+}
+function deviceDayShiftFromZone(instant,sourceTz){
+ if(!(instant instanceof Date)||Number.isNaN(instant.getTime()))return '';
+ return dayShiftLabel(dayOffsetBetweenKeys(dateKeyInZone(instant,sourceTz),deviceDateKeyFromDate(instant)));
+}
+function parseScheduledLocalInstant(f,time,tz){
+ if(!f?.date||!time||!tz)return null;
+ return parseLocalDateTimeInZone(f.date,time,tz);
+}
 function formatDepartureDisplay(f){
- if(!f)return {primary:'—',secondary:'—'};
- const origin=f.fromCode||'';
+ if(!f)return {primary:'—',secondary:'—',secondaryDay:''};
+ const origin=String(f.fromCode||'').toUpperCase();
  const tz=airportTimeZone(origin);
  if(f.departureUtc){
-  const originTime=formatTimeInZone(f.departureUtc,tz);
-  const deviceTime=formatDeviceTimeFromUtc(f.departureUtc);
-  if(originTime)return {primary:originTime,secondary:deviceTime||'—'};
-  return {primary:deviceTime||'—',secondary:'—'};
+  const d=new Date(f.departureUtc);
+  if(!Number.isNaN(d.getTime())){
+   const originTime=formatTimeInZone(f.departureUtc,tz);
+   const deviceTime=formatDeviceTimeFromUtc(f.departureUtc);
+   return {primary:originTime||deviceTime||'—',secondary:deviceTime||'—',secondaryDay:deviceDayShiftFromZone(d,tz)};
+  }
  }
  if(f.departureTime){
-  const deviceTime=localScheduledTimeToDevice(f.date,f.departureTime,tz);
-  return {primary:String(f.departureTime).match(/^(\d{1,2}:\d{2})/)?.[1]||String(f.departureTime),secondary:deviceTime||'—'};
+  const primary=String(f.departureTime).match(/^(\d{1,2}:\d{2})/)?.[1]||String(f.departureTime);
+  const zoned=parseScheduledLocalInstant(f,primary,tz);
+  if(zoned){
+   const deviceTime=formatDeviceTimeFromUtc(zoned.toISOString());
+   return {primary,secondary:deviceTime||'—',secondaryDay:deviceDayShiftFromZone(zoned,tz)};
+  }
+  return {primary,secondary:'—',secondaryDay:''};
  }
- return {primary:'—',secondary:'—'};
+ return {primary:'—',secondary:'—',secondaryDay:''};
 }
 function formatWatchArrival(f){
  const dest=String(f?.toCode||'').toUpperCase();
  const tz=airportTimeZone(dest);
  if(f?.arrivalUtc){
-  const utc=String(f.arrivalUtc);
-  const localTime=formatTimeInZone(utc,tz);
-  const deviceTime=formatDeviceTimeFromUtc(utc);
-  return {primary:localTime||deviceTime||'—',secondary:deviceTime||'—'};
+  const d=new Date(f.arrivalUtc);
+  if(!Number.isNaN(d.getTime())){
+   const localTime=formatTimeInZone(f.arrivalUtc,tz);
+   const deviceTime=formatDeviceTimeFromUtc(f.arrivalUtc);
+   return {primary:localTime||deviceTime||'—',secondary:deviceTime||'—',secondaryDay:deviceDayShiftFromZone(d,tz)};
+  }
  }
  const raw=f?.arrivalTime||f?.arrTime||f?.arrival||f?.scheduledArrival||'';
  const m=String(raw).match(/(\d{1,2}:\d{2})/);
  if(m){
   const primary=m[1];
-  const zoned=tz?parseLocalDateTimeInZone(f?.date,primary,tz):null;
-  const deviceTime=zoned?formatDeviceTimeFromUtc(zoned.toISOString()):null;
-  return {primary,secondary:deviceTime||'—'};
+  const zoned=parseScheduledLocalInstant(f,primary,tz);
+  if(zoned){
+   const deviceTime=formatDeviceTimeFromUtc(zoned.toISOString());
+   return {primary,secondary:deviceTime||'—',secondaryDay:deviceDayShiftFromZone(zoned,tz)};
+  }
+  return {primary,secondary:'—',secondaryDay:''};
  }
- return {primary:'—',secondary:'—'};
+ return {primary:'—',secondary:'—',secondaryDay:''};
 }
 
 function aircraftHeroSvg(x){
@@ -5406,11 +5365,11 @@ function renderHomeWatch(items){
  setTextSafe('homeWatchStatusSub',live?(phase==='LANDED'?'FLIGHT ENDED':watchLiveIsStale(next)?'SEARCHING FOR LIVE POSITION · LAST SEEN '+Math.max(1,Math.floor((Date.now()-Number(S.watchLive.lastSeenAt||Date.now()))/60000))+'M AGO':'LIVE TRACKING · '+formatProgressPercent(pct)):(future?countdownText(next):state==='TRACKING PENDING'?'WAITING FOR LIVE POSITION':state==='SEARCHING'?'SEARCHING FOR LIVE POSITION':state==='SCHEDULED'?countdownText(next):'flight day complete'));
  const dep=formatDepartureDisplay(next);
  const depNode=$('homeWatchDeparture');
- if(depNode){depNode.innerHTML=`<span class="watch-time-local">${escapeHtml(dep.primary||next.departureTime||'—')}</span><span class="watch-time-device">${escapeHtml(dep.secondary||'—')}</span>`;}
+ if(depNode){depNode.innerHTML=`<span class="watch-time-local">${escapeHtml(dep.primary||next.departureTime||'—')}</span><span class="watch-time-device">${escapeHtml(dep.secondary||'—')}${dep.secondaryDay?` <em class="watch-time-day">${escapeHtml(dep.secondaryDay)}</em>`:''}</span>`;}
  setTextSafe('homeWatchDepartureSub','');
  const arr=formatWatchArrival(next);
  const arrNode=$('homeWatchArrival');
- if(arrNode){arrNode.innerHTML=`<span class="watch-time-local">${escapeHtml(arr.primary||'—')}</span><span class="watch-time-device">${escapeHtml(arr.secondary||'—')}</span>`;}
+ if(arrNode){arrNode.innerHTML=`<span class="watch-time-local">${escapeHtml(arr.primary||'—')}</span><span class="watch-time-device">${escapeHtml(arr.secondary||'—')}${arr.secondaryDay?` <em class="watch-time-day">${escapeHtml(arr.secondaryDay)}</em>`:''}</span>`;}
  setTextSafe('homeWatchArrivalSub','');
  setTextSafe('homeWatchFlight',(next.flightNumber||next.flight||'—').toUpperCase());
  setTextSafe('homeWatchFlightSub',next.airlineName||'WATCHED FLIGHT');
@@ -7360,4 +7319,23 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
 @media(max-width:1050px){.feature-special-grid{grid-template-columns:repeat(4,minmax(0,1fr));}}
 @media(max-width:800px){body .feature-special-panel{padding:11px 16px 10px}.feature-special-grid{grid-template-columns:repeat(3,minmax(0,1fr));}.feature-special-title strong{font-size:18px;}.feature-special-hint{display:none;}}
 @media(max-width:560px){.feature-special-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+</style>
+<style id="v1-watch-device-time-day-label">
+/* V1.0 — watched-flight device time + explicit calendar-day shift */
+.watch-bottom-compact .watch-time-device{display:block!important;white-space:nowrap!important;}
+.watch-bottom-compact .watch-time-day{
+  display:inline-block!important;
+  margin-left:4px!important;
+  font-style:normal!important;
+  font-size:.48em!important;
+  line-height:1!important;
+  letter-spacing:.08em!important;
+  font-weight:950!important;
+  vertical-align:middle!important;
+  color:#6f7b79!important;
+}
+@media(max-width:700px){
+ .watch-bottom-compact .watch-time-device{font-size:18px!important;line-height:1.05!important;}
+ .watch-bottom-compact .watch-time-day{font-size:7px!important;letter-spacing:.08em!important;margin-left:3px!important;}
+}
 </style>
