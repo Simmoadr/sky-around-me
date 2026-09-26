@@ -2772,6 +2772,284 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
   .hero .journey-info{grid-template-columns:53px minmax(0,1fr) 53px!important;}
 }
 </style>
+
+<style id="v1-mobile-featured-redesign">
+/* V1.0 MOBILE FEATURED REDESIGN
+   Purpose: make the live-aircraft card a compact mobile-first card,
+   with the route/progress bar always occupying its own clear row.
+   Desktop is untouched. */
+@media (max-width:700px){
+  .hero{
+    display:flex!important;
+    flex-direction:column!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    border-radius:18px!important;
+    overflow:visible!important;
+    background:var(--paper)!important;
+    box-shadow:0 10px 30px rgba(23,30,30,.08)!important;
+  }
+
+  .hero .sky{
+    height:270px!important;
+    min-height:270px!important;
+    max-height:270px!important;
+    flex:0 0 270px!important;
+    border-radius:18px 18px 0 0!important;
+    overflow:hidden!important;
+  }
+  .hero .aircraft-stage,
+  .hero .aircraft-stage-art{
+    height:270px!important;
+    min-height:270px!important;
+    max-height:270px!important;
+  }
+
+  .hero .hero-bottom{
+    position:relative!important;
+    left:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:18px 14px 16px!important;
+    border-radius:0 0 18px 18px!important;
+    background:var(--paper)!important;
+    box-shadow:none!important;
+    display:block!important;
+  }
+
+  .hero .divider{display:none!important;}
+
+  .hero .identity{
+    display:block!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  .hero .identity-primary{
+    display:block!important;
+    width:100%!important;
+    padding:0!important;
+    margin:0 0 12px!important;
+  }
+
+  .hero .airline-brand{
+    display:flex!important;
+    align-items:center!important;
+    gap:9px!important;
+    margin:0 0 5px!important;
+  }
+  .hero .airline-badge{
+    min-width:34px!important;
+    height:25px!important;
+    font-size:9px!important;
+  }
+  .hero .operator{
+    font-size:8px!important;
+    letter-spacing:.18em!important;
+  }
+  .hero .flight-name{
+    font-size:29px!important;
+    line-height:1!important;
+    margin:0!important;
+    letter-spacing:-.02em!important;
+  }
+  .hero .aircraft-type{
+    font-size:10px!important;
+    line-height:1.2!important;
+    margin-top:5px!important;
+  }
+
+  /* Six desktop metrics become three compact two-column rows. */
+  .hero .telemetry{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    grid-auto-rows:minmax(67px,auto)!important;
+    gap:0!important;
+    width:100%!important;
+    padding:0!important;
+    margin:0!important;
+    border-top:1px solid var(--line)!important;
+    border-bottom:1px solid var(--line)!important;
+  }
+  .hero .telemetry .metric{
+    min-width:0!important;
+    min-height:67px!important;
+    padding:10px 10px 9px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+    text-align:center!important;
+    border:0!important;
+  }
+  .hero .telemetry .metric:nth-child(odd){
+    border-right:1px solid var(--line)!important;
+  }
+  .hero .telemetry .metric:nth-child(n+3){
+    border-top:1px solid var(--line)!important;
+  }
+  .hero .telemetry .metric label{
+    font-size:6.5px!important;
+    line-height:1!important;
+    letter-spacing:.18em!important;
+    margin:0!important;
+  }
+  .hero .telemetry .metric b{
+    font-size:18px!important;
+    line-height:1.05!important;
+    margin:5px 0 0!important;
+    white-space:nowrap!important;
+  }
+  .hero .telemetry .metric small{
+    font-size:7px!important;
+    line-height:1.1!important;
+    margin:3px 0 0!important;
+  }
+
+  /* New mobile route module: FROM | progress | TO. */
+  .hero .journey-info{
+    display:grid!important;
+    grid-template-columns:64px minmax(0,1fr) 64px!important;
+    gap:10px!important;
+    align-items:end!important;
+    width:100%!important;
+    margin:0!important;
+    padding:14px 2px 0!important;
+    border-top:0!important;
+    min-height:78px!important;
+  }
+  .hero .journey-end{
+    min-width:0!important;
+    text-align:center!important;
+    align-self:end!important;
+  }
+  .hero .journey-end span{
+    display:block!important;
+    font-size:6px!important;
+    line-height:1!important;
+    letter-spacing:.18em!important;
+    margin:0 0 4px!important;
+  }
+  .hero .journey-end b{
+    display:block!important;
+    font-size:17px!important;
+    line-height:1!important;
+    margin:0!important;
+  }
+  .hero .journey-end small{
+    display:block!important;
+    width:100%!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    font-size:6.5px!important;
+    line-height:1.1!important;
+    margin-top:4px!important;
+  }
+  .hero .journey-center{
+    min-width:0!important;
+    width:100%!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:flex-end!important;
+    align-items:stretch!important;
+    padding:0!important;
+    margin:0!important;
+  }
+  .hero .journey-percent{
+    display:block!important;
+    height:auto!important;
+    margin:0 0 7px!important;
+    text-align:center!important;
+    font-size:7px!important;
+    line-height:1!important;
+    letter-spacing:.15em!important;
+    color:var(--muted)!important;
+    white-space:nowrap!important;
+  }
+  .hero .journey-countdown{
+    display:none!important;
+  }
+  .hero .journey-progress,
+  .hero .journey-center .progress{
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    height:5px!important;
+    min-height:5px!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:visible!important;
+    background:#dfe3e0!important;
+    border-radius:99px!important;
+    opacity:1!important;
+  }
+  .hero .journey-progress i,
+  .hero .journey-center .progress i{
+    display:block!important;
+    height:100%!important;
+    min-height:5px!important;
+    background:var(--accent)!important;
+    border-radius:99px!important;
+    opacity:1!important;
+  }
+  .hero .journey-progress .progress-plane{
+    position:absolute!important;
+    top:50%!important;
+    left:0!important;
+    width:20px!important;
+    height:20px!important;
+    display:grid!important;
+    place-items:center!important;
+    transform:translate(-50%,-50%)!important;
+    color:var(--accent)!important;
+    z-index:4!important;
+    transition:left .6s ease!important;
+  }
+  .hero .journey-progress .progress-plane:before{
+    content:''!important;
+    position:absolute!important;
+    inset:-2px!important;
+    width:auto!important;
+    height:auto!important;
+    border-radius:50%!important;
+    background:#fff!important;
+    border:1px solid var(--accent)!important;
+    box-shadow:0 3px 8px rgba(23,30,30,.16)!important;
+    z-index:-1!important;
+  }
+  .hero .journey-progress .progress-plane svg{
+    width:12px!important;
+    height:12px!important;
+    display:block!important;
+  }
+
+  .hero .edit-panel{
+    margin-top:12px!important;
+  }
+}
+
+@media (max-width:390px){
+  .hero .sky,
+  .hero .aircraft-stage,
+  .hero .aircraft-stage-art{
+    height:245px!important;
+    min-height:245px!important;
+    max-height:245px!important;
+  }
+  .hero .flight-name{font-size:27px!important;}
+  .hero .telemetry .metric b{font-size:17px!important;}
+  .hero .journey-info{grid-template-columns:58px minmax(0,1fr) 58px!important;gap:8px!important;}
+}
+</style>
+
 </head>
 <body>
 
