@@ -2943,6 +2943,109 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
 })();
 </script>
 
+
+<style id="v1-mobile-journey-final">
+/* V1.0 — MOBILE JOURNEY FINAL
+   Keep FROM / TO and the completion track as one coherent row.
+   The aircraft marker is anchored to the track itself. */
+@media(max-width:700px){
+  .hero .journey-info{
+    display:grid!important;
+    grid-template-columns:58px minmax(0,1fr) 58px!important;
+    grid-template-rows:56px!important;
+    align-items:center!important;
+    width:100%!important;
+    height:56px!important;
+    min-height:56px!important;
+    margin:12px 0 0!important;
+    padding:0!important;
+    border:0!important;
+    overflow:visible!important;
+  }
+  .hero .journey-end,
+  .hero .journey-end-right{
+    width:58px!important;
+    height:56px!important;
+    min-width:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    overflow:hidden!important;
+  }
+  .hero .journey-end span{font-size:6px!important;line-height:1!important;letter-spacing:.16em!important;margin:0 0 3px!important;}
+  .hero .journey-end b{font-size:16px!important;line-height:1!important;margin:0!important;color:var(--watch-route-color,#176f8b)!important;}
+  .hero .journey-end small{font-size:5.5px!important;line-height:1!important;margin:3px 0 0!important;width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+
+  .hero .journey-center{
+    grid-column:2!important;
+    width:100%!important;
+    height:56px!important;
+    min-width:0!important;
+    padding:0 6px!important;
+    margin:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+    position:relative!important;
+    overflow:visible!important;
+  }
+  .hero .journey-percent{
+    display:block!important;
+    font-size:6.5px!important;
+    line-height:1!important;
+    height:9px!important;
+    margin:0 0 5px!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:visible!important;
+  }
+  .hero .journey-countdown{display:none!important;}
+  .hero .journey-center .progress{
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    height:5px!important;
+    min-height:5px!important;
+    margin:0!important;
+    background:#dfe3e1!important;
+    border-radius:999px!important;
+    overflow:visible!important;
+  }
+  .hero .journey-center .progress i{
+    display:block!important;
+    height:5px!important;
+    min-height:5px!important;
+    border-radius:999px!important;
+  }
+  .hero .journey-progress .progress-plane{
+    position:absolute!important;
+    top:50%!important;
+    width:20px!important;
+    height:20px!important;
+    margin:0!important;
+    transform:translate(-50%,-50%)!important;
+    z-index:5!important;
+    pointer-events:none!important;
+  }
+  .hero .journey-progress .progress-plane:before{
+    width:22px!important;
+    height:22px!important;
+  }
+  .hero .journey-progress .progress-plane svg{width:100%!important;height:100%!important;display:block!important;}
+
+  /* Remove the separate bottom edit action on phones. */
+  #editFlight,
+  .home > div[style*="justify-content:flex-end"]{display:none!important;}
+}
+@media(max-width:390px){
+  .hero .journey-info{grid-template-columns:54px minmax(0,1fr) 54px!important;}
+  .hero .journey-end,.hero .journey-end-right{width:54px!important;}
+  .hero .journey-center{padding:0 5px!important;}
+}
+</style>
 </head>
 <body>
 
