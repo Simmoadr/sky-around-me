@@ -2772,283 +2772,176 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
   .hero .journey-info{grid-template-columns:53px minmax(0,1fr) 53px!important;}
 }
 </style>
-
-<style id="v1-mobile-featured-redesign">
-/* V1.0 MOBILE FEATURED REDESIGN
-   Purpose: make the live-aircraft card a compact mobile-first card,
-   with the route/progress bar always occupying its own clear row.
-   Desktop is untouched. */
+<style id="v1-mobile-collapsible-dashboard">
+/* V1.0 — MOBILE COLLAPSIBLE DASHBOARD
+   Mobile only: keep the useful flight identity + route visible, tuck detailed
+   telemetry behind a tap. Desktop is untouched. */
 @media (max-width:700px){
-  .hero{
-    display:flex!important;
-    flex-direction:column!important;
-    height:auto!important;
-    min-height:0!important;
-    max-height:none!important;
-    border-radius:18px!important;
-    overflow:visible!important;
-    background:var(--paper)!important;
-    box-shadow:0 10px 30px rgba(23,30,30,.08)!important;
-  }
+  /* Map */
+  .hero .sky{height:260px!important;min-height:260px!important;max-height:260px!important;flex:0 0 260px!important;}
+  .hero{border-radius:20px!important;overflow:hidden!important;background:var(--paper)!important;}
 
-  .hero .sky{
-    height:270px!important;
-    min-height:270px!important;
-    max-height:270px!important;
-    flex:0 0 270px!important;
-    border-radius:18px 18px 0 0!important;
-    overflow:hidden!important;
-  }
-  .hero .aircraft-stage,
-  .hero .aircraft-stage-art{
-    height:270px!important;
-    min-height:270px!important;
-    max-height:270px!important;
-  }
-
+  /* Nearest card: compact by default */
   .hero .hero-bottom{
-    position:relative!important;
-    left:auto!important;
-    right:auto!important;
-    bottom:auto!important;
-    width:100%!important;
-    height:auto!important;
-    min-height:0!important;
-    max-height:none!important;
-    margin:0!important;
-    padding:18px 14px 16px!important;
-    border-radius:0 0 18px 18px!important;
-    background:var(--paper)!important;
-    box-shadow:none!important;
-    display:block!important;
+    position:relative!important;display:block!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    padding:16px 14px 14px!important;margin:0!important;
+    border:0!important;border-radius:0!important;box-shadow:none!important;
+    overflow:visible!important;background:var(--paper)!important;
   }
-
-  .hero .divider{display:none!important;}
-
+  .hero .hero-bottom .divider{display:none!important;}
   .hero .identity{
-    display:block!important;
-    width:100%!important;
-    margin:0!important;
-    padding:0!important;
+    display:block!important;width:100%!important;margin:0!important;padding:0!important;
   }
+  .hero .identity-primary{width:100%!important;padding:0!important;margin:0!important;}
+  .hero .airline-brand{display:flex!important;align-items:center!important;gap:8px!important;min-height:24px!important;}
+  .hero .airline-badge{min-width:42px!important;height:28px!important;padding:0 10px!important;font-size:10px!important;border-radius:9px!important;}
+  .hero .operator{font-size:8px!important;letter-spacing:.16em!important;}
+  .hero .flight-name{font-size:31px!important;line-height:1!important;margin:6px 0 0!important;letter-spacing:-.04em!important;}
+  .hero .aircraft-type{font-size:10px!important;line-height:1.2!important;margin:5px 0 0!important;color:#778080!important;}
 
-  .hero .identity-primary{
-    display:block!important;
-    width:100%!important;
-    padding:0!important;
-    margin:0 0 12px!important;
-  }
-
-  .hero .airline-brand{
-    display:flex!important;
-    align-items:center!important;
-    gap:9px!important;
-    margin:0 0 5px!important;
-  }
-  .hero .airline-badge{
-    min-width:34px!important;
-    height:25px!important;
-    font-size:9px!important;
-  }
-  .hero .operator{
-    font-size:8px!important;
-    letter-spacing:.18em!important;
-  }
-  .hero .flight-name{
-    font-size:29px!important;
-    line-height:1!important;
-    margin:0!important;
-    letter-spacing:-.02em!important;
-  }
-  .hero .aircraft-type{
-    font-size:10px!important;
-    line-height:1.2!important;
-    margin-top:5px!important;
-  }
-
-  /* Six desktop metrics become three compact two-column rows. */
+  /* Hide the six telemetry values until the card is expanded. */
   .hero .telemetry{
-    display:grid!important;
-    grid-template-columns:1fr 1fr!important;
-    grid-auto-rows:minmax(67px,auto)!important;
-    gap:0!important;
-    width:100%!important;
-    padding:0!important;
-    margin:0!important;
-    border-top:1px solid var(--line)!important;
-    border-bottom:1px solid var(--line)!important;
+    display:none!important;width:100%!important;height:auto!important;
+    margin:14px 0 0!important;padding:12px 0 0!important;
+    border-top:1px solid #dfe1dd!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:14px 0!important;
   }
-  .hero .telemetry .metric{
-    min-width:0!important;
-    min-height:67px!important;
-    padding:10px 10px 9px!important;
-    display:flex!important;
-    flex-direction:column!important;
-    justify-content:center!important;
-    align-items:center!important;
-    text-align:center!important;
-    border:0!important;
-  }
-  .hero .telemetry .metric:nth-child(odd){
-    border-right:1px solid var(--line)!important;
-  }
-  .hero .telemetry .metric:nth-child(n+3){
-    border-top:1px solid var(--line)!important;
-  }
-  .hero .telemetry .metric label{
-    font-size:6.5px!important;
-    line-height:1!important;
-    letter-spacing:.18em!important;
-    margin:0!important;
-  }
-  .hero .telemetry .metric b{
-    font-size:18px!important;
-    line-height:1.05!important;
-    margin:5px 0 0!important;
-    white-space:nowrap!important;
-  }
-  .hero .telemetry .metric small{
-    font-size:7px!important;
-    line-height:1.1!important;
-    margin:3px 0 0!important;
-  }
+  .hero.mobile-details-open .telemetry{display:grid!important;}
+  .hero .telemetry .metric{min-width:0!important;text-align:center!important;padding:0 8px!important;}
+  .hero .telemetry .metric:nth-child(odd){border-right:1px solid #dfe1dd!important;}
+  .hero .telemetry .metric label{font-size:6.5px!important;line-height:1!important;}
+  .hero .telemetry .metric b{font-size:16px!important;line-height:1.05!important;margin:4px 0 0!important;}
+  .hero .telemetry .metric small{font-size:7px!important;line-height:1!important;margin:3px 0 0!important;}
 
-  /* New mobile route module: FROM | progress | TO. */
+  /* Always-visible journey strip. */
   .hero .journey-info{
-    display:grid!important;
-    grid-template-columns:64px minmax(0,1fr) 64px!important;
-    gap:10px!important;
-    align-items:end!important;
-    width:100%!important;
-    margin:0!important;
-    padding:14px 2px 0!important;
-    border-top:0!important;
-    min-height:78px!important;
+    display:grid!important;position:relative!important;
+    grid-template-columns:58px minmax(0,1fr) 58px!important;
+    grid-template-rows:44px!important;
+    width:100%!important;height:44px!important;min-height:44px!important;
+    margin:14px 0 0!important;padding:0!important;border:0!important;
+    align-items:center!important;background:transparent!important;
   }
-  .hero .journey-end{
-    min-width:0!important;
-    text-align:center!important;
-    align-self:end!important;
+  .hero.hero-is-quiet .journey-info{display:none!important;}
+  .hero .journey-end,.hero .journey-end-right{
+    width:58px!important;height:44px!important;min-width:0!important;
+    display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;
+    padding:0!important;margin:0!important;text-align:center!important;overflow:hidden!important;
   }
-  .hero .journey-end span{
-    display:block!important;
-    font-size:6px!important;
-    line-height:1!important;
-    letter-spacing:.18em!important;
-    margin:0 0 4px!important;
-  }
-  .hero .journey-end b{
-    display:block!important;
-    font-size:17px!important;
-    line-height:1!important;
-    margin:0!important;
-  }
-  .hero .journey-end small{
-    display:block!important;
-    width:100%!important;
-    overflow:hidden!important;
-    text-overflow:ellipsis!important;
-    white-space:nowrap!important;
-    font-size:6.5px!important;
-    line-height:1.1!important;
-    margin-top:4px!important;
-  }
-  .hero .journey-center{
-    min-width:0!important;
-    width:100%!important;
-    display:flex!important;
-    flex-direction:column!important;
-    justify-content:flex-end!important;
-    align-items:stretch!important;
-    padding:0!important;
-    margin:0!important;
-  }
-  .hero .journey-percent{
-    display:block!important;
-    height:auto!important;
-    margin:0 0 7px!important;
-    text-align:center!important;
-    font-size:7px!important;
-    line-height:1!important;
-    letter-spacing:.15em!important;
-    color:var(--muted)!important;
-    white-space:nowrap!important;
-  }
-  .hero .journey-countdown{
-    display:none!important;
-  }
-  .hero .journey-progress,
-  .hero .journey-center .progress{
-    position:relative!important;
-    display:block!important;
-    width:100%!important;
-    height:5px!important;
-    min-height:5px!important;
-    margin:0!important;
-    padding:0!important;
-    overflow:visible!important;
-    background:#dfe3e0!important;
-    border-radius:99px!important;
-    opacity:1!important;
-  }
-  .hero .journey-progress i,
-  .hero .journey-center .progress i{
-    display:block!important;
-    height:100%!important;
-    min-height:5px!important;
-    background:var(--accent)!important;
-    border-radius:99px!important;
-    opacity:1!important;
-  }
-  .hero .journey-progress .progress-plane{
-    position:absolute!important;
-    top:50%!important;
-    left:0!important;
-    width:20px!important;
-    height:20px!important;
-    display:grid!important;
-    place-items:center!important;
-    transform:translate(-50%,-50%)!important;
-    color:var(--accent)!important;
-    z-index:4!important;
-    transition:left .6s ease!important;
-  }
-  .hero .journey-progress .progress-plane:before{
-    content:''!important;
-    position:absolute!important;
-    inset:-2px!important;
-    width:auto!important;
-    height:auto!important;
-    border-radius:50%!important;
-    background:#fff!important;
-    border:1px solid var(--accent)!important;
-    box-shadow:0 3px 8px rgba(23,30,30,.16)!important;
-    z-index:-1!important;
-  }
-  .hero .journey-progress .progress-plane svg{
-    width:12px!important;
-    height:12px!important;
-    display:block!important;
-  }
+  .hero .journey-end span{font-size:6px!important;line-height:1!important;letter-spacing:.16em!important;margin:0 0 3px!important;}
+  .hero .journey-end b{font-size:16px!important;line-height:1!important;margin:0!important;color:var(--watch-route-color,#176f8b)!important;}
+  .hero .journey-end small{font-size:5.5px!important;line-height:1!important;margin:3px 0 0!important;width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  .hero .journey-center{grid-column:2!important;width:100%!important;height:44px!important;min-width:0!important;padding:0 7px!important;margin:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:stretch!important;}
+  .hero .journey-percent{font-size:6.5px!important;height:auto!important;line-height:1!important;margin:0 0 5px!important;text-align:center!important;white-space:nowrap!important;}
+  .hero .journey-countdown{display:none!important;}
+  .hero .journey-center .progress{position:relative!important;width:100%!important;height:5px!important;min-height:5px!important;margin:0!important;background:#dfe3e1!important;border-radius:99px!important;overflow:visible!important;}
+  .hero .journey-center .progress i{height:100%!important;border-radius:99px!important;}
+  .hero .journey-progress .progress-plane{width:19px!important;height:19px!important;}
+  .hero .journey-progress .progress-plane:before{width:22px!important;height:22px!important;}
+  .hero .journey-progress .progress-plane svg{width:100%!important;height:100%!important;}
 
-  .hero .edit-panel{
-    margin-top:12px!important;
+  /* One clear expand affordance */
+  .mobile-expand-hint{
+    display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;
+    width:100%!important;margin:10px 0 0!important;padding:7px 0 0!important;
+    border-top:1px solid #e3e5e2!important;color:#7a8584!important;
+    font-size:6.5px!important;font-weight:950!important;letter-spacing:.14em!important;text-transform:uppercase!important;
+    cursor:pointer!important;user-select:none!important;
   }
-}
+  .mobile-expand-hint::after{content:'⌄';font-size:13px!important;line-height:8px!important;transform:translateY(-1px);transition:transform .2s ease;}
+  .mobile-details-open .mobile-expand-hint::after{transform:rotate(180deg) translateY(1px);}
 
-@media (max-width:390px){
-  .hero .sky,
-  .hero .aircraft-stage,
-  .hero .aircraft-stage-art{
-    height:245px!important;
-    min-height:245px!important;
-    max-height:245px!important;
+  /* Watched flight card: compact summary + expandable detail grid. */
+  .watch-bottom-compact{
+    display:block!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
+    margin-top:12px!important;padding:15px 14px 14px!important;border-radius:20px!important;
+    overflow:visible!important;background:var(--paper)!important;
   }
-  .hero .flight-name{font-size:27px!important;}
-  .hero .telemetry .metric b{font-size:17px!important;}
-  .hero .journey-info{grid-template-columns:58px minmax(0,1fr) 58px!important;gap:8px!important;}
+  .watch-compact-main{display:block!important;width:100%!important;min-height:0!important;}
+  .watch-compact-brand{width:100%!important;min-width:0!important;}
+  .watch-compact-brand .eyebrow{font-size:7px!important;line-height:1!important;letter-spacing:.17em!important;margin-bottom:7px!important;}
+  .watch-compact-airline{font-size:8px!important;gap:7px!important;letter-spacing:.12em!important;}
+  .watch-compact-airline-code{min-width:38px!important;height:26px!important;padding:0 9px!important;font-size:9px!important;border-radius:8px!important;}
+  .watch-bottom-compact .watch-bottom-title{font-size:27px!important;line-height:1!important;margin:6px 0 0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  .watch-compact-sub{font-size:8px!important;line-height:1.15!important;margin-top:5px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  .watch-compact-state{display:none!important;}
+
+  /* Hide watched telemetry by default. */
+  .watch-compact-metrics{
+    display:none!important;width:100%!important;height:auto!important;
+    margin:14px 0 0!important;padding:0!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    border-top:1px solid #dfe1dd!important;
+  }
+  .watch-bottom-compact.mobile-details-open .watch-compact-metrics{display:grid!important;}
+  .watch-compact-metric{min-width:0!important;padding:12px 10px!important;border-bottom:1px solid #dfe1dd!important;}
+  .watch-compact-metric:nth-child(odd){border-right:1px solid #dfe1dd!important;}
+  .watch-compact-metric label{font-size:6.5px!important;line-height:1!important;letter-spacing:.14em!important;}
+  .watch-compact-metric b{font-size:15px!important;line-height:1.05!important;margin-top:5px!important;}
+  .watch-compact-metric small{font-size:7px!important;line-height:1!important;margin-top:3px!important;}
+
+  /* Watched route remains visible in collapsed state and expands naturally with the card. */
+  .watch-compact-route{
+    display:grid!important;grid-template-columns:58px minmax(0,1fr) 58px!important;
+    width:100%!important;height:44px!important;min-height:44px!important;
+    margin-top:12px!important;padding:0!important;gap:0!important;align-items:center!important;
+  }
+  .watch-compact-end{height:44px!important;width:58px!important;min-width:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;text-align:center!important;overflow:hidden!important;}
+  .watch-compact-end span{font-size:6px!important;line-height:1!important;letter-spacing:.16em!important;}
+  .watch-compact-end b{font-size:16px!important;line-height:1!important;margin-top:3px!important;}
+  .watch-compact-end small{font-size:5.5px!important;line-height:1!important;margin-top:3px!important;width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  .watch-compact-progress{height:44px!important;width:100%!important;min-width:0!important;padding:0 7px!important;display:flex!important;flex-direction:column!important;justify-content:center!important;}
+  .watch-progress-label{font-size:6.5px!important;line-height:1!important;margin:0 0 5px!important;text-align:center!important;white-space:nowrap!important;}
+  .watch-progress-track{height:5px!important;min-height:5px!important;position:relative!important;overflow:visible!important;}
+  .watch-progress-track i{height:100%!important;}
+  .watch-progress-track span.progress-plane{width:19px!important;height:19px!important;}
+  .watch-progress-track span.progress-plane:before{width:22px!important;height:22px!important;}
+  .watch-progress-track span.progress-plane svg{width:100%!important;height:100%!important;}
+
+  /* Make the edit action remain below the card, not inside it. */
+  .home > div[style*="justify-content:flex-end"]{margin-top:10px!important;}
+  #editFlight{width:100%!important;min-height:48px!important;}
 }
 </style>
+<script>
+(function(){
+  function setupMobileCollapsibles(){
+    if(window.__skyMobileCollapsiblesReady) return;
+    window.__skyMobileCollapsiblesReady=true;
+    function addToggle(card, label, openClass){
+      if(!card || card.querySelector('.mobile-expand-hint')) return;
+      var hint=document.createElement('div');
+      hint.className='mobile-expand-hint';
+      hint.setAttribute('role','button');
+      hint.setAttribute('tabindex','0');
+      hint.setAttribute('aria-expanded','false');
+      hint.textContent=label;
+      function toggle(){
+        var open=card.classList.toggle(openClass);
+        hint.setAttribute('aria-expanded',open?'true':'false');
+        hint.textContent=open?'HIDE DETAILS':'SHOW DETAILS';
+      }
+      hint.addEventListener('click',function(e){e.stopPropagation();toggle();});
+      hint.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
+      card.appendChild(hint);
+    }
+    function apply(){
+      var hero=document.querySelector('.hero');
+      if(hero) addToggle(hero,'SHOW TELEMETRY','mobile-details-open');
+      var watch=document.getElementById('homeWatch');
+      if(watch) addToggle(watch,'SHOW DETAILS','mobile-details-open');
+    }
+    apply();
+    setTimeout(apply,500);
+    setTimeout(apply,1500);
+    window.addEventListener('resize',apply,{passive:true});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setupMobileCollapsibles);
+  else setupMobileCollapsibles();
+})();
+</script>
 
 </head>
 <body>
