@@ -5050,10 +5050,13 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  const journeyDistance=journey&&Number.isFinite(journeyDestLat)&&Number.isFinite(journeyDestLon)&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),journeyDestLat,journeyDestLon):null;
  $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';const jc=$('journeyCountdown');if(jc)jc.textContent='';
  const ji=$('journeyInfo');if(ji){if(journey&&journey.fromCode&&journey.toCode){ji.hidden=false;const pct=progressPercent(journey,x);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=formatProgressPercent(pct);updateHeroJourneyProgress(pct,x)}else{
- // No resolved route: never show the previous aircraft's completion state.
- // Hide the journey strip and hard-reset its progress so a later route
- // resolution starts cleanly from 0% rather than visually moving backwards.
- ji.hidden=true;
+ // A route lookup can fail for one poll. Keep the last confirmed route for
+ // the SAME selected aircraft instead of making FROM / TO disappear.
+ const sameAircraft=heroProgressIsSameAircraft(x);
+ const hasExistingRoute=!!($('journeyFrom')?.textContent&&$('journeyTo')?.textContent);
+ if(!(sameAircraft&&hasExistingRoute)){
+   ji.hidden=true;
+ }
  // Do not reset Featured progress merely because route enrichment is temporarily
  // unavailable on one poll. The aircraft identity controller owns the reset.
  }}
@@ -5065,7 +5068,7 @@ const ROUTE_TIMEOUT=5000;
 const liveRouteCache=new Map();
 const liveRoutePending=new Map();
 function utcDateKey(){return new Date().toISOString().slice(0,10)}
-function routeCacheKey(flight,date,registration,hex,lat,lon){return 'route-v12|'+normalFlightCode(flight)+'|'+normalFlightCode(registration||'')+'|'+normalFlightCode(hex||'')+'|'+date+'|'+(Number.isFinite(Number(lat))?Number(lat).toFixed(1):'x')+'|'+(Number.isFinite(Number(lon))?Number(lon).toFixed(1):'x')}
+function routeCacheKey(flight,date,registration,hex,lat,lon){return 'route-v13|'+normalFlightCode(flight)+'|'+normalFlightCode(registration||'')+'|'+normalFlightCode(hex||'')+'|'+date}
 async function lookupFlightRoute(callsign,date,registration,hex,lat,lon,heading){
  const cs=normalFlightCode(callsign);
  const reg=String(registration||'').trim().toUpperCase();
@@ -6548,6 +6551,66 @@ body .feature-special-close:active{transform:translateY(0) scale(.985)!important
 .feature-special-close.is-closing .feature-close-route{background:linear-gradient(90deg,rgba(39,126,150,.18),rgba(39,126,150,.42));}
 .feature-special-close.is-closing .feature-close-x{transform:scale(1.08);background:#e1e7e4;}
 @media(max-width:700px){body .feature-special-close{width:92px!important;height:38px!important}.feature-close-flight{width:70px}.feature-close-plane{width:18px;height:18px}.feature-close-plane svg{width:18px!important;height:18px!important}.feature-special-close:hover .feature-close-plane,.feature-special-close.is-closing .feature-close-plane{left:48px}.feature-close-x{width:22px;height:22px;font-size:18px;line-height:18px;}}
+</style>
+
+<style id="v1-mobile-journey-final-fix">
+@media (max-width:700px){
+.hero{overflow:visible!important;}
+.hero .hero-bottom{overflow:visible!important;height:auto!important;min-height:0!important;max-height:none!important;}
+.hero .journey-info{display:grid!important;grid-template-columns:58px minmax(0,1fr) 58px!important;grid-template-rows:44px!important;width:100%!important;height:44px!important;min-height:44px!important;margin:14px 0 0!important;padding:0!important;border:0!important;overflow:visible!important;align-items:center!important;}
+.hero .journey-info .journey-end,.hero .journey-info .journey-end-right{grid-row:1!important;width:58px!important;height:44px!important;min-width:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;padding:0!important;margin:0!important;text-align:center!important;overflow:hidden!important;}
+.hero .journey-info .journey-end{grid-column:1!important;}
+.hero .journey-info .journey-end-right{grid-column:3!important;}
+.hero .journey-info .journey-center{grid-column:2!important;grid-row:1!important;width:100%!important;height:44px!important;min-width:0!important;padding:0 7px!important;margin:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:stretch!important;overflow:visible!important;}
+.hero .journey-percent{font-size:6.5px!important;line-height:1!important;height:auto!important;margin:0 0 5px!important;text-align:center!important;white-space:nowrap!important;}
+.hero .journey-center .progress{position:relative!important;width:100%!important;height:5px!important;min-height:5px!important;margin:0!important;overflow:visible!important;}
+.hero .journey-progress{overflow:visible!important;}
+.hero .journey-progress .progress-plane{width:19px!important;height:19px!important;margin-top:0!important;z-index:5!important;}
+}
+@media (max-width:390px){.hero .journey-info{grid-template-columns:58px minmax(0,1fr) 58px!important;}}
+</style>
+
+<style id="v1-final-mobile-route-layout">
+/* V1.0 FINAL MOBILE ROUTE LAYOUT
+   One row: FROM | completion | TO. Do not let legacy mobile rules move the
+   completion block onto row 2 or clip the bottom of the hero card. */
+@media (max-width:700px){
+  .hero{overflow:visible!important;height:auto!important;min-height:0!important;max-height:none!important;}
+  .hero .hero-bottom{overflow:visible!important;height:auto!important;min-height:0!important;max-height:none!important;}
+  .hero .journey-info{
+    display:grid!important;
+    grid-template-columns:58px minmax(0,1fr) 58px!important;
+    grid-template-rows:44px!important;
+    grid-column:1!important;
+    grid-row:auto!important;
+    width:100%!important;height:44px!important;min-height:44px!important;
+    margin:14px 0 0!important;padding:0!important;border:0!important;
+    overflow:visible!important;align-items:center!important;
+  }
+  .hero .journey-info .journey-end,
+  .hero .journey-info .journey-end-right{
+    grid-row:1!important;width:58px!important;height:44px!important;
+    min-width:0!important;margin:0!important;padding:0!important;
+    display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;
+    text-align:center!important;overflow:hidden!important;
+  }
+  .hero .journey-info .journey-end{grid-column:1!important;}
+  .hero .journey-info .journey-end-right{grid-column:3!important;}
+  .hero .journey-info .journey-center{
+    grid-column:2!important;grid-row:1!important;
+    width:100%!important;height:44px!important;min-width:0!important;
+    margin:0!important;padding:0 7px!important;
+    display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:stretch!important;
+    overflow:visible!important;
+  }
+  .hero .journey-percent{font-size:6.5px!important;line-height:1!important;height:auto!important;margin:0 0 5px!important;text-align:center!important;white-space:nowrap!important;}
+  .hero .journey-center .progress{width:100%!important;height:5px!important;min-height:5px!important;margin:0!important;overflow:visible!important;}
+  .hero .journey-progress{overflow:visible!important;}
+  .hero .journey-progress .progress-plane{width:19px!important;height:19px!important;z-index:5!important;}
+  .hero .journey-end span{font-size:6px!important;line-height:1!important;letter-spacing:.16em!important;margin:0 0 3px!important;}
+  .hero .journey-end b{font-size:16px!important;line-height:1!important;margin:0!important;color:var(--watch-route-color,#176f8b)!important;}
+  .hero .journey-end small{font-size:5.5px!important;line-height:1!important;margin:3px 0 0!important;width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+}
 </style>
 </body></html>
 
