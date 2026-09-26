@@ -2490,7 +2490,9 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
   /* Featured hero: map first, information underneath. */
   .hero{
     width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
-    overflow:hidden!important;border-radius:20px!important;
+    /* The hero must grow to include FROM / TO and the completion track.
+       The map itself remains clipped by .sky, so the outer card can stay visible. */
+    overflow:visible!important;border-radius:20px!important;
     display:flex!important;flex-direction:column!important;
   }
   .hero .sky{
