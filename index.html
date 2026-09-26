@@ -3046,6 +3046,17 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
   .hero .journey-center{padding:0 5px!important;}
 }
 </style>
+
+<style id="v1-special-white-silhouettes">
+/* V1.0: aircraft silhouette is always white for special/emergency markers.
+   Squawk colour belongs to the marker/ring, not the aircraft shape. */
+.live-aircraft-marker.special-emergency .live-aircraft-shape,
+.live-aircraft-marker.special-vfr .live-aircraft-shape,
+.outer-aircraft-marker.special-emergency .live-aircraft-shape,
+.outer-aircraft-marker.special-vfr .live-aircraft-shape{
+  color:#fff!important;
+}
+</style>
 </head>
 <body>
 
@@ -3953,9 +3964,9 @@ function heroMapAirportIcon(code,name,side){
  return L.divIcon({className:'hero-airport-icon',iconSize:[0,0],iconAnchor:[0,0],html:`<div class="hero-airport-label ${side||''}"><span>${c}</span><small>${n}</small></div><div class="hero-airport-dot"></div>`});
 }
 function miniAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"/></svg>'}
-function specialCommercialAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M31.57 0 L29.01 4.44 L28.16 20.44 L22.19 24 L19.63 23.11 L19.63 24.89 L15.36 28.44 L12.8 27.56 L9.39 32 L2.56 35.56 L0 38.22 L0 40.89 L20.48 33.78 L27.31 32.89 L29.01 39.11 L29.01 50.67 L29.87 53.33 L26.45 56.89 L23.04 58.67 L21.33 61.33 L22.19 62.22 L29.87 59.56 L31.57 63.11 L33.28 60.44 L37.55 60.44 L41.81 62.22 L41.81 60.44 L33.28 53.33 L34.13 51.56 L34.13 44.44 L34.99 43.56 L34.99 33.78 L35.84 32.89 L39.25 32.89 L63.15 40.89 L63.15 37.33 L53.76 32 L50.35 27.56 L47.79 28.44 L43.52 24.89 L43.52 23.11 L40.96 24 L34.99 20.44 L34.99 6.22 L33.28 1.78 Z" fill="currentColor"/></svg>'}
-function privateAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M31.58 0 L28.26 2.29 L26.6 9.14 L24.1 9.14 L25.77 9.14 L27.43 11.43 L27.43 17.14 L24.94 19.43 L2.49 19.43 L0 21.71 L0 26.29 L0.83 27.43 L26.6 32 L28.26 34.29 L29.09 51.43 L25.77 53.71 L20.78 54.86 L19.95 58.29 L22.44 60.57 L29.92 60.57 L31.58 62.86 L33.25 60.57 L39.9 60.57 L42.39 59.43 L42.39 54.86 L34.08 52.57 L33.25 51.43 L34.91 33.14 L35.74 32 L51.53 29.71 L52.36 28.57 L62.34 27.43 L63.17 26.29 L62.34 20.57 L60.68 19.43 L40.73 19.43 L39.9 18.29 L36.57 18.29 L35.74 17.14 L35.74 10.29 L38.23 9.14 L36.57 9.14 L34.91 3.43 Z" fill="currentColor"/></svg>'}
-function militaryAircraftSvg(){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 L28.8 7.68 L27.73 16.21 L24.53 18.77 L21.33 27.31 L5.33 40.96 L3.2 40.11 L2.13 35.84 L2.13 42.67 L0 45.23 L0 48.64 L1.07 50.35 L18.13 49.49 L21.33 46.08 L22.4 46.93 L21.33 50.35 L23.47 52.91 L16 59.73 L17.07 62.29 L21.33 62.29 L25.6 59.73 L26.67 60.59 L27.73 58.88 L29.87 58.88 L28.8 57.17 L29.87 56.32 L29.87 46.08 L30.93 45.23 L33.07 47.79 L33.07 58.88 L35.2 58.03 L36.27 60.59 L38.4 60.59 L43.73 63.15 L45.87 61.44 L45.87 59.73 L38.4 52.91 L40.53 51.2 L40.53 47.79 L41.6 46.93 L43.73 49.49 L61.87 50.35 L62.93 48.64 L61.87 36.69 L60.8 35.84 L60.8 40.96 L58.67 41.81 L41.6 27.31 L40.53 22.19 L35.2 13.65 L35.2 9.39 L34.13 8.53 L34.13 5.12 Z" fill="currentColor"/></svg>'}
+function specialCommercialAircraftSvg(white=false){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M31.57 0 L29.01 4.44 L28.16 20.44 L22.19 24 L19.63 23.11 L19.63 24.89 L15.36 28.44 L12.8 27.56 L9.39 32 L2.56 35.56 L0 38.22 L0 40.89 L20.48 33.78 L27.31 32.89 L29.01 39.11 L29.01 50.67 L29.87 53.33 L26.45 56.89 L23.04 58.67 L21.33 61.33 L22.19 62.22 L29.87 59.56 L31.57 63.11 L33.28 60.44 L37.55 60.44 L41.81 62.22 L41.81 60.44 L33.28 53.33 L34.13 51.56 L34.13 44.44 L34.99 43.56 L34.99 33.78 L35.84 32.89 L39.25 32.89 L63.15 40.89 L63.15 37.33 L53.76 32 L50.35 27.56 L47.79 28.44 L43.52 24.89 L43.52 23.11 L40.96 24 L34.99 20.44 L34.99 6.22 L33.28 1.78 Z" fill="' + (white ? '#fff' : 'currentColor') + '"/></svg>'}
+function privateAircraftSvg(white=false){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M31.58 0 L28.26 2.29 L26.6 9.14 L24.1 9.14 L25.77 9.14 L27.43 11.43 L27.43 17.14 L24.94 19.43 L2.49 19.43 L0 21.71 L0 26.29 L0.83 27.43 L26.6 32 L28.26 34.29 L29.09 51.43 L25.77 53.71 L20.78 54.86 L19.95 58.29 L22.44 60.57 L29.92 60.57 L31.58 62.86 L33.25 60.57 L39.9 60.57 L42.39 59.43 L42.39 54.86 L34.08 52.57 L33.25 51.43 L34.91 33.14 L35.74 32 L51.53 29.71 L52.36 28.57 L62.34 27.43 L63.17 26.29 L62.34 20.57 L60.68 19.43 L40.73 19.43 L39.9 18.29 L36.57 18.29 L35.74 17.14 L35.74 10.29 L38.23 9.14 L36.57 9.14 L34.91 3.43 Z" fill="' + (white ? '#fff' : 'currentColor') + '"/></svg>'}
+function militaryAircraftSvg(white=false){return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 L28.8 7.68 L27.73 16.21 L24.53 18.77 L21.33 27.31 L5.33 40.96 L3.2 40.11 L2.13 35.84 L2.13 42.67 L0 45.23 L0 48.64 L1.07 50.35 L18.13 49.49 L21.33 46.08 L22.4 46.93 L21.33 50.35 L23.47 52.91 L16 59.73 L17.07 62.29 L21.33 62.29 L25.6 59.73 L26.67 60.59 L27.73 58.88 L29.87 58.88 L28.8 57.17 L29.87 56.32 L29.87 46.08 L30.93 45.23 L33.07 47.79 L33.07 58.88 L35.2 58.03 L36.27 60.59 L38.4 60.59 L43.73 63.15 L45.87 61.44 L45.87 59.73 L38.4 52.91 L40.53 51.2 L40.53 47.79 L41.6 46.93 L43.73 49.49 L61.87 50.35 L62.93 48.64 L61.87 36.69 L60.8 35.84 L60.8 40.96 L58.67 41.81 L41.6 27.31 L40.53 22.19 L35.2 13.65 L35.2 9.39 L34.13 8.53 L34.13 5.12 Z" fill="' + (white ? '#fff' : 'currentColor') + '"/></svg>'}
 function specialAircraftClass(x){
  const explicit=String(x?.specialClass||x?._skySpecialClass||'').trim().toLowerCase();
  if(explicit==='military'||explicit==='private'||explicit==='commercial')return explicit;
@@ -3964,9 +3975,11 @@ function specialAircraftClass(x){
  return 'private';
 }
 // V1.0: classification is unchanged; icons follow the established Commercial / Cessna-style Private / Fighter-style Military visual mapping.
-function specialAircraftIconSvg(x){
+function specialAircraftIconSvg(x,white=false){
  const c=specialAircraftClass(x);
- return c==='military'?militaryAircraftSvg():c==='private'?privateAircraftSvg():specialCommercialAircraftSvg();
+ if(c==='military')return militaryAircraftSvg(white);
+ if(c==='private')return privateAircraftSvg(white);
+ return specialCommercialAircraftSvg(white);
 }
 function specialAircraftClassLabel(x){
  const c=specialAircraftClass(x);
@@ -4002,7 +4015,7 @@ function heroAircraftIcon(angle,x=null){
  const kind=specialSquawkKind(x),colour=specialSquawkColour(x);
  const cls=kind?`hero-aircraft-marker special-${kind}`:'hero-aircraft-marker';
  const style=colour?`transform:rotate(${a}deg);--special-squawk:${colour}`:`transform:rotate(${a}deg)`;
- return L.divIcon({className:'hero-aircraft-icon',iconSize:[42,42],iconAnchor:[21,21],html:`<div class="${cls}" style="${style}">${specialSquawkBubble(x,a)}<div class="hero-aircraft-halo"></div><div class="hero-aircraft-shape">${specialSquawkKind(x)?specialAircraftIconSvg(x):miniAircraftSvg()}</div></div>`});
+ return L.divIcon({className:'hero-aircraft-icon',iconSize:[42,42],iconAnchor:[21,21],html:`<div class="${cls}" style="${style}">${specialSquawkBubble(x,a)}<div class="hero-aircraft-halo"></div><div class="hero-aircraft-shape">${specialSquawkKind(x)?specialAircraftIconSvg(x,true):miniAircraftSvg()}</div></div>`});
 }
 function heroRoutePoints(a,b,count=80){const pts=[];for(let i=0;i<=count;i++)pts.push(greatCirclePoint(a,b,i/count));return pts}
 function heroCurvedRoutePoints(a,p,b,count=160){
@@ -5648,12 +5661,12 @@ function selectSpecialAircraft(icao){
 function outerIcon(x){
  const heading=Number.isFinite(x?.heading)?x.heading:0,kind=specialSquawkKind(x),colour=specialSquawkColour(x);
  const style=colour?`style="transform:rotate(${heading}deg);--special-squawk:${colour}"`:`style="transform:rotate(${heading}deg)"`;
- return L.divIcon({className:'outer-aircraft-icon',html:`<div class="outer-aircraft-marker ${kind?'special-'+kind:''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${kind?specialAircraftIconSvg(x):miniAircraftSvg()}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})
+ return L.divIcon({className:'outer-aircraft-icon',html:`<div class="outer-aircraft-marker ${kind?'special-'+kind:''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${kind?specialAircraftIconSvg(x,true):miniAircraftSvg()}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})
 }
 function icon(x,featured){
  const tracked=!!featured,heading=Number.isFinite(x.heading)?x.heading:0,kind=specialSquawkKind(x),colour=specialSquawkColour(x);
  const style=colour?`style="transform:rotate(${heading}deg);--special-squawk:${colour}"`:`style="transform:rotate(${heading}deg)"`;
- return L.divIcon({className:tracked?'featured-icon':'aircraft-icon',html:`<div class="live-aircraft-marker ${tracked?'tracked':''} ${kind?'special-'+kind:''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${specialSquawkKind(x)?specialAircraftIconSvg(x):miniAircraftSvg()}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})
+ return L.divIcon({className:tracked?'featured-icon':'aircraft-icon',html:`<div class="live-aircraft-marker ${tracked?'tracked':''} ${kind?'special-'+kind:''}" ${style}>${specialSquawkBubble(x,heading)}<div class="live-aircraft-ring"></div><div class="live-aircraft-shape">${specialSquawkKind(x)?specialAircraftIconSvg(x,true):miniAircraftSvg()}</div></div>`,iconSize:[34,34],iconAnchor:[17,17]})
 }
 function choose(items){if(!items.length)return null;const airborne=items.filter(x=>(x.alt!=null&&x.alt>140)||(x.speed!=null&&x.speed>80));return (airborne.length?airborne:items).slice().sort((a,b)=>a.d-b.d)[0]}
 const map=L.map('map',{zoomControl:false,attributionControl:true,rotate:true,bearing:S.rotationDeg,dragRotate:false,touchRotate:false,shiftKeyRotate:false}).setView([S.lat,S.lon],8);
