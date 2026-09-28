@@ -3053,7 +3053,29 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
 .feature-map-card .map-card-route{margin-top:10px;}
 .feature-map-card .map-card-progress{display:none!important;}
 @media(max-width:700px){.feature-map-card{left:12px!important;right:12px!important;top:145px!important;bottom:auto!important;width:auto!important;max-width:none!important;} .feature-map-card .feature-selected-extra{grid-template-columns:repeat(2,minmax(0,1fr));}}
-</style></head>
+</style>
+<style id="v67-6-nearest-telemetry-wider">
+/* V67.6 — NEAREST AIRCRAFT: wider Distance / Altitude, shorter completion section */
+@media (min-width:701px) and (orientation:landscape){
+  .hero .hero-bottom{
+    grid-template-columns:minmax(225px,1.05fr) minmax(315px,1.45fr) minmax(455px,2.15fr)!important;
+    column-gap:20px!important;
+  }
+  .hero .telemetry{
+    grid-template-columns:1.38fr 1.38fr .62fr .62fr!important;
+  }
+}
+@media (min-width:701px) and (orientation:landscape) and (max-width:1250px){
+  .hero .hero-bottom{
+    grid-template-columns:minmax(195px,1fr) minmax(275px,1.3fr) minmax(405px,1.95fr)!important;
+    column-gap:16px!important;
+  }
+  .hero .telemetry{
+    grid-template-columns:1.38fr 1.38fr .62fr .62fr!important;
+  }
+}
+</style>
+</head>
 <body>
 
 <div id="skyDebugPanel" aria-label="Sky Around Me debug console">
