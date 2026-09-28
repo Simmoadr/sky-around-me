@@ -2917,43 +2917,7 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
   #editFlight{width:100%!important;min-height:48px!important;}
 }
 </style>
-<script>
-(function(){
-  function setupMobileCollapsibles(){
-    if(window.__skyMobileCollapsiblesReady) return;
-    window.__skyMobileCollapsiblesReady=true;
-    function addToggle(card, label, openClass){
-      if(!card || card.querySelector('.mobile-expand-hint')) return;
-      var hint=document.createElement('div');
-      hint.className='mobile-expand-hint';
-      hint.setAttribute('role','button');
-      hint.setAttribute('tabindex','0');
-      hint.setAttribute('aria-expanded','false');
-      hint.textContent=label;
-      function toggle(){
-        var open=card.classList.toggle(openClass);
-        hint.setAttribute('aria-expanded',open?'true':'false');
-        hint.textContent=open?'HIDE DETAILS':'SHOW DETAILS';
-      }
-      hint.addEventListener('click',function(e){e.stopPropagation();toggle();});
-      hint.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
-      card.appendChild(hint);
-    }
-    function apply(){
-      var hero=document.querySelector('.hero');
-      if(hero) addToggle(hero,'SHOW TELEMETRY','mobile-details-open');
-      var watch=document.getElementById('homeWatch');
-      if(watch) addToggle(watch,'SHOW DETAILS','mobile-details-open');
-    }
-    apply();
-    setTimeout(apply,500);
-    setTimeout(apply,1500);
-    window.addEventListener('resize',apply,{passive:true});
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setupMobileCollapsibles);
-  else setupMobileCollapsibles();
-})();
-</script>
+
 
 
 <style id="v1-mobile-journey-final">
@@ -3069,7 +3033,27 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
   color:#fff!important;
 }
 </style>
-</head>
+<style id="remove-show-details-control">
+.mobile-expand-hint{display:none!important;}
+</style>
+<style id="v67-feature-map-card-live-style">
+.feature-map-card{position:absolute!important;z-index:10000!important;right:22px!important;top:155px!important;bottom:auto!important;left:auto!important;width:390px!important;max-width:calc(100% - 44px)!important;pointer-events:auto!important;}
+.feature-map-card-close{position:absolute;right:10px;top:9px;border:0;background:transparent;color:#697475;font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;}
+.feature-map-card-close:hover{color:#111;}
+.feature-map-card .map-card-title{padding-right:24px;}
+.feature-map-card .map-card-sub{padding-right:22px;}
+.feature-map-card .feature-selected-identity{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px;padding-top:10px;border-top:1px solid #dfe1dd;}
+.feature-map-card .feature-selected-identity>div{min-width:0;padding:7px 9px;background:#eef0ed;border-radius:9px;}
+.feature-map-card .feature-selected-identity label{display:block;color:#778080;font-size:7px;letter-spacing:.11em;font-weight:900;}
+.feature-map-card .feature-selected-identity b{display:block;margin-top:3px;font-size:12px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.feature-map-card .feature-selected-extra{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:7px;}
+.feature-map-card .feature-selected-extra>div{min-width:0;padding:7px 9px;background:#f1f2ef;border-radius:9px;}
+.feature-map-card .feature-selected-extra label{display:block;color:#778080;font-size:6px;letter-spacing:.1em;font-weight:900;}
+.feature-map-card .feature-selected-extra b{display:block;margin-top:3px;font-size:10px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.feature-map-card .map-card-route{margin-top:10px;}
+.feature-map-card .map-card-progress{display:none!important;}
+@media(max-width:700px){.feature-map-card{left:12px!important;right:12px!important;top:145px!important;bottom:auto!important;width:auto!important;max-width:none!important;} .feature-map-card .feature-selected-extra{grid-template-columns:repeat(2,minmax(0,1fr));}}
+</style></head>
 <body>
 
 <div id="skyDebugPanel" aria-label="Sky Around Me debug console">
@@ -4218,7 +4202,8 @@ function renderHeroFlightMap(live,watch){
     });
     const nextPoint=greatCirclePoint(a,b,Math.min(1,progress+.015));
     const angle=Number.isFinite(live?.heading)?live.heading:heroBearing(pos,progress<.99?nextPoint:b);
-    L.marker(pos,{icon:heroAircraftIcon(angle,live),interactive:false}).addTo(heroFlightLayer);
+    const featuredMarker=L.marker(pos,{icon:heroAircraftIcon(angle,live),interactive:true,bubblingMouseEvents:false,zIndexOffset:500}).addTo(heroFlightLayer);
+    if(live?.icao)featuredMarker.on('click',()=>{if(specialSquawkKind(live))selectFeatureSpecialAircraft(live.icao);else selectFeaturedAircraft(live.icao);});
    }else{
     // Local airspace view: show every commercial aircraft currently inside the
     // selected radius, with the Featured aircraft visually highlighted.
@@ -4236,7 +4221,8 @@ function renderHeroFlightMap(live,watch){
       if(specialSquawkKind(item))return;
       // Featured aircraft is rendered once below with the locked white/green marker.
       if(item.icao===S.featured)return;
-      L.marker([Number(item.lat),Number(item.lon)],{icon:icon(item,false),interactive:false,zIndexOffset:0}).addTo(heroFlightLayer);
+      const featureMarker=L.marker([Number(item.lat),Number(item.lon)],{icon:icon(item,false),interactive:true,bubblingMouseEvents:false,zIndexOffset:0}).addTo(heroFlightLayer);
+      featureMarker.on('click',()=>selectFeaturedAircraft(item.icao));
     });
     // V66.47 — Local Airspace also shows nearby worldwide Special Squawks
     // that are outside the selected radius.  Inside the radius they use the
@@ -4269,7 +4255,8 @@ function renderHeroFlightMap(live,watch){
     });
     const nextPoint=greatCirclePoint(a,b,Math.min(1,progress+.015));
     const angle=Number.isFinite(live?.heading)?live.heading:heroBearing(pos,progress<.99?nextPoint:b);
-    L.marker(pos,{icon:heroAircraftIcon(angle,live),interactive:false,zIndexOffset:500}).addTo(heroFlightLayer);
+    const featuredMarker=L.marker(pos,{icon:heroAircraftIcon(angle,live),interactive:true,bubblingMouseEvents:false,zIndexOffset:500}).addTo(heroFlightLayer);
+    if(live?.icao)featuredMarker.on('click',()=>{if(specialSquawkKind(live))selectFeatureSpecialAircraft(live.icao);else selectFeaturedAircraft(live.icao);});
     if(!canReuse || modeChanged){
       const fitLocalAirspace=()=>{
        if(!heroFlightMap||heroMapMode!=='airspace')return;
@@ -4386,10 +4373,19 @@ function renderHeroFlightMap(live,watch){
    }
  }else{
    L.circleMarker(pos,{radius:8,color:WATCH_ROUTE_COLOR,weight:2,fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(heroFlightLayer);
-   L.marker(pos,{icon:heroAircraftIcon(live.heading,live),interactive:false}).addTo(heroFlightLayer);
+   const featuredMarker=L.marker(pos,{icon:heroAircraftIcon(live.heading,live),interactive:true,bubblingMouseEvents:false,zIndexOffset:500}).addTo(heroFlightLayer);
+   if(live?.icao)featuredMarker.on('click',()=>{if(specialSquawkKind(live))selectFeatureSpecialAircraft(live.icao);else selectFeaturedAircraft(live.icao);});
    if(!canReuse)heroFlightMap.setView(pos,7);
  }
  heroFlightMap._skyMapMode=heroMapMode;
+ const selectedFeatured=(S.featureAircraftSelected?(S.lastItems||[]).find(a=>String(a.icao||'')===String(S.featureAircraftSelected)):null);
+ if(selectedFeatured){
+   updateFeaturedAircraftPanel(selectedFeatured);
+ }else if(S.featureAircraftSelected){
+   S.featureAircraftSelected=null;
+   const stalePanel=$('featureAircraftPanel');
+   if(stalePanel){stalePanel.hidden=true;stalePanel.innerHTML='';}
+ }
  setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),60);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),300);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),900);setTimeout(()=>heroFlightMap&&heroFlightMap.invalidateSize(true),1500);
 }
 function stopHeroMapCycle(){if(heroMapCycleTimer){clearInterval(heroMapCycleTimer);heroMapCycleTimer=null}heroMapCycleKey='';heroMapMode='journey'}
@@ -5057,7 +5053,7 @@ function renderLiveHome(x){setQuietHeroState(false);const hero=$('hero');if(hero
  const journeyDestLat=journey?.toLat!=null?Number(journey.toLat):routePoint(journey?.toCode)?.[0];
  const journeyDestLon=journey?.toLon!=null?Number(journey.toLon):routePoint(journey?.toCode)?.[1];
  const journeyDistance=journey&&Number.isFinite(journeyDestLat)&&Number.isFinite(journeyDestLon)&&x?.lat!=null&&x?.lon!=null?hav(Number(x.lat),Number(x.lon),journeyDestLat,journeyDestLon):null;
- $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='HEADING';$('m4').textContent=x.heading==null?'—':Math.round(x.heading)+'°';$('m4s').textContent='track';const jc=$('journeyCountdown');if(jc)jc.textContent='';
+ $('mLabel1').textContent='DISTANCE TO GO';$('m1').textContent=journeyDistance!=null?Math.round(journeyDistance).toLocaleString('en-GB')+' km':'—';$('m1s').textContent='remaining';$('mLabel2').textContent='ALTITUDE';$('m2').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';$('m2s').textContent='above ground';$('mLabel3').textContent='SPEED';$('m3').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';$('m3s').textContent='ground speed';$('mLabel4').textContent='TIME LEFT';const speedMs=Number(x.speed);const etaMinutes=journeyDistance!=null&&Number.isFinite(speedMs)&&speedMs>1?(journeyDistance*1000/speedMs)/60:null;let etaText='—';if(etaMinutes!=null&&Number.isFinite(etaMinutes)){if(etaMinutes<60)etaText=Math.max(0,Math.round(etaMinutes))+'m';else{const eh=Math.floor(etaMinutes/60),em=Math.round(etaMinutes%60);etaText=eh+'h'+String(em).padStart(2,'0')+'m';}}$('m4').textContent=etaText;$('m4s').textContent='estimated at current speed';const jc=$('journeyCountdown');if(jc)jc.textContent='';
  const ji=$('journeyInfo');if(ji){if(journey&&journey.fromCode&&journey.toCode){ji.hidden=false;const pct=progressPercent(journey,x);$('journeyFrom').textContent=journey.fromCode;$('journeyFromName').textContent=airportDisplayName(journey.fromCode,journey.from||journey.fromName);$('journeyTo').textContent=journey.toCode;$('journeyToName').textContent=airportDisplayName(journey.toCode,journey.to||journey.toName);$('journeyPercent').textContent=formatProgressPercent(pct);updateHeroJourneyProgress(pct,x)}else{
  // A route lookup can fail for one poll. Keep the last confirmed route for
  // the SAME selected aircraft instead of making FROM / TO disappear.
@@ -5656,6 +5652,66 @@ function updateFeatureSpecialPanel(){
  const close=$('featureSpecialClose');if(close)close.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(close.classList.contains('is-closing'))return;close.classList.add('is-closing');setTimeout(()=>clearFeatureSpecialSelection(),430)});
  const heroBottom=panel.closest('.hero-bottom');if(heroBottom)heroBottom.classList.add('feature-special-selected');
 }
+
+function selectFeaturedAircraft(icao){
+ const key=String(icao||'');
+ const x=(S.lastItems||[]).find(a=>String(a.icao||'')===key)||(S.lastAllItems||[]).find(a=>String(a.icao||'')===key);
+ if(!x)return;
+ if(specialSquawkKind(x)){selectFeatureSpecialAircraft(x.icao);return;}
+ S.featureAircraftSelected=x.icao;
+ if(heroMapCycleTimer){clearInterval(heroMapCycleTimer);heroMapCycleTimer=null;}
+ heroMapCycleKey='';
+ updateFeaturedAircraftPanel(x);
+}
+
+function updateFeaturedAircraftPanel(x){
+ const host=$('heroFlightMap');
+ if(!host||!x)return;
+ let panel=$('featureAircraftPanel');
+ if(!panel){
+   panel=document.createElement('div');
+   panel.id='featureAircraftPanel';
+   panel.className='map-card feature-map-card';
+   host.appendChild(panel);
+ }
+ const specialCode=normalSquawk(x?.squawk),specialKind=specialSquawkKind(x),isSpecial=!!(specialKind&&specialCode);
+ const title=normalFlightCode(x.callsign||x.icao||'').toUpperCase()||'AIRCRAFT';
+ const callsign=String(x.callsign||x.flight||x.flightNumber||x.icao||'—').toUpperCase();
+ const registration=String(x.registration||x.r||'—').toUpperCase();
+ const icao=String(x.icao||x.hex||'—').toUpperCase();
+ const airline=x.airlineName||airlineFromCallsign(x.callsign)||x.operator||'—';
+ const model=aircraftFullName(x)||x.desc||x.type||'—';
+ const route=x.liveRoute&&x.liveRoute.status==='FOUND'?x.liveRoute:null;
+ const deviceDistance=Number.isFinite(Number(x?.d))?Number(x.d):hav(S.lat,S.lon,Number(x.lat),Number(x.lon));
+ const dest=route&&route.toLat!=null&&route.toLon!=null?hav(x.lat,x.lon,route.toLat,route.toLon):null;
+ const distance=isSpecial?(deviceDistance!=null?deviceDistance.toFixed(1)+' km':'—'):(dest!=null?Math.round(dest).toLocaleString('en-GB')+' km':'—');
+ const altitude=x.alt==null?'—':Math.round(Number(x.alt)*3.28084).toLocaleString('en-GB')+' ft';
+ const speed=x.speed==null?'—':Math.round(Number(x.speed)*1.94384)+' kt';
+ const heading=x.heading==null?'—':Math.round(Number(x.heading))+'°';
+ const vertical=x.vs==null?'—':Math.round(Number(x.vs)*196.850394).toLocaleString('en-GB')+' ft/min';
+ const routeVisible=!isSpecial&&route&&route.fromCode&&route.toCode;
+ const specialInfo=isSpecial?`<div class="map-card-special-info"><div class="special-info-code" style="color:${specialSquawkColour(x)}"><span class="special-info-dot"></span><b>${escapeHtml(specialCode)}</b><span>${escapeHtml(specialSquawkReason(specialCode))}</span></div><div class="special-info-meta"><span>${escapeHtml(specialAircraftClassLabel(x))}</span><span>${Number.isFinite(deviceDistance)?deviceDistance.toFixed(1)+' km from device':'GLOBAL'}</span><span>${escapeHtml(x.source||'ADS-B')}</span></div></div>`:'';
+ panel.hidden=false;
+ panel.innerHTML=`<button type="button" class="feature-map-card-close" id="featureAircraftClose" aria-label="Close aircraft information">×</button>
+ <div class="map-card-kicker" style="${isSpecial?'color:'+specialSquawkColour(x):'color:#14836d'}">${isSpecial?'SPECIAL SQUAWK · '+escapeHtml(specialCode):'SELECTED AIRCRAFT'}</div>
+ <div class="map-card-title">${escapeHtml(title)}${specialSquawkLabel(x)?` <span class="squawk-badge" style="--special-squawk:${specialSquawkColour(x)}">${escapeHtml(specialSquawkLabel(x))}</span>`:''}</div>
+ <div class="map-card-sub">${escapeHtml(airline)} · ${escapeHtml(model)}</div>
+ <div class="feature-selected-identity"><div><label>CALLSIGN</label><b>${escapeHtml(callsign)}</b></div><div><label>REGISTRATION</label><b>${escapeHtml(registration)}</b></div></div>
+ <div class="feature-selected-extra"><div><label>ICAO / MODE-S</label><b>${escapeHtml(icao)}</b></div><div><label>SQUAWK</label><b>${escapeHtml(specialCode||'—')}</b></div><div><label>DATA SOURCE</label><b>${escapeHtml(x.source||'ADS-B')}</b></div><div><label>ALTITUDE</label><b>${escapeHtml(altitude)}</b></div><div><label>SPEED</label><b>${escapeHtml(speed)}</b></div><div><label>HEADING</label><b>${escapeHtml(heading)}</b></div><div><label>VERTICAL SPEED</label><b>${escapeHtml(vertical)}</b></div><div><label>DISTANCE FROM DEVICE</label><b>${Number.isFinite(deviceDistance)?deviceDistance.toFixed(1)+' km':'—'}</b></div><div><label>DISTANCE TO GO</label><b>${escapeHtml(distance)}</b></div></div>
+ ${specialInfo}
+ <div class="map-card-route" ${routeVisible?'':'hidden'}>
+   <div class="map-card-route-head"><div><span>FROM</span><b>${escapeHtml(route?.fromCode||'—')}</b><small>${escapeHtml(route?.from||route?.fromName||'')}</small></div><div class="map-card-route-arrow">→</div><div class="map-card-route-to"><span>TO</span><b>${escapeHtml(route?.toCode||'—')}</b><small>${escapeHtml(route?.to||route?.toName||'')}</small></div></div>
+ </div>`;
+ const close=$('featureAircraftClose');
+ if(close)close.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();clearFeaturedAircraftSelection();});
+}
+
+function clearFeaturedAircraftSelection(){
+ S.featureAircraftSelected=null;
+ const panel=$('featureAircraftPanel');
+ if(panel){panel.hidden=true;panel.innerHTML='';}
+}
+
 function selectFeatureSpecialAircraft(icao){
  const x=specialAircraftForSelection(icao);if(!x||!specialSquawkKind(x))return;
  S.featureSpecialSelected=x.icao;stopHeroMapCycle();heroMapMode='journey';
@@ -6621,6 +6677,34 @@ body .feature-special-close:active{transform:translateY(0) scale(.985)!important
   .hero .journey-end small{font-size:5.5px!important;line-height:1!important;margin:3px 0 0!important;width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
 }
 </style>
+
+<style id="v67-4-next-watch-layout-match">
+/* V67.4 — NEXT WATCHED FLIGHT: match Nearest Aircraft layout.
+   Put the completion route beside the flight identity and use vertical
+   separators between the four remaining information fields. */
+@media (min-width:701px){
+  .watch-bottom-compact{display:grid!important;grid-template-columns:minmax(250px,1.05fr) minmax(0,2.95fr)!important;grid-template-rows:auto auto!important;column-gap:26px!important;row-gap:10px!important;align-items:center!important;}
+  .watch-compact-main{grid-column:1!important;grid-row:1!important;display:flex!important;align-items:center!important;min-width:0!important;}
+  .watch-compact-brand{min-width:0!important;}
+  .watch-compact-state{display:none!important;}
+  .watch-compact-route{grid-column:1!important;grid-row:2!important;display:grid!important;grid-template-columns:52px minmax(0,1fr) 48px!important;width:100%!important;margin:0!important;padding:0!important;align-items:center!important;}
+  .watch-compact-progress{min-width:0!important;padding:0 8px!important;}
+  .watch-compact-metrics{grid-column:2!important;grid-row:1 / 3!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;align-self:stretch!important;margin:0!important;padding:0!important;border:0!important;}
+  .watch-compact-metric{min-width:0!important;padding:8px 14px!important;border:0!important;border-left:1px solid rgba(140,151,150,.28)!important;display:flex!important;flex-direction:column!important;justify-content:center!important;}
+  .watch-compact-metric:first-child{border-left:0!important;}
+  .watch-compact-metric label,.watch-compact-metric b,.watch-compact-metric small{text-align:center!important;width:100%!important;}
+  .watch-compact-metric label{font-size:7px!important;}
+  .watch-compact-metric b{font-size:20px!important;margin-top:5px!important;}
+  .watch-compact-metric small{font-size:8px!important;margin-top:3px!important;}
+}
+@media (min-width:701px) and (max-width:1250px){
+  .watch-bottom-compact{grid-template-columns:minmax(220px,1fr) minmax(0,3fr)!important;column-gap:18px!important;}
+  .watch-compact-route{grid-template-columns:48px minmax(0,1fr) 42px!important;}
+  .watch-compact-progress{padding-left:9px!important;padding-right:5px!important;}
+  .watch-compact-metric{padding-left:10px!important;padding-right:10px!important;}
+  .watch-compact-metric b{font-size:18px!important;}
+}
+</style>
 </body></html>
 
 
@@ -7384,6 +7468,136 @@ body #mapCard .map-card-special-info .special-info-meta{flex-wrap:wrap;}
 </style>
 
 
+
+<style id="v67-feature-aircraft-selection">
+/* V67 — Featured page: selecting any aircraft inside the zone opens the same
+   level of live aircraft information available in Live Sky. */
+body .feature-aircraft-panel{
+  position:absolute;
+  left:18px;
+  right:18px;
+  bottom:18px;
+  z-index:45;
+  padding:13px 20px 11px;
+  background:rgba(248,248,244,.97);
+  border:1px solid rgba(70,95,100,.18);
+  border-radius:16px;
+  box-shadow:0 12px 32px rgba(23,30,30,.16);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  color:#111;
+  box-sizing:border-box;
+}
+body .feature-aircraft-panel[hidden]{display:none!important;}
+.feature-aircraft-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding-bottom:9px;
+  border-bottom:1px solid #dfe1dd;
+}
+.feature-aircraft-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.feature-aircraft-icon{
+  width:30px;
+  height:30px;
+  flex:0 0 30px;
+  display:grid;
+  place-items:center;
+  color:#176f8b;
+}
+.feature-aircraft-icon svg{width:27px;height:27px;display:block;transform:rotate(90deg);}
+.feature-aircraft-kicker{
+  font-size:7px;
+  line-height:1;
+  letter-spacing:.13em;
+  font-weight:950;
+  color:#176f8b;
+}
+.feature-aircraft-title strong{
+  display:block;
+  font-size:21px;
+  line-height:1.05;
+  margin-top:4px;
+  letter-spacing:-.025em;
+}
+.feature-aircraft-title small{
+  display:block;
+  margin-top:4px;
+  font-size:8px;
+  color:#6d7777;
+  letter-spacing:.06em;
+  font-weight:850;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.feature-aircraft-close{
+  flex:0 0 auto;
+  width:38px;
+  height:38px;
+  border:1px solid rgba(65,82,84,.22);
+  border-radius:50%;
+  background:#fff;
+  color:#334143;
+  font:400 24px/34px Arial,sans-serif;
+  cursor:pointer;
+}
+.feature-aircraft-close:hover{background:#eef1ef;}
+.feature-aircraft-grid{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:7px;
+  margin-top:9px;
+}
+.feature-aircraft-grid>div{
+  min-width:0;
+  padding:7px 9px;
+  background:#eef0ed;
+  border-radius:9px;
+}
+.feature-aircraft-grid label{
+  display:block;
+  color:#778080;
+  font-size:6px;
+  letter-spacing:.12em;
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.feature-aircraft-grid b{
+  display:block;
+  margin-top:4px;
+  font-size:10px;
+  line-height:1.1;
+  font-weight:950;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.feature-aircraft-hint{
+  margin-top:8px;
+  font-size:6.5px;
+  color:#7a8382;
+  letter-spacing:.11em;
+  font-weight:900;
+}
+@media(max-width:1000px){
+  .feature-aircraft-grid{grid-template-columns:repeat(4,minmax(0,1fr));}
+}
+@media(max-width:700px){
+  body .feature-aircraft-panel{left:8px;right:8px;bottom:8px;padding:11px 12px 10px;}
+  .feature-aircraft-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .feature-aircraft-title strong{font-size:18px;}
+}
+</style>
+
 <style id="v66-35-feature-special-selection">
 /* V66.35 — bright green device location + Featured special-aircraft selection card. */
 body .feature-special-panel{position:absolute;left:0;right:0;bottom:0;z-index:40;padding:13px 24px 12px;background:rgba(248,248,244,.97);border:1px solid rgba(70,95,100,.18);border-radius:16px;box-shadow:0 -8px 28px rgba(23,30,30,.12);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#111;box-sizing:border-box;}
@@ -7424,5 +7638,507 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
 @media(max-width:700px){
  .watch-bottom-compact .watch-time-device{font-size:18px!important;line-height:1.05!important;}
  .watch-bottom-compact .watch-time-day{font-size:7px!important;letter-spacing:.08em!important;margin-left:3px!important;}
+}
+</style>
+
+
+<style id="v67-nearest-one-row-final">
+/* V67 — NEAREST AIRCRAFT / FEATURED HERO FINAL ONE-ROW LAYOUT
+   Target geometry:
+     LEFT   = aircraft / flight identity
+     CENTRE = FROM + completion bar + TO
+     RIGHT  = Distance to go + Altitude + Speed + Time left
+   Everything is vertically centred in ONE compact row.
+*/
+@media (min-width:701px) and (orientation:landscape){
+  .hero .journey-info[hidden]{display:none!important;}
+  /* The outer card is the only container. */
+  .hero .hero-bottom{
+    display:grid!important;
+    grid-template-columns:minmax(235px,1.15fr) minmax(390px,2.15fr) minmax(430px,2.65fr)!important;
+    grid-template-rows:auto!important;
+    column-gap:28px!important;
+    row-gap:0!important;
+    align-items:center!important;
+    padding:16px 26px 17px!important;
+    min-height:88px!important;
+    box-sizing:border-box!important;
+  }
+
+  .hero .hero-bottom .divider{
+    display:none!important;
+  }
+
+  /* Flatten the old identity wrapper so the identity, journey and telemetry
+     can become the three columns of the same physical row. */
+  .hero .identity{
+    display:contents!important;
+  }
+
+  .hero .identity-primary{
+    grid-column:1!important;
+    grid-row:1!important;
+    min-width:0!important;
+    width:100%!important;
+    padding:0!important;
+    margin:0!important;
+    align-self:center!important;
+    justify-self:stretch!important;
+  }
+
+  /* Registration / callsign were part of the old six-metric layout. They are
+     deliberately hidden here: the right-hand block is ONLY the four values
+     requested in the new design. */
+  .hero .telemetry .metric:nth-child(1),
+  .hero .telemetry .metric:nth-child(2){
+    display:none!important;
+  }
+
+  .hero .telemetry{
+    grid-column:3!important;
+    grid-row:1!important;
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:0!important;
+    width:100%!important;
+    min-width:0!important;
+    padding:0!important;
+    margin:0!important;
+    align-items:center!important;
+    justify-content:stretch!important;
+    align-self:center!important;
+  }
+
+  .hero .telemetry .metric{
+    min-width:0!important;
+    min-height:54px!important;
+    padding:0 18px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+    text-align:center!important;
+    border-left:1px solid rgba(125,139,137,.18)!important;
+  }
+
+  .hero .telemetry .metric:first-of-type{
+    border-left:0!important;
+  }
+
+  .hero .telemetry .metric label{
+    width:100%!important;
+    font-size:8px!important;
+    line-height:1!important;
+    letter-spacing:.16em!important;
+    font-weight:950!important;
+    white-space:nowrap!important;
+    text-align:center!important;
+  }
+
+  .hero .telemetry .metric b{
+    width:100%!important;
+    margin-top:6px!important;
+    font-size:24px!important;
+    line-height:1!important;
+    letter-spacing:-.025em!important;
+    white-space:nowrap!important;
+    text-align:center!important;
+  }
+
+  .hero .telemetry .metric small{
+    width:100%!important;
+    margin-top:4px!important;
+    font-size:8px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    text-align:center!important;
+  }
+
+  /* Completion is now the middle column, not a row underneath telemetry. */
+  .hero .journey-info{
+    grid-column:2!important;
+    grid-row:1!important;
+    display:grid!important;
+    grid-template-columns:42px minmax(0,1fr) 42px!important;
+    gap:0!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    align-items:center!important;
+    align-self:center!important;
+  }
+
+  .hero .journey-info .journey-end,
+  .hero .journey-info .journey-end-right{
+    width:100%!important;
+    min-width:0!important;
+    height:auto!important;
+    padding:0!important;
+    margin:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+    text-align:center!important;
+    align-self:center!important;
+  }
+
+  .hero .journey-end span{
+    font-size:7px!important;
+    line-height:1!important;
+    letter-spacing:.16em!important;
+    margin:0!important;
+  }
+
+  .hero .journey-end b{
+    font-size:17px!important;
+    line-height:1!important;
+    margin:4px 0 0!important;
+    letter-spacing:.035em!important;
+  }
+
+  .hero .journey-end small{
+    max-width:42px!important;
+    margin:4px 0 0!important;
+    font-size:7px!important;
+    line-height:1.1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    text-align:center!important;
+  }
+
+  .hero .journey-end-right{
+    text-align:center!important;
+  }
+
+  .hero .journey-center{
+    grid-column:2!important;
+    grid-row:1!important;
+    min-width:0!important;
+    width:100%!important;
+    height:42px!important;
+    padding:0!important;
+    margin:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:stretch!important;
+    align-self:center!important;
+  }
+
+  .hero .journey-percent{
+    width:100%!important;
+    margin:0 0 6px!important;
+    font-size:8px!important;
+    line-height:1!important;
+    letter-spacing:.14em!important;
+    font-weight:950!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+  }
+
+  .hero .journey-countdown{
+    display:none!important;
+  }
+
+  .hero .journey-center .progress,
+  .hero .journey-progress{
+    position:relative!important;
+    width:100%!important;
+    height:5px!important;
+    min-width:0!important;
+    margin:0!important;
+    background:#dfe3e1!important;
+    border-radius:99px!important;
+    overflow:visible!important;
+  }
+
+  .hero .journey-center .progress i{
+    height:100%!important;
+    border-radius:99px!important;
+  }
+
+  .hero .progress-plane:before{
+    width:19px!important;
+    height:19px!important;
+  }
+
+  /* Make the aircraft identity readable at wall distance. */
+  .hero .airline-brand{
+    min-height:22px!important;
+    gap:8px!important;
+  }
+
+  .hero .airline-badge{
+    font-size:8px!important;
+  }
+
+  .hero .operator{
+    font-size:9px!important;
+    letter-spacing:.13em!important;
+  }
+
+  .hero .flight-name{
+    margin-top:5px!important;
+    font-size:29px!important;
+    line-height:1!important;
+    letter-spacing:-.035em!important;
+  }
+
+  .hero .aircraft-type{
+    margin-top:5px!important;
+    font-size:10px!important;
+    line-height:1.15!important;
+  }
+
+  /* Feature/special/edit panels are separate states and must not steal the
+     three-column geometry when they are visible. */
+  .hero .feature-special-panel,
+  .hero .edit-panel{
+    grid-column:1 / -1!important;
+    grid-row:2!important;
+  }
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-width:1250px){
+  .hero .hero-bottom{
+    grid-template-columns:minmax(205px,1.05fr) minmax(320px,1.8fr) minmax(365px,2.45fr)!important;
+    column-gap:18px!important;
+    padding-left:20px!important;
+    padding-right:20px!important;
+  }
+  .hero .telemetry .metric{padding:0 10px!important;}
+  .hero .telemetry .metric b{font-size:22px!important;}
+  .hero .flight-name{font-size:26px!important;}
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .hero-bottom{
+    min-height:82px!important;
+    padding:11px 20px 12px!important;
+    column-gap:18px!important;
+  }
+  .hero .telemetry .metric{min-height:50px!important;padding:0 10px!important;}
+  .hero .telemetry .metric b{font-size:21px!important;}
+  .hero .telemetry .metric label{font-size:7px!important;}
+  .hero .telemetry .metric small{font-size:7px!important;}
+  .hero .journey-info{grid-template-columns:38px minmax(0,1fr) 38px!important;gap:0!important;}
+  .hero .journey-end b{font-size:15px!important;}
+  .hero .journey-end small{font-size:6.5px!important;max-width:38px!important;}
+  .hero .journey-percent{font-size:7px!important;}
+  .hero .flight-name{font-size:24px!important;}
+}
+
+/* V67.1 — Registration and Callsign are not part of the Nearest Aircraft
+   presentation at any landscape width. Keep the DOM nodes because the live
+   data controller still updates them, but never render their metric cells. */
+@media (min-width:701px) and (orientation:landscape){
+  .hero .telemetry .metric:has(#aircraftReg),
+  .hero .telemetry .metric:has(#aircraftCallsign){
+    display:none!important;
+  }
+
+  /* Larger telemetry at every supported landscape size. */
+  .hero .telemetry .metric b{
+    font-size:24px!important;
+  }
+
+  /* Make the route line run almost directly into the TO airport block. */
+  .hero .journey-info{
+    grid-template-columns:42px minmax(0,1fr) 42px!important;
+    gap:0!important;
+  }
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-width:1250px){
+  .hero .telemetry .metric b{font-size:22px!important;}
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .telemetry .metric b{font-size:21px!important;}
+  .hero .journey-info{grid-template-columns:38px minmax(0,1fr) 38px!important;gap:0!important;}
+}
+</style>
+
+<style id="v67-2-nearest-final-fixes">
+/* V67.2 — FINAL NEAREST AIRCRAFT FIXES
+   1. Registration / Callsign are NEVER displayed in the Nearest Aircraft hero,
+      including the mobile layout.
+   2. Move the beginning of the completion bar slightly away from FROM while
+      keeping the TO end tight to the destination airport.
+*/
+
+/* Registration and Callsign are data-only fields for the live controller.
+   They must never be rendered in the Nearest Aircraft presentation at ANY size. */
+.hero .telemetry .metric:has(#aircraftReg),
+.hero .telemetry .metric:has(#aircraftCallsign){
+  display:none!important;
+}
+
+/* Mobile/tablet telemetry must also contain ONLY the four requested values. */
+@media (max-width:700px){
+  .hero .telemetry .metric:has(#aircraftReg),
+  .hero .telemetry .metric:has(#aircraftCallsign){
+    display:none!important;
+  }
+}
+
+/* The route bar starts slightly to the right of FROM.  Keep the TO side tight
+   so there is no large gap before the destination airport. */
+@media (min-width:701px) and (orientation:landscape){
+  .hero .journey-info{
+    grid-template-columns:52px minmax(0,1fr) 42px!important;
+  }
+
+  .hero .journey-center{
+    padding-left:10px!important;
+    padding-right:0!important;
+    box-sizing:border-box!important;
+  }
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-width:1250px){
+  .hero .journey-info{
+    grid-template-columns:48px minmax(0,1fr) 38px!important;
+  }
+  .hero .journey-center{
+    padding-left:9px!important;
+    padding-right:0!important;
+  }
+}
+
+@media (min-width:701px) and (orientation:landscape) and (max-height:760px){
+  .hero .journey-info{
+    grid-template-columns:46px minmax(0,1fr) 38px!important;
+  }
+  .hero .journey-center{
+    padding-left:8px!important;
+    padding-right:0!important;
+  }
+}
+</style>
+
+<style id="v67-3-next-watch-remove-reg-callsign">
+/* V67.3 — NEXT WATCHED FLIGHT
+   Registration and Callsign are intentionally removed from the visible layout
+   at ALL viewport sizes. The underlying elements remain in the DOM so existing
+   JavaScript can continue to populate them without affecting the UI.
+*/
+.watch-bottom-compact .watch-compact-metrics > .watch-compact-metric:nth-child(1),
+.watch-bottom-compact .watch-compact-metrics > .watch-compact-metric:nth-child(2){
+  display:none!important;
+}
+
+/* Four visible metrics: Status / Departure / Arrival / Flight. */
+@media (min-width:701px){
+  .watch-bottom-compact .watch-compact-metrics{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  }
+}
+
+/* Mobile: keep the remaining four metrics in the existing clean 2-column
+   arrangement rather than leaving empty Registration / Callsign slots. */
+@media (max-width:700px){
+  .watch-bottom-compact .watch-compact-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+</style>
+
+<style id="v67-5-next-watch-route-visible">
+/* V67.5 — NEXT WATCHED FLIGHT
+   Keep the route/progress bar visible and place it directly beside the flight
+   identity, on the same horizontal row as the information metrics. */
+@media (min-width:701px){
+  .watch-bottom-compact{
+    display:grid!important;
+    grid-template-columns:minmax(210px,1.05fr) minmax(300px,1.55fr) minmax(0,2.8fr)!important;
+    grid-template-rows:1fr!important;
+    column-gap:22px!important;
+    row-gap:0!important;
+    align-items:stretch!important;
+  }
+
+  .watch-compact-main{
+    grid-column:1!important;
+    grid-row:1!important;
+    display:flex!important;
+    align-items:center!important;
+    min-width:0!important;
+  }
+
+  .watch-compact-route{
+    grid-column:2!important;
+    grid-row:1!important;
+    display:grid!important;
+    grid-template-columns:58px minmax(0,1fr) 58px!important;
+    align-items:center!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0 4px!important;
+    border:0!important;
+    background:transparent!important;
+    box-sizing:border-box!important;
+    visibility:visible!important;
+  }
+
+  .watch-compact-route[hidden]{display:grid!important;}
+  .watch-compact-end,
+  .watch-compact-progress{display:flex!important;visibility:visible!important;}
+  .watch-compact-end{height:auto!important;}
+  .watch-compact-progress{height:auto!important;min-width:0!important;padding:0 8px!important;}
+
+  .watch-compact-progress .watch-progress-label{
+    display:block!important;
+    visibility:visible!important;
+  }
+
+  .watch-compact-metrics{
+    grid-column:3!important;
+    grid-row:1!important;
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    align-self:stretch!important;
+    min-width:0!important;
+    height:100%!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+  }
+
+  .watch-compact-metric{
+    min-width:0!important;
+    padding:8px 12px!important;
+    border:0!important;
+    border-left:1px solid rgba(140,151,150,.28)!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+    overflow:hidden!important;
+  }
+  .watch-compact-metric:first-child{border-left:0!important;}
+  .watch-compact-metric label,
+  .watch-compact-metric b,
+  .watch-compact-metric small{
+    width:100%!important;
+    text-align:center!important;
+  }
+}
+
+@media (min-width:701px) and (max-width:1250px){
+  .watch-bottom-compact{
+    grid-template-columns:minmax(185px,1fr) minmax(250px,1.45fr) minmax(0,2.65fr)!important;
+    column-gap:16px!important;
+  }
+  .watch-compact-route{grid-template-columns:48px minmax(0,1fr) 48px!important;padding:0 2px!important;}
+  .watch-compact-progress{padding:0 6px!important;}
+  .watch-compact-metric{padding-left:8px!important;padding-right:8px!important;}
 }
 </style>
