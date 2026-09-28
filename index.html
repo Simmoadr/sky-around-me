@@ -6727,6 +6727,106 @@ body .feature-special-close:active{transform:translateY(0) scale(.985)!important
   .watch-compact-metric b{font-size:18px!important;}
 }
 </style>
+<script id="v67-6-mobile-collapsible-interaction">
+/* V67.6 — MOBILE COLLAPSIBLE FLIGHT CARDS
+   The mobile CSS already provides the collapsed/expanded states. This adds the
+   missing interaction so both Nearest Aircraft and Next Watched Flight can be
+   tapped to reveal their details and tapped again to collapse them. */
+(function(){
+  function setupMobileFlightCard(card, isNearest){
+    if(!card || card.dataset.mobileCollapseReady==='1') return;
+    card.dataset.mobileCollapseReady='1';
+
+    let hint=card.querySelector('.mobile-expand-hint');
+    if(!hint){
+      hint=document.createElement('div');
+      hint.className='mobile-expand-hint';
+      hint.setAttribute('role','button');
+      hint.setAttribute('tabindex','0');
+      hint.setAttribute('aria-expanded','false');
+      hint.textContent='TAP FOR DETAILS';
+      const route=card.querySelector(isNearest ? '.journey-info' : '.watch-compact-route');
+      if(route) route.insertAdjacentElement('afterend',hint);
+      else card.appendChild(hint);
+    }
+
+    const setOpen=open=>{
+      card.classList.toggle('mobile-details-open',open);
+      hint.setAttribute('aria-expanded',open?'true':'false');
+      hint.textContent=open?'HIDE DETAILS':'TAP FOR DETAILS';
+    };
+
+    const toggle=e=>{
+      if(e){e.preventDefault();e.stopPropagation();}
+      setOpen(!card.classList.contains('mobile-details-open'));
+    };
+
+    hint.addEventListener('click',toggle);
+    hint.addEventListener('keydown',e=>{
+      if(e.key==='Enter'||e.key===' '){toggle(e);}
+    });
+
+    /* Tapping the information card itself also expands/collapses it. Do not
+       intercept controls, links, inputs or the map. */
+    card.addEventListener('click',e=>{
+      if(window.matchMedia('(min-width:701px)').matches) return;
+      const t=e.target;
+      if(t.closest('.mobile-expand-hint,button,a,input,select,textarea,.hero-flight-map,.leaflet-control,.feature-map-card,.feature-special-panel')) return;
+      if(isNearest && t.closest('.hero .sky')) return;
+      toggle(e);
+    });
+  }
+
+  function init(){
+    setupMobileFlightCard(document.querySelector('.hero .hero-bottom'),true);
+    setupMobileFlightCard(document.querySelector('.watch-bottom-compact'),false);
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
+  else init();
+  window.addEventListener('load',init);
+})();
+</script>
+
+<style id="v67-6-mobile-collapsible-style">
+@media (max-width:700px){
+  .hero .hero-bottom .mobile-expand-hint,
+  .watch-bottom-compact .mobile-expand-hint{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:7px!important;
+    width:100%!important;
+    margin:10px 0 0!important;
+    padding:8px 0 0!important;
+    border-top:1px solid #e3e5e2!important;
+    color:#7a8584!important;
+    font-size:6.5px!important;
+    font-weight:950!important;
+    letter-spacing:.14em!important;
+    text-transform:uppercase!important;
+    cursor:pointer!important;
+    user-select:none!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+  .hero .hero-bottom .mobile-expand-hint::after,
+  .watch-bottom-compact .mobile-expand-hint::after{
+    content:'⌄';
+    font-size:13px!important;
+    line-height:8px!important;
+    transform:translateY(-1px);
+    transition:transform .2s ease;
+  }
+  .hero.mobile-details-open .mobile-expand-hint::after,
+  .watch-bottom-compact.mobile-details-open .mobile-expand-hint::after{
+    transform:rotate(180deg) translateY(1px);
+  }
+}
+@media (min-width:701px){
+  .hero .mobile-expand-hint,
+  .watch-bottom-compact .mobile-expand-hint{display:none!important;}
+}
+</style>
 </body></html>
 
 
