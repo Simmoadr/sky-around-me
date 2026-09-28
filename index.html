@@ -3065,16 +3065,10 @@ button,.btn,.nav button,.map-rotation-btn,.map-rotation-lock,.hero-map-recenter{
     grid-template-columns:1.38fr 1.38fr .62fr .62fr!important;
   }
 }
-@media (min-width:701px) and (orientation:landscape) and (max-width:1250px){
-  .hero .hero-bottom{
-    grid-template-columns:minmax(195px,1fr) minmax(275px,1.3fr) minmax(405px,1.95fr)!important;
-    column-gap:16px!important;
-  }
-  .hero .telemetry{
-    grid-template-columns:1.38fr 1.38fr .62fr .62fr!important;
-  }
-}
+
 </style>
+
+
 </head>
 <body>
 
@@ -6719,13 +6713,6 @@ body .feature-special-close:active{transform:translateY(0) scale(.985)!important
   .watch-compact-metric b{font-size:20px!important;margin-top:5px!important;}
   .watch-compact-metric small{font-size:8px!important;margin-top:3px!important;}
 }
-@media (min-width:701px) and (max-width:1250px){
-  .watch-bottom-compact{grid-template-columns:minmax(220px,1fr) minmax(0,3fr)!important;column-gap:18px!important;}
-  .watch-compact-route{grid-template-columns:48px minmax(0,1fr) 42px!important;}
-  .watch-compact-progress{padding-left:9px!important;padding-right:5px!important;}
-  .watch-compact-metric{padding-left:10px!important;padding-right:10px!important;}
-  .watch-compact-metric b{font-size:18px!important;}
-}
 </style>
 <script id="v67-6-mobile-collapsible-interaction">
 /* V67.6 — MOBILE COLLAPSIBLE FLIGHT CARDS
@@ -6799,7 +6786,7 @@ body .feature-special-close:active{transform:translateY(0) scale(.985)!important
     width:100%!important;
     margin:10px 0 0!important;
     padding:8px 0 0!important;
-    border-top:1px solid #e3e5e2!important;
+    border-top:0!important;
     color:#7a8584!important;
     font-size:6.5px!important;
     font-weight:950!important;
@@ -6825,6 +6812,108 @@ body .feature-special-close:active{transform:translateY(0) scale(.985)!important
 @media (min-width:701px){
   .hero .mobile-expand-hint,
   .watch-bottom-compact .mobile-expand-hint{display:none!important;}
+}
+</style>
+
+<style id="v67-7-nearest-mobile-details-final">
+/* V67.7 — MOBILE NEAREST AIRCRAFT DETAILS
+   Match the Next Watched mobile interaction: compact collapsed card,
+   TAP FOR DETAILS reveals the live telemetry, and HIDE DETAILS collapses it.
+   No extra divider/border is introduced. */
+@media (max-width:700px){
+  .hero .hero-bottom{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:0!important;
+  }
+  .hero .hero-bottom .identity{
+    display:contents!important;
+  }
+  .hero .hero-bottom .identity-primary{
+    order:1!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  .hero .hero-bottom .journey-info{
+    order:2!important;
+    width:100%!important;
+  }
+  .hero .hero-bottom .mobile-expand-hint{
+    order:3!important;
+    border-top:0!important;
+    margin:8px 0 0!important;
+    padding:6px 0 0!important;
+  }
+  .hero .hero-bottom .telemetry{
+    order:4!important;
+    display:none!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:12px 18px!important;
+    margin:10px 0 0!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+  }
+  .hero .hero-bottom.mobile-details-open .telemetry{
+    display:grid!important;
+  }
+  .hero .hero-bottom .telemetry .metric{
+    min-width:0!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    text-align:center!important;
+  }
+  .hero .hero-bottom .telemetry .metric label,
+  .hero .hero-bottom .telemetry .metric b,
+  .hero .hero-bottom .telemetry .metric small{
+    text-align:center!important;
+  }
+  .hero .hero-bottom .telemetry .metric b{
+    font-size:18px!important;
+    margin-top:4px!important;
+  }
+  .hero .hero-bottom .telemetry .metric small{
+    font-size:7px!important;
+    margin-top:2px!important;
+  }
+  .hero .hero-bottom .edit-panel,
+  .hero .hero-bottom .feature-special-panel{
+    order:5!important;
+  }
+}
+</style>
+
+<style id="nearest-exact-next-watched-container-final">
+/* FINAL: Nearest Aircraft uses the EXACT same desktop container geometry as Next Watched Flight.
+   One desktop layout only; no 701-1250 compression. Mobile is untouched. */
+@media (min-width:701px){
+  .hero .hero-bottom{
+    display:grid!important;
+    grid-template-columns:minmax(210px,1.05fr) minmax(240px,1.25fr) minmax(0,3.1fr)!important;
+    grid-template-rows:1fr!important;
+    column-gap:22px!important;
+    row-gap:0!important;
+    align-items:stretch!important;
+  }
+  .hero .identity{display:contents!important;}
+  .hero .identity-primary{
+    grid-column:1!important;grid-row:1!important;min-width:0!important;width:100%!important;margin:0!important;
+  }
+  .hero .journey-info{
+    grid-column:2!important;grid-row:1!important;width:100%!important;min-width:0!important;margin:0!important;
+    grid-template-columns:58px minmax(0,1fr) 58px!important;
+  }
+  .hero .telemetry{
+    grid-column:3!important;grid-row:1!important;display:grid!important;
+    grid-template-columns:1.28fr 1.28fr .72fr .72fr!important;
+    align-self:stretch!important;min-width:0!important;width:100%!important;height:100%!important;margin:0!important;padding:0!important;
+  }
 }
 </style>
 </body></html>
@@ -8025,17 +8114,7 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
   }
 }
 
-@media (min-width:701px) and (orientation:landscape) and (max-width:1250px){
-  .hero .hero-bottom{
-    grid-template-columns:minmax(205px,1.05fr) minmax(320px,1.8fr) minmax(365px,2.45fr)!important;
-    column-gap:18px!important;
-    padding-left:20px!important;
-    padding-right:20px!important;
-  }
-  .hero .telemetry .metric{padding:0 10px!important;}
-  .hero .telemetry .metric b{font-size:22px!important;}
-  .hero .flight-name{font-size:26px!important;}
-}
+
 
 @media (min-width:701px) and (orientation:landscape) and (max-height:760px){
   .hero .hero-bottom{
@@ -8075,9 +8154,7 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
   }
 }
 
-@media (min-width:701px) and (orientation:landscape) and (max-width:1250px){
-  .hero .telemetry .metric b{font-size:22px!important;}
-}
+
 
 @media (min-width:701px) and (orientation:landscape) and (max-height:760px){
   .hero .telemetry .metric b{font-size:21px!important;}
@@ -8122,15 +8199,7 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
   }
 }
 
-@media (min-width:701px) and (orientation:landscape) and (max-width:1250px){
-  .hero .journey-info{
-    grid-template-columns:48px minmax(0,1fr) 48px!important;
-  }
-  .hero .journey-center{
-    padding-left:9px!important;
-    padding-right:0!important;
-  }
-}
+
 
 @media (min-width:701px) and (orientation:landscape) and (max-height:760px){
   .hero .journey-info{
@@ -8254,13 +8323,4 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
   }
 }
 
-@media (min-width:701px) and (max-width:1250px){
-  .watch-bottom-compact{
-    grid-template-columns:minmax(185px,1fr) minmax(220px,1.2fr) minmax(0,2.9fr)!important;
-    column-gap:16px!important;
-  }
-  .watch-compact-route{grid-template-columns:48px minmax(0,1fr) 48px!important;padding:0 2px!important;}
-  .watch-compact-progress{padding:0 6px!important;}
-  .watch-compact-metric{padding-left:8px!important;padding-right:8px!important;}
-}
 </style>
