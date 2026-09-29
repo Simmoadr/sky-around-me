@@ -4945,7 +4945,7 @@ body .feature-special-close:active{transform:translateY(0) scale(.985)!important
   .hero .journey-end b{font-size:22px!important;line-height:1!important;margin-top:5px!important}
   .hero .journey-end small{font-size:7px!important;line-height:1.1!important;margin-top:4px!important;display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
   .hero .journey-center{min-width:0!important;padding:0 12px!important;align-self:center!important}
-  .hero .journey-percent{font-size:20px!important;line-height:1!important;height:auto!important;margin:0 0 12px!important;font-weight:900!important;letter-spacing:-.025em!important;text-align:center!important}
+  .hero .journey-percent{font-size:24px!important;line-height:1!important;height:auto!important;margin:0 0 12px!important;font-weight:900!important;letter-spacing:-.025em!important;text-align:center!important}
   .hero .journey-center .progress{height:8px!important;min-height:8px!important;border-radius:999px!important}
   .hero .journey-center .progress i{height:8px!important;min-height:8px!important}
   .hero .journey-progress .progress-plane{width:30px!important;height:30px!important}
@@ -5107,7 +5107,7 @@ body .feature-special-close:active{transform:translateY(0) scale(.985)!important
     align-items:stretch!important;
   }
   .hero .journey-percent{
-    font-size:20px!important;
+    font-size:24px!important;
     line-height:1!important;
     height:auto!important;
     margin:0 0 9px!important;
@@ -6200,7 +6200,7 @@ body .feature-special-close:active{transform:translateY(0) scale(.985)!important
 .hero-selected-route span{display:block!important;color:#778080!important;font-size:6px!important;letter-spacing:.16em!important;font-weight:900!important;}
 .hero-selected-route b{display:block!important;margin-top:3px!important;font-size:19px!important;line-height:1!important;color:#111b1d!important;}
 .hero-selected-route small{display:block!important;margin-top:3px!important;color:#8a9191!important;font-size:7px!important;line-height:1.2!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
-.hero-selected-route-arrow{align-self:center!important;text-align:center!important;color:#176f8b!important;font-size:20px!important;font-weight:800!important;}
+.hero-selected-route-arrow{align-self:center!important;text-align:center!important;color:#176f8b!important;font-size:24px!important;font-weight:800!important;}
 .hero-selected-stats{
   display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important;margin-top:11px!important;
 }
@@ -7252,7 +7252,7 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
     white-space:nowrap!important;
   }
   .hero .journey-end b{
-    font-size:20px!important;
+    font-size:24px!important;
     line-height:1!important;
     margin:0!important;
     white-space:nowrap!important;
@@ -8526,6 +8526,29 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
   }
 }
+/* Large-screen Next Watched Flight progress/countdown text. */
+@media (min-width:701px){
+  .watch-bottom-compact #homeWatchProgressLabel,
+  .hero #quietCountdown{
+    font-size:24px!important;
+    line-height:1.05!important;
+    letter-spacing:.08em!important;
+    font-weight:950!important;
+  }
+}
+
+/* Mobile Next Watched Flight progress/countdown text. */
+@media (max-width:700px){
+  .watch-bottom-compact #homeWatchProgressLabel,
+  .watch-bottom-compact #journeyCountdown,
+  .watch-bottom-compact .journey-countdown{
+    font-size:24px!important;
+    line-height:1.05!important;
+    letter-spacing:.08em!important;
+    font-weight:950!important;
+  }
+}
+
 </style>
 </head>
 <body>
