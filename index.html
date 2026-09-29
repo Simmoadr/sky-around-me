@@ -8530,7 +8530,7 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
 @media (min-width:701px){
   .watch-bottom-compact #homeWatchProgressLabel,
   .hero #quietCountdown{
-    font-size:24px!important;
+    font-size:20px!important;
     line-height:1.05!important;
     letter-spacing:.08em!important;
     font-weight:950!important;
@@ -8540,14 +8540,17 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
 /* Mobile Next Watched Flight progress/countdown text. */
 @media (max-width:700px){
   .watch-bottom-compact #homeWatchProgressLabel,
+  .hero #quietCountdown,
   .watch-bottom-compact #journeyCountdown,
   .watch-bottom-compact .journey-countdown{
-    font-size:24px!important;
+    font-size:21px!important;
     line-height:1.05!important;
     letter-spacing:.08em!important;
     font-weight:950!important;
   }
 }
+
+
 
 </style>
 </head>
@@ -12099,5 +12102,6 @@ updateSkySettingsUI();updateSpecialSquawkCounter();if(S.extendedAirspace&&S.rang
 <script>
 window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 </script>
+
 </body>
 </html>
