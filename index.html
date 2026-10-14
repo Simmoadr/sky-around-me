@@ -8570,6 +8570,16 @@ input,select,textarea{color:#142a34!important;background:rgba(255,255,255,.88)!i
   .watch-compact-metric small{font-size:6px!important;line-height:1!important;margin:2px 0 0!important}
 }
 </style>
+
+<style id="featured-telemetry-fill-row">
+@media (min-width:701px) and (max-width:1300px) and (orientation:landscape){
+  .hero .featured-info-row>.telemetry{grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:minmax(0,1fr)!important}
+  .hero .featured-info-row>.telemetry .metric:has(#m1),
+  .hero .featured-info-row>.telemetry .metric:has(#m2),
+  .hero .featured-info-row>.telemetry .metric:has(#m3),
+  .hero .featured-info-row>.telemetry .metric:has(#m4){grid-column:auto!important;grid-row:1!important;width:100%!important;min-width:0!important}
+}
+</style>
 </head>
 <body>
 <div aria-label="Sky Around Me debug console" id="skyDebugPanel">
