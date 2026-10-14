@@ -8081,6 +8081,292 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
   }
 }
 
+
+/* Premium liquid-glass responsive skin */
+:root{color-scheme:dark;--ink:#f3f8ff;--muted:#a8bacd;--line:rgba(211,231,255,.16);--accent:#70dcff;--panel:rgba(17,34,57,.54);--glass-border:rgba(228,242,255,.22)}
+html,body{min-height:100%;background:#081324!important;color:var(--ink)!important}
+body{background:radial-gradient(ellipse at 16% 0%,rgba(33,113,166,.38),transparent 43%),radial-gradient(ellipse at 88% 18%,rgba(104,89,178,.26),transparent 35%),linear-gradient(145deg,#07111f 0%,#0b1b2c 52%,#101629 100%)!important;background-attachment:fixed!important}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.19;background-image:radial-gradient(1px 1px at 18% 25%,#fff 99%,transparent),radial-gradient(1px 1px at 71% 17%,#cce9ff 99%,transparent),radial-gradient(1px 1px at 83% 62%,#fff 99%,transparent),radial-gradient(1px 1px at 37% 79%,#d4e9ff 99%,transparent);background-size:280px 220px;z-index:0}
+.app{position:relative;z-index:1;width:min(1600px,100%);margin:auto;padding:18px clamp(16px,3vw,46px) 40px;box-sizing:border-box}
+.topbar{position:sticky;top:12px;z-index:1000;display:flex;align-items:center;gap:24px;min-height:68px;padding:10px 16px;margin-bottom:18px;border:1px solid var(--glass-border);border-radius:24px;background:rgba(13,29,49,.52)!important;backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);box-shadow:0 16px 50px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.12)}
+.brand-name{color:#f5faff!important;letter-spacing:.18em!important}.brand-sub{color:#91a9c0!important;letter-spacing:.18em!important}.clock{color:#b9ccde!important}
+.nav{display:flex!important;gap:8px!important;margin:auto!important;padding:5px;border:1px solid rgba(222,239,255,.14);border-radius:20px;background:rgba(255,255,255,.045)}
+.nav button{width:52px;height:48px;min-width:52px;padding:0!important;display:grid!important;place-content:center;gap:2px;border:0!important;border-radius:15px!important;background:transparent!important;color:#a9bed2!important;box-shadow:none!important;transition:.2s ease}
+.nav button svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;margin:auto}
+.nav button .nav-label{font-size:8px;line-height:1;font-weight:750;letter-spacing:.04em;opacity:.8}
+.nav button.active{background:linear-gradient(145deg,rgba(139,224,255,.24),rgba(109,148,255,.14))!important;color:#d9f7ff!important;box-shadow:inset 0 1px rgba(255,255,255,.2),0 5px 18px rgba(63,167,216,.12)!important}
+.page{color:#eaf4ff!important}.home{min-height:calc(100dvh - 142px)}
+.hero,.watch-bottom,.panel,.map-wrap,.page-intro,.special-squawk-setting{border:1px solid var(--glass-border)!important;background:linear-gradient(135deg,rgba(255,255,255,.105),rgba(255,255,255,.025))!important;backdrop-filter:blur(24px) saturate(155%);-webkit-backdrop-filter:blur(24px) saturate(155%);box-shadow:0 20px 70px rgba(0,0,0,.3),inset 0 1px rgba(255,255,255,.13)!important}
+.hero{overflow:hidden;border-radius:30px!important}.sky{background:radial-gradient(ellipse at 50% 85%,rgba(36,130,177,.25),transparent 58%),linear-gradient(180deg,rgba(3,14,27,.28),rgba(10,28,46,.04))!important}
+.hero-bottom{background:linear-gradient(145deg,rgba(16,34,55,.83),rgba(12,24,42,.65))!important}
+.divider{background:linear-gradient(90deg,transparent,rgba(190,222,249,.28),transparent)!important}
+.identity,.telemetry,.journey-info,.watch-compact-main,.watch-compact-route{color:#eef7ff!important}
+.flight-name{color:#f4f9ff!important}.aircraft-type,.journey-end small,.metric small,.watch-compact-sub,.watch-compact-metric small{color:#a7bbce!important}.operator,.eyebrow,.metric label,.watch-compact-metric label,.journey-end span{color:#8da7bd!important}
+.metric,.watch-compact-metric{border-color:rgba(220,239,255,.13)!important}.metric b,.watch-compact-metric b{color:#f2f8ff!important}.journey-percent,.journey-countdown,.watch-progress-label{color:#dff7ff!important}
+.watch-bottom{border-radius:24px!important;color:#f1f7ff!important}.watch-compact-route{border-color:rgba(220,239,255,.15)!important}
+.btn,button{touch-action:manipulation}.btn{min-height:46px!important;border-radius:15px!important;background:rgba(223,240,255,.09)!important;border:1px solid rgba(220,239,255,.2)!important;color:#eaf6ff!important;box-shadow:inset 0 1px rgba(255,255,255,.1)!important}.btn.primary{background:linear-gradient(135deg,#57c9ed,#688af6)!important;color:#071526!important;border-color:transparent!important;font-weight:850}
+input,select,textarea{color:#f3f8ff!important;background:rgba(5,18,33,.58)!important;border:1px solid rgba(220,239,255,.18)!important;border-radius:13px!important;min-height:44px}input::placeholder{color:#7991a9!important}input[type=range]{min-height:28px;background:transparent!important}
+.form label,.sky-settings label,.special-squawk-setting>label{color:#a8bfd5!important}
+.page-intro h1,.panel h2{color:#f2f8ff!important}.page-intro p,.panel .sub,.hint,.selected-note,.sky-settings-sub,.extended-copy small,.refresh-setting-note{color:#a9bdcf!important}
+.panel{border-radius:24px!important}.flight-layout{gap:18px!important}.watch-list{color:#ebf5ff}
+.map-wrap{border-radius:26px!important;overflow:hidden}.map-card{background:rgba(9,23,40,.76)!important;border:1px solid rgba(221,239,255,.2)!important;backdrop-filter:blur(24px);color:#f1f8ff!important;border-radius:22px!important;box-shadow:0 18px 50px rgba(0,0,0,.3)!important}.map-card-title,.map-card b{color:#f2f8ff!important}.map-card-sub,.map-card-kicker,.map-stat span{color:#9eb6cb!important}.map-stats{border-color:rgba(220,239,255,.14)!important}
+.pill{background:rgba(8,23,40,.66)!important;border:1px solid rgba(221,239,255,.2)!important;color:#e4f1fb!important;backdrop-filter:blur(18px)}
+.special-squawk-setting{border-radius:22px!important;color:#f1f8ff!important}.special-code-row{background:rgba(255,255,255,.045)!important;border-color:rgba(220,239,255,.11)!important}.special-code-identity b,.special-code-summary{color:#eaf5ff!important}.special-code-identity small{color:#91a8bd!important}
+.app-footer{color:#91a8bd!important}
+a{color:#8fe4ff!important}
+.state{border-radius:999px}
+@media(max-width:700px){
+ .app{padding:10px 12px calc(92px + env(safe-area-inset-bottom))!important}
+ .topbar{position:fixed!important;top:auto!important;bottom:calc(10px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(330px,calc(100% - 28px));min-height:68px;margin:0!important;padding:8px 12px!important;border-radius:25px!important;justify-content:center;background:rgba(12,27,47,.78)!important;box-shadow:0 15px 45px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.16)!important}
+ .brand,.clock{display:none!important}.nav{width:100%;justify-content:space-around;margin:0!important;background:transparent;border:0;padding:0}.nav button{width:84px;height:52px;min-width:70px;border-radius:17px!important}.nav button svg{width:22px;height:22px}.nav button .nav-label{font-size:9px}
+ .home{min-height:0}.hero{border-radius:24px!important}.hero-bottom{padding:16px!important}.flight-name{font-size:clamp(25px,8vw,42px)!important}
+ .map-page,.flights-page{padding-bottom:16px}.map-wrap{min-height:calc(100dvh - 132px)!important;border-radius:22px!important}.map-card{max-width:calc(100vw - 36px)!important}
+ .page-intro,.panel,.special-squawk-setting{border-radius:20px!important}.flight-layout{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(min-width:701px) and (max-width:1100px){.app{padding-inline:20px}.topbar{gap:15px}.brand-sub{font-size:8px}.hero{min-height:calc(100dvh - 125px)}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Keep the glass palette above the legacy compatibility rules. */
+body,html{background-color:#081324!important;color:#f3f8ff!important}
+.topbar,.hero,.watch-bottom,.panel,.map-wrap,.page-intro,.special-squawk-setting,.map-card{border:1px solid rgba(228,242,255,.22)!important;background-color:rgba(15,31,51,.62)!important;color:#f3f8ff!important;box-shadow:0 18px 58px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.12)!important}
+.topbar{backdrop-filter:blur(28px) saturate(170%)!important;-webkit-backdrop-filter:blur(28px) saturate(170%)!important}
+.hero-bottom{background:linear-gradient(145deg,rgba(16,34,55,.9),rgba(12,24,42,.76))!important}
+.metric b,.watch-compact-metric b,.map-card-title,.map-card b,.panel h2,.page-intro h1,.flight-name{color:#f2f8ff!important}
+.metric label,.watch-compact-metric label,.operator,.aircraft-type,.journey-end small,.metric small,.watch-compact-sub,.watch-compact-metric small,.page-intro p,.panel .sub,.hint,.selected-note,.sky-settings-sub,.extended-copy small,.refresh-setting-note{color:#a9bdcf!important}
+.nav button{background:transparent!important;color:#a9bed2!important;border:0!important}.nav button.active{background:linear-gradient(145deg,rgba(139,224,255,.24),rgba(109,148,255,.14))!important;color:#d9f7ff!important}
+.btn{color:#eaf6ff!important;background:rgba(223,240,255,.09)!important;border:1px solid rgba(220,239,255,.2)!important}
+input,select,textarea{color:#f3f8ff!important;background-color:rgba(5,18,33,.7)!important;border-color:rgba(220,239,255,.18)!important}
+@media(max-width:700px){.topbar{position:fixed!important;top:auto!important;bottom:calc(10px + env(safe-area-inset-bottom))!important;left:50%!important;transform:translateX(-50%)!important}.map-wrap{height:calc(100dvh - 130px)!important;min-height:360px!important}}
+
+/* Original logo artwork, with only its dark wordmark recolored white. */
+.brand{position:relative!important;display:flex!important;align-items:center!important;width:200px!important;height:66px!important;min-width:200px!important}
+.brand::before{display:none!important}
+.brand::after{content:""!important;display:block!important;position:relative!important;width:200px!important;height:66px!important;background:var(--sam-wide-logo) left center/contain no-repeat!important}
+.brand>div{position:absolute!important;inset:0!important;width:200px!important;height:66px!important;display:block!important;pointer-events:none!important}
+.brand-name,.brand-sub{display:none!important}
+.brand>div::before{content:"";position:absolute;inset:0;background:var(--sam-wide-logo) left center/contain no-repeat;filter:brightness(0) invert(1);clip-path:inset(32% 0 43% 24%)}
+
+.metric label,.watch-compact-metric label{display:flex!important;align-items:center!important;gap:7px!important}
+.metric label#mLabel1::before{content:"";display:inline-block;flex:0 0 16px;width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M4%2017h5l3-10%203%2010h5M3%2020h18%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;opacity:.92;}
+.metric label#mLabel2::before{content:"";display:inline-block;flex:0 0 16px;width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%2020V4m0%200L6%2010m6-6%206%206M4%2020h16%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;opacity:.92;}
+.metric label#mLabel3::before{content:"";display:inline-block;flex:0 0 16px;width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M4%2018a8%208%200%201%201%2016%200M12%2014l4-4M12%2018h.01%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;opacity:.92;}
+.metric label#mLabel4::before{content:"";display:inline-block;flex:0 0 16px;width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%208v4l3%202M21%2012a9%209%200%201%201-18%200%209%209%200%200%201%2018%200%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;opacity:.92;}
+.watch-compact-metric:has(#homeWatchStatus) label::before{content:"";display:inline-block;flex:0 0 16px;width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%203a9%209%200%201%200%200%2018%209%209%200%200%200%200-18M8%2012l2.5%202.5L16%209%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;opacity:.92;}
+.watch-compact-metric:has(#homeWatchDeparture) label::before{content:"";display:inline-block;flex:0 0 16px;width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M3%2019l18-7L3%205v5l13%202-13%202z%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;opacity:.92;}
+.watch-compact-metric:has(#homeWatchArrival) label::before{content:"";display:inline-block;flex:0 0 16px;width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M3%2019l18-7L3%205v5l13%202-13%202z%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;opacity:.92;}
+.watch-compact-metric:has(#homeWatchFlight) label::before{content:"";display:inline-block;flex:0 0 16px;width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M3%2019l18-7L3%205v5l13%202-13%202z%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;opacity:.92;}
+.app-footer-brand{filter:brightness(0) invert(1)!important}
+@media(max-width:700px){.brand,.brand-name,.brand-sub{display:none!important}}
+
+/* Recolor the lettering region of the original logo asset only. */
+.brand>div::before{content:""!important;display:block!important;position:absolute!important;inset:0!important;width:200px!important;height:66px!important;background:var(--sam-wide-logo) left center/contain no-repeat!important;filter:grayscale(1) brightness(0) invert(1)!important;clip-path:inset(0 0 0 24%)!important;z-index:3!important;pointer-events:none!important}
+
+/* Icon-only featured telemetry headers; labels remain available to assistive tech. */
+.metric label#mLabel1,.metric label#mLabel2,.metric label#mLabel3,.metric label#mLabel4{display:flex!important;justify-content:center!important;align-items:center!important;width:32px!important;height:30px!important;margin-inline:auto!important;overflow:visible!important;font-size:0!important;line-height:0!important;letter-spacing:0!important;color:transparent!important;cursor:help}
+.metric label#mLabel1::before,.metric label#mLabel2::before,.metric label#mLabel3::before,.metric label#mLabel4::before{content:""!important;display:block!important;flex:0 0 25px!important;width:25px!important;height:25px!important;background-position:center!important;background-size:contain!important;background-repeat:no-repeat!important;opacity:1!important}
+.metric label#mLabel1::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22%3Cpath%20d%3D%22M4%2018a2%202%200%201%200%200-4%202%202%200%200%200%200%204Zm16-10a2%202%200%201%200%200-4%202%202%200%200%200%200%204ZM6%2016c8%200%203-10%2012-10%22%2F%3E%22%20fill%3D%22none%22%20stroke%3D%22%2357b9df%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")!important}
+.metric label#mLabel2::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22%3Cpath%20d%3D%22M12%2020V4m0%200-5%205m5-5%205%205M4%2020h16%22%2F%3E%22%20fill%3D%22none%22%20stroke%3D%22%2357b9df%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")!important}
+.metric label#mLabel3::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22%3Cpath%20d%3D%22M4%2018a8%208%200%201%201%2016%200M12%2014l4-4M7%2018h10%22%2F%3E%22%20fill%3D%22none%22%20stroke%3D%22%2357b9df%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")!important}
+.metric label#mLabel4::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22M12%207v5l3.5%202%22%2F%3E%22%20fill%3D%22none%22%20stroke%3D%22%2357b9df%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")!important}
+
+/* Corrected inline SVG telemetry icons */
+.metric label#mLabel1,.metric label#mLabel2,.metric label#mLabel3,.metric label#mLabel4{display:flex!important;visibility:visible!important;opacity:1!important;justify-content:center!important;align-items:center!important;min-width:32px!important;min-height:30px!important}
+.metric label#mLabel1::before,.metric label#mLabel2::before,.metric label#mLabel3::before,.metric label#mLabel4::before{display:block!important;visibility:visible!important;opacity:1!important;content:""!important;width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;background-position:center!important;background-size:contain!important;background-repeat:no-repeat!important}
+.metric label#mLabel1::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.9%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%224%22%20cy%3D%2216%22%20r%3D%222%22%2F%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3Cpath%20d%3D%22M6%2016c8%200%203-8%2012-8%22%2F%3E%3C%2Fsvg%3E")!important}
+.metric label#mLabel2::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.9%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%2020V4m0%200-5%205m5-5%205%205M4%2020h16%22%2F%3E%3C%2Fsvg%3E")!important}
+.metric label#mLabel3::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.9%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2018a8%208%200%201%201%2016%200M12%2014l4-4M7%2018h10%22%2F%3E%3C%2Fsvg%3E")!important}
+.metric label#mLabel4::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.9%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22M12%207v5l3.5%202%22%2F%3E%3C%2Fsvg%3E")!important}
+
+/* Icon-only watched flight details, matching the featured metric headers. */
+.watch-compact-metric label#homeWatchMetricStatusLabel{display:flex!important;justify-content:center!important;align-items:center!important;width:34px!important;height:34px!important;margin-inline:auto!important;overflow:visible!important;font-size:0!important;line-height:0!important;letter-spacing:0!important;color:transparent!important;cursor:help}
+.watch-compact-metric label#homeWatchMetricStatusLabel::before{content:""!important;display:block!important;flex:0 0 25px!important;width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22m8%2012%202.5%202.5L16%209%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat!important;opacity:1!important}
+.watch-compact-metric label#homeWatchMetricDepartureLabel{display:flex!important;justify-content:center!important;align-items:center!important;width:34px!important;height:34px!important;margin-inline:auto!important;overflow:visible!important;font-size:0!important;line-height:0!important;letter-spacing:0!important;color:transparent!important;cursor:help}
+.watch-compact-metric label#homeWatchMetricDepartureLabel::before{content:""!important;display:block!important;flex:0 0 25px!important;width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2019%2021%2012%203%205v5l12%202-12%202z%22%2F%3E%3Cpath%20d%3D%22M16%204h5m-2.5-2.5v5%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat!important;opacity:1!important}
+.watch-compact-metric label#homeWatchMetricArrivalLabel{display:flex!important;justify-content:center!important;align-items:center!important;width:34px!important;height:34px!important;margin-inline:auto!important;overflow:visible!important;font-size:0!important;line-height:0!important;letter-spacing:0!important;color:transparent!important;cursor:help}
+.watch-compact-metric label#homeWatchMetricArrivalLabel::before{content:""!important;display:block!important;flex:0 0 25px!important;width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2019%2021%2012%203%205v5l12%202-12%202z%22%2F%3E%3Cpath%20d%3D%22M16%2020h5m-2.5-2.5v5%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat!important;opacity:1!important}
+.watch-compact-metric label#homeWatchMetricFlightLabel{display:flex!important;justify-content:center!important;align-items:center!important;width:34px!important;height:34px!important;margin-inline:auto!important;overflow:visible!important;font-size:0!important;line-height:0!important;letter-spacing:0!important;color:transparent!important;cursor:help}
+.watch-compact-metric label#homeWatchMetricFlightLabel::before{content:""!important;display:block!important;flex:0 0 25px!important;width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2019%2021%2012%203%205v5l12%202-12%202z%22%2F%3E%3Cpath%20d%3D%22M5%203h4M3%205V3h2%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat!important;opacity:1!important}
+
+/* User-refined watched-flight symbols: takeoff, landing, boarding pass. */
+.watch-compact-metric label#homeWatchMetricDepartureLabel::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2017%2021%208%205%2011l-2-4-1%200%201%206%200%204z%22%2F%3E%3Cpath%20d%3D%22M7%2020h14M16%205l3-3%22%2F%3E%3C%2Fsvg%3E")!important}
+.watch-compact-metric label#homeWatchMetricArrivalLabel::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2010%2021%2017%205%2015l-2%204-1%200%201-6%200-4z%22%2F%3E%3Cpath%20d%3D%22M7%2020h14M16%205l3-3%22%2F%3E%3C%2Fsvg%3E")!important}
+.watch-compact-metric label#homeWatchMetricFlightLabel::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23247e9e%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%204h16a2%202%200%200%201%202%202v2a3%203%200%200%200%200%206v2a2%202%200%200%201-2%202H4a2%202%200%200%201-2-2v-2a3%203%200%200%200%200-6V6a2%202%200%200%201%202-2Z%22%2F%3E%3Cpath%20d%3D%22M13%208v8M8%2012h2m6%200h2%22%2F%3E%3Cpath%20d%3D%22m12%2010%203%202-3%202v-1l-2-.5v-1l2-.5z%22%2F%3E%3C%2Fsvg%3E")!important}
+
+/* Reference-inspired fine-line aircraft and travel symbols. */
+.metric label#mLabel1::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318262d%22%20stroke-width%3D%221.55%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2018c4%200%205-2%207-5s4-3%206-6%22%20stroke-dasharray%3D%222.2%203%22%2F%3E%3Cpath%20d%3D%22M2%2018a2%202%200%201%200%204%200%202%202%200%200%200-4%200ZM16%206a3%203%200%201%200%206%200%203%203%200%200%200-6%200Z%22%2F%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%226%22%20r%3D%221%22%2F%3E%3C%2Fsvg%3E")!important}
+.metric label#mLabel2::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318262d%22%20stroke-width%3D%221.55%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m2%2020%206-7%203%203%205-8%206%2012M16%208V3m0%200-2%202m2-2%202%202M16%2012v5m0%200-2-2m2%202%202-2%22%2F%3E%3C%2Fsvg%3E")!important}
+.metric label#mLabel3::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318262d%22%20stroke-width%3D%221.55%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2019a9%209%200%201%201%2018%200%22%2F%3E%3Cpath%20d%3D%22M5%2013l2%201m10-1-2%201M12%205v2m0%205%204-4%22%2F%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%221%22%2F%3E%3C%2Fsvg%3E")!important}
+.metric label#mLabel4::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318262d%22%20stroke-width%3D%221.55%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22M12%206v6l4%202%22%2F%3E%3C%2Fsvg%3E")!important}
+.watch-compact-metric label#homeWatchMetricStatusLabel::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318262d%22%20stroke-width%3D%221.55%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2216%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22M7%202v4m10-4v4M3%209h18%22%2F%3E%3Ccircle%20cx%3D%2215.5%22%20cy%3D%2215%22%20r%3D%223.5%22%2F%3E%3Cpath%20d%3D%22M15.5%2013.5V15l1.2.8%22%2F%3E%3C%2Fsvg%3E")!important}
+.watch-compact-metric label#homeWatchMetricDepartureLabel::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318262d%22%20stroke-width%3D%221.55%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M2%2016%2021%207%208%2012%205%209l-2%201%202%205-3%201Z%22%2F%3E%3Cpath%20d%3D%22M1%2021h12%22%2F%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2218%22%20r%3D%224%22%2F%3E%3Cpath%20d%3D%22M18%2016v2l1.3%201%22%2F%3E%3C%2Fsvg%3E")!important}
+.watch-compact-metric label#homeWatchMetricArrivalLabel::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318262d%22%20stroke-width%3D%221.55%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M2%2011%2021%2018%208%2015%205%2018l-2-1%202-5-3-1Z%22%2F%3E%3Cpath%20d%3D%22M1%2021h12%22%2F%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2218%22%20r%3D%224%22%2F%3E%3Cpath%20d%3D%22M18%2016v2l1.3%201%22%2F%3E%3C%2Fsvg%3E")!important}
+.watch-compact-metric label#homeWatchMetricFlightLabel::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318262d%22%20stroke-width%3D%221.55%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%203h14a2%202%200%200%201%202%202v3a3%203%200%200%200%200%206v3a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2v-3a3%203%200%200%200%200-6V5a2%202%200%200%201%202-2Z%22%2F%3E%3Cpath%20d%3D%22M12%206v2m0%202v1m0%202v1m0%202v1M14%2010l4%202-4%202v-1l-3-.5v-1l3-.5z%22%2F%3E%3C%2Fsvg%3E")!important}
+.metric label#mLabel1::before,.metric label#mLabel2::before,.metric label#mLabel3::before,.metric label#mLabel4::before,.watch-compact-metric label#homeWatchMetricStatusLabel::before,.watch-compact-metric label#homeWatchMetricDepartureLabel::before,.watch-compact-metric label#homeWatchMetricArrivalLabel::before,.watch-compact-metric label#homeWatchMetricFlightLabel::before{filter:drop-shadow(0 1px 1px rgba(255,255,255,.35))!important}
+
+.watch-compact-metric.status-is-live label::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318262d%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2015l5-2%204-5%202%20.5-2%204%205-1%203-3%201%20.5-2.5%204.5-5%201.2-3%20.8-2.8%203L4%2015Z%22%2F%3E%3Cpath%20d%3D%22M8%205c2-2%206-2%208%200M6%203c3-3%209-3%2012%200%22%20stroke%3D%22%2315945b%22%2F%3E%3Cpath%20d%3D%22M10%2020c1%201%203%201%204%200%22%20stroke%3D%22%2315945b%22%2F%3E%3C%2Fsvg%3E")!important}
+.watch-compact-metric.status-is-landed label::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2318262d%22%20stroke-width%3D%221.55%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2011%2021%2018%208%2015%205%2018l-2-1%202-5-2-1Z%22%2F%3E%3Cpath%20d%3D%22M2%2021h20%22%2F%3E%3C%2Fsvg%3E")!important}
+.watch-compact-metric.status-is-live label::before{filter:drop-shadow(0 0 2px rgba(21,148,91,.4))!important}
+
+/* High-contrast white outline treatment for all metric icons. */
+.metric label#mLabel1::before,
+.metric label#mLabel2::before,
+.metric label#mLabel3::before,
+.metric label#mLabel4::before,
+.watch-compact-metric label#homeWatchMetricStatusLabel::before,
+.watch-compact-metric label#homeWatchMetricDepartureLabel::before,
+.watch-compact-metric label#homeWatchMetricArrivalLabel::before,
+.watch-compact-metric label#homeWatchMetricFlightLabel::before{filter:brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,255,255,.28))!important}
+
+/* Blue outlines for Featured telemetry; watched-flight icons remain white. */
+.metric label#mLabel1::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23238bb6%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2018c4%200%205-2%207-5s4-3%206-6%22%20stroke-dasharray%3D%222.2%203%22%2F%3E%3Cpath%20d%3D%22M2%2018a2%202%200%201%200%204%200%202%202%200%200%200-4%200ZM16%206a3%203%200%201%200%206%200%203%203%200%200%200-6%200Z%22%2F%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%226%22%20r%3D%221%22%2F%3E%3C%2Fsvg%3E")!important;filter:drop-shadow(0 0 1px rgba(35,139,182,.25))!important}
+.metric label#mLabel2::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23238bb6%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m2%2020%206-7%203%203%205-8%206%2012M16%208V3m0%200-2%202m2-2%202%202M16%2012v5m0%200-2-2m2%202%202-2%22%2F%3E%3C%2Fsvg%3E")!important;filter:drop-shadow(0 0 1px rgba(35,139,182,.25))!important}
+.metric label#mLabel3::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23238bb6%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2019a9%209%200%201%201%2018%200%22%2F%3E%3Cpath%20d%3D%22M5%2013l2%201m10-1-2%201M12%205v2m0%205%204-4%22%2F%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%221%22%2F%3E%3C%2Fsvg%3E")!important;filter:drop-shadow(0 0 1px rgba(35,139,182,.25))!important}
+.metric label#mLabel4::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23238bb6%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22M12%206v6l4%202%22%2F%3E%3C%2Fsvg%3E")!important;filter:drop-shadow(0 0 1px rgba(35,139,182,.25))!important}
+
+/* Match the featured aircraft and route progress to the watched-flight navy. */
+.hero .hero-aircraft-marker:not(.special-emergency):not(.special-vfr) .hero-aircraft-shape{color:var(--watch-route-color,#176f8b)!important}
+.hero .journey-progress .progress-plane,.watch-compact-progress .watch-progress-track .progress-plane{color:var(--watch-route-color,#176f8b)!important}
+.hero .journey-center .progress i,.watch-compact-progress .watch-progress-track i{background-color:var(--watch-route-color,#176f8b)!important}
+.hero .journey-progress .progress-plane::before,.watch-compact-progress .watch-progress-track .progress-plane::before{border-color:var(--watch-route-color,#176f8b)!important}
+
+/* Premium frosted-glass treatment for the selected-aircraft popout. */
+.hero-map-status.aircraft-selected{background:linear-gradient(145deg,rgba(18,38,62,.94),rgba(10,24,43,.91))!important;border:1px solid rgba(222,241,255,.24)!important;border-radius:26px!important;color:#f4f8ff!important;backdrop-filter:blur(28px) saturate(165%)!important;-webkit-backdrop-filter:blur(28px) saturate(165%)!important;box-shadow:0 24px 72px rgba(2,10,22,.42),inset 0 1px rgba(255,255,255,.15)!important}
+.hero-map-status.aircraft-selected .hero-selected-aircraft-panel{color:#f4f8ff!important;gap:0!important}
+.hero-map-status.aircraft-selected .hero-selected-head{grid-template-columns:minmax(0,1fr) auto 56px!important;column-gap:14px!important;flex-basis:58px!important;height:58px!important;min-height:58px!important;border-color:rgba(221,239,255,.16)!important}
+.hero-map-status.aircraft-selected .hero-selected-kicker{color:#74d7f2!important;font-size:8px!important;letter-spacing:.2em!important}
+.hero-map-status.aircraft-selected .hero-selected-title{color:#f7fbff!important;font-size:25px!important;letter-spacing:-.035em!important}
+.hero-map-status.aircraft-selected .hero-selected-sub{color:#aabed0!important}
+.hero-map-status.aircraft-selected .hero-selected-registration span{color:#94aabd!important;font-size:7px!important;letter-spacing:.16em!important}
+.hero-map-status.aircraft-selected .hero-selected-registration b{color:#9be3f5!important}
+.hero-map-status.aircraft-selected .hero-selected-close{width:48px!important;min-width:48px!important;height:42px!important;min-height:42px!important;border-radius:15px!important;background:rgba(234,247,255,.1)!important;border:1px solid rgba(225,242,255,.22)!important;box-shadow:inset 0 1px rgba(255,255,255,.13)!important;transform:none!important}
+.hero-map-status.aircraft-selected .hero-selected-close:active{transform:scale(.97)!important}
+.hero-map-status.aircraft-selected .hero-selected-stats{grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin-top:12px!important}
+.hero-map-status.aircraft-selected .hero-selected-stat{min-width:0!important;min-height:65px!important;padding:9px 9px 8px!important;border-radius:14px!important;border:1px solid rgba(224,240,255,.10)!important;background:linear-gradient(145deg,rgba(234,247,255,.095),rgba(234,247,255,.045))!important;box-shadow:inset 0 1px rgba(255,255,255,.06)!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:flex-start!important;gap:6px!important;box-sizing:border-box!important}
+.hero-map-status.aircraft-selected .hero-selected-stat-label{display:flex!important;align-items:center!important;gap:6px!important;width:100%!important;color:#a9bdd0!important;font-size:6.5px!important;line-height:1!important;letter-spacing:.11em!important;font-weight:850!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.hero-map-status.aircraft-selected .hero-selected-stat-label svg{width:13px!important;height:13px!important;flex:0 0 13px!important;fill:none!important;stroke:#86d8ef!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important;filter:drop-shadow(0 0 4px rgba(69,184,218,.22))!important}
+.hero-map-status.aircraft-selected .hero-selected-stat b{display:block!important;width:100%!important;margin:0!important;color:#f4f8ff!important;font-size:14px!important;line-height:1.05!important;letter-spacing:0!important;font-weight:850!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.hero-map-status.aircraft-selected .hero-selected-footer{color:#8299ad!important;font-size:6.5px!important;letter-spacing:.15em!important;margin-top:10px!important}
+@media(max-width:700px){.hero-map-status.aircraft-selected{left:12px!important;right:12px!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:calc(100dvh - 130px)!important;padding:14px!important;overflow:auto!important}.hero-map-status.aircraft-selected .hero-selected-head{grid-template-columns:minmax(0,1fr) auto 48px!important;column-gap:8px!important}.hero-map-status.aircraft-selected .hero-selected-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:none!important;gap:8px!important}.hero-map-status.aircraft-selected .hero-selected-stat{min-height:66px!important}.hero-map-status.aircraft-selected .hero-selected-stat-label{font-size:7px!important}.hero-map-status.aircraft-selected .hero-selected-stat b{font-size:15px!important}}
+
+/* Center popout content and restore the full animated close runway. */
+.hero-map-status.aircraft-selected .hero-selected-head{grid-template-columns:minmax(0,1fr) auto 112px!important}
+.hero-map-status.aircraft-selected .hero-selected-title-block{text-align:center!important}
+.hero-map-status.aircraft-selected .hero-selected-registration{text-align:center!important}
+.hero-map-status.aircraft-selected .hero-selected-close{width:112px!important;min-width:112px!important;height:44px!important;min-height:44px!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:visible!important;transform:none!important}
+.hero-map-status.aircraft-selected .hero-selected-close .feature-close-flight{width:88px!important;min-width:88px!important}
+.hero-map-status.aircraft-selected .hero-selected-stats .hero-selected-stat{align-items:center!important;text-align:center!important}
+.hero-map-status.aircraft-selected .hero-selected-stat-label{justify-content:center!important}
+.hero-map-status.aircraft-selected .hero-selected-route>div{text-align:center!important}
+.hero-map-status.aircraft-selected .hero-selected-route-arrow{text-align:center!important}
+.hero-map-status.aircraft-selected .hero-selected-footer{text-align:center!important}
+@media(max-width:700px){.hero-map-status.aircraft-selected .hero-selected-head{grid-template-columns:minmax(0,1fr) 92px!important}.hero-map-status.aircraft-selected .hero-selected-close{grid-column:2!important;width:92px!important;min-width:92px!important}.hero-map-status.aircraft-selected .hero-selected-close .feature-close-flight{width:70px!important;min-width:70px!important}}
+
+/* Improve popout contrast and give each stat value room to breathe. */
+.hero-map-status.aircraft-selected .hero-selected-route span{color:#c1d3e3!important}
+.hero-map-status.aircraft-selected .hero-selected-route b{color:#f5f9ff!important;font-size:19px!important;letter-spacing:.05em!important}
+.hero-map-status.aircraft-selected .hero-selected-route small{color:#a9bdcf!important}
+.hero-map-status.aircraft-selected .hero-selected-route-arrow{color:#79d9f2!important}
+.hero-map-status.aircraft-selected .hero-selected-stat-label{height:18px!important;min-height:18px!important;justify-content:center!important;gap:0!important;overflow:visible!important}
+.hero-map-status.aircraft-selected .hero-selected-stat-label>span{display:none!important}
+.hero-map-status.aircraft-selected .hero-selected-stat-label svg{width:17px!important;height:17px!important;flex-basis:17px!important}
+.hero-map-status.aircraft-selected .hero-selected-stat{min-height:68px!important;padding:8px 6px!important;gap:5px!important;overflow:visible!important}
+.hero-map-status.aircraft-selected .hero-selected-stat b{color:#f5f9ff!important;font-size:clamp(10px,1.05vw,12px)!important;line-height:1.12!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere!important;text-align:center!important}
+.hero-map-status.aircraft-selected .hero-selected-footer{color:#a9bdcf!important}
+@media(max-width:700px){.hero-map-status.aircraft-selected .hero-selected-stat b{font-size:12px!important}}
+
+/* Live Sky card mirrors the Featured selected-aircraft glass popout. */
+.map-card{width:420px!important;max-width:min(420px,calc(100% - 32px))!important;max-height:calc(100% - 32px)!important;overflow-y:auto!important;padding:20px!important;border-radius:26px!important;border:1px solid rgba(222,241,255,.24)!important;background:linear-gradient(145deg,rgba(18,38,62,.94),rgba(10,24,43,.91))!important;color:#f4f8ff!important;backdrop-filter:blur(28px) saturate(165%)!important;-webkit-backdrop-filter:blur(28px) saturate(165%)!important;box-shadow:0 24px 72px rgba(2,10,22,.42),inset 0 1px rgba(255,255,255,.15)!important}
+.map-card .map-card-kicker{color:#74d7f2!important;text-align:center!important;font-size:8px!important;letter-spacing:.2em!important}
+.map-card .map-card-title{color:#f7fbff!important;text-align:center!important;font-size:25px!important;line-height:1.05!important;margin-top:7px!important;padding-inline:42px!important}
+.map-card .map-card-sub{color:#aabed0!important;text-align:center!important;font-size:10px!important}
+.map-card .map-card-route{border-color:rgba(221,239,255,.16)!important}
+.map-card .map-card-route-head>div{text-align:center!important}
+.map-card .map-card-route-head span{color:#c1d3e3!important}
+.map-card .map-card-route-head b{color:#f5f9ff!important;font-size:19px!important}
+.map-card .map-card-route-head small{color:#a9bdcf!important}
+.map-card .map-card-route-arrow{color:#79d9f2!important}
+.map-card .map-card-progress-label{color:#c8d8e6!important;text-align:center!important}
+.map-card .map-card-progress-track{background:rgba(226,241,252,.2)!important}
+.map-card .map-card-progress-track i{background:#176f8b!important}
+.map-card .map-stats{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;margin-top:14px!important}
+.map-card .map-stat{min-width:0!important;min-height:68px!important;padding:8px 6px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:6px!important;border-radius:14px!important;border:1px solid rgba(224,240,255,.10)!important;background:linear-gradient(145deg,rgba(234,247,255,.095),rgba(234,247,255,.045))!important;box-shadow:inset 0 1px rgba(255,255,255,.06)!important;text-align:center!important;box-sizing:border-box!important}
+.map-card .map-stat-icon{width:18px!important;height:18px!important;display:grid!important;place-items:center!important}
+.map-card .map-stat-icon svg{width:17px!important;height:17px!important;fill:none!important;stroke:#86d8ef!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+.map-card .map-stat b{display:block!important;width:100%!important;margin:0!important;color:#f4f8ff!important;font-size:12px!important;line-height:1.12!important;font-weight:850!important;white-space:normal!important;overflow-wrap:anywhere!important;text-align:center!important}
+.map-card-close{position:absolute!important;top:14px!important;right:14px!important;z-index:30!important;width:92px!important;height:42px!important;padding:0 10px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;border:1px solid rgba(225,242,255,.22)!important;border-radius:999px!important;background:rgba(234,247,255,.1)!important;color:#f5fbff!important;box-shadow:inset 0 1px rgba(255,255,255,.13)!important;cursor:pointer!important;overflow:hidden!important}
+.map-card-close-plane{position:absolute!important;left:12px!important;top:50%!important;width:20px!important;height:20px!important;display:grid!important;place-items:center!important;transform:translateY(-50%)!important;transition:left .35s cubic-bezier(.2,.8,.2,1)!important;color:#79d9f2!important}
+.map-card-close-plane svg{width:18px!important;height:18px!important;fill:currentColor!important}
+.map-card-close-x{position:absolute!important;right:7px!important;top:50%!important;width:24px!important;height:24px!important;display:grid!important;place-items:center!important;border-radius:50%!important;background:rgba(244,249,255,.92)!important;color:#13283c!important;font-size:18px!important;line-height:1!important;transform:translateY(-50%)!important}
+.map-card-close:hover .map-card-close-plane,.map-card-close.is-closing .map-card-close-plane{left:54px!important}
+@media(max-width:700px){.map-card{left:12px!important;right:12px!important;top:auto!important;bottom:12px!important;width:auto!important;max-width:none!important;max-height:calc(100dvh - 130px)!important;padding:16px!important;border-radius:23px!important}.map-card .map-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}.map-card .map-stat{min-height:62px!important}.map-card-close{right:11px!important;top:11px!important;width:82px!important;height:40px!important}.map-card-close:hover .map-card-close-plane,.map-card-close.is-closing .map-card-close-plane{left:45px!important}.map-card .map-card-title{font-size:23px!important}}
+
+/* Live Sky uses a passive details panel; no close affordance. */
+.map-card-close{display:none!important}
+.map-card .map-card-title{padding-inline:0!important}
+
+/* Featured altitude uses the same up/down symbol as vertical speed. */
+.metric label#mLabel2::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23238bb6%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M7%2020V5m0%200L4%208m3-3%203%203M17%204v15m0%200-3-3m3%203%203-3%22%2F%3E%3C%2Fsvg%3E")!important;filter:drop-shadow(0 0 1px rgba(35,139,182,.25))!important}
+
+/* Altitude icon follows the supplied mountain and vertical double-arrow reference. */
+.metric label#mLabel2::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23238bb6%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M2%2021%207.5%2014l2.5%202.5L14%2011l2%203%201.5-1%204.5%208%22%2F%3E%3Cpath%20d%3D%22M16%205v15m0-15-3%203m3-3%203%203m-3%2012-3-3m3%203%203-3%22%2F%3E%3Cpath%20d%3D%22M3%204h2m3%200h2m3%200h2m6%200h1%22%20stroke-dasharray%3D%221%201%22%2F%3E%3C%2Fsvg%3E")!important;filter:drop-shadow(0 0 1px rgba(35,139,182,.25))!important}
+
+.hero-status-detail strong { color: #176f8b !important; }
+</style>
+
+<style id="watched-flight-responsive-preserve-all">
+/* Keep every watched-flight field visible as the viewport narrows. */
+@media (min-width:701px) and (max-width:1100px) and (orientation:landscape){
+  .hero{height:calc(100% - 144px)!important;min-height:0!important;max-height:none!important;}
+  .watch-bottom-compact{
+    display:grid!important;grid-template-columns:minmax(190px,.85fr) minmax(0,2.5fr)!important;
+    grid-template-rows:78px 42px!important;column-gap:14px!important;row-gap:0!important;
+    height:136px!important;min-height:136px!important;max-height:136px!important;
+    margin:8px 0 0!important;padding:7px 14px!important;box-sizing:border-box!important;overflow:hidden!important;
+  }
+  .watch-compact-main{grid-column:1!important;grid-row:1 / 3!important;min-width:0!important;padding:0 8px!important;}
+  .watch-compact-brand{min-width:0!important;width:100%!important;}
+  .watch-bottom-compact .watch-bottom-title{font-size:clamp(20px,2.5vw,28px)!important;}
+  .watch-compact-metrics{
+    display:grid!important;grid-column:2!important;grid-row:1!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;
+    gap:4px 10px!important;width:100%!important;height:78px!important;min-width:0!important;padding:4px 7px!important;
+  }
+  .watch-compact-metric,
+  .watch-compact-metric:has(#homeWatchReg),.watch-compact-metric:has(#homeWatchCallsign),
+  .watch-compact-metric:has(#homeWatchStatus),.watch-compact-metric:has(#homeWatchDeparture),
+  .watch-compact-metric:has(#homeWatchArrival),.watch-compact-metric:has(#homeWatchFlight){
+    display:flex!important;grid-column:auto!important;grid-row:auto!important;min-width:0!important;width:100%!important;
+    flex-direction:column!important;justify-content:center!important;align-items:center!important;text-align:center!important;
+    padding:2px 4px!important;border:0!important;overflow:hidden!important;
+  }
+  .watch-compact-metric label{font-size:clamp(6px,.75vw,8px)!important;letter-spacing:.1em!important;}
+  .watch-compact-metric b{width:100%!important;font-size:clamp(12px,1.4vw,17px)!important;margin-top:4px!important;}
+  .watch-compact-metric small{width:100%!important;font-size:clamp(6px,.8vw,8px)!important;margin-top:3px!important;}
+  .watch-compact-route{grid-column:2!important;grid-row:2!important;width:100%!important;height:42px!important;min-width:0!important;grid-template-columns:68px minmax(0,1fr) 68px!important;padding:0 5px!important;}
+  .watch-compact-end,.watch-compact-progress{height:40px!important;}
+  .watch-compact-end b{font-size:14px!important;}
+  .watch-compact-end small{font-size:6px!important;}
+  .watch-compact-progress .watch-progress-label{font-size:7px!important;}
+}
+@media (max-width:700px){
+  .watch-bottom-compact .watch-compact-metrics,
+  .watch-bottom-compact.mobile-details-open .watch-compact-metrics{
+    display:grid!important;grid-column:1!important;grid-row:3!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:auto!important;
+    width:100%!important;height:auto!important;min-height:0!important;margin:10px 0 0!important;padding:9px 0 0!important;
+    border-top:1px solid var(--line)!important;gap:8px!important;box-sizing:border-box!important;
+  }
+  .watch-bottom-compact .watch-compact-metric,
+  .watch-bottom-compact .watch-compact-metric:has(#homeWatchReg),
+  .watch-bottom-compact .watch-compact-metric:has(#homeWatchCallsign){
+    display:flex!important;min-width:0!important;min-height:42px!important;padding:6px 8px!important;
+    flex-direction:column!important;justify-content:center!important;align-items:flex-start!important;
+    border:1px solid rgba(70,95,100,.13)!important;border-radius:9px!important;background:rgba(255,255,255,.4)!important;overflow:hidden!important;
+  }
+  .watch-bottom-compact .watch-compact-metric label{font-size:7px!important;letter-spacing:.12em!important;}
+  .watch-bottom-compact .watch-compact-metric b{width:100%!important;font-size:15px!important;margin-top:4px!important;}
+  .watch-bottom-compact .watch-compact-metric small{width:100%!important;font-size:8px!important;margin-top:3px!important;}
+}
 </style>
 </head>
 <body>
@@ -8096,7 +8382,7 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
 <div class="app">
 <header class="topbar">
 <div class="brand"><div><div class="brand-name">SKY AROUND ME</div><div class="brand-sub">SAME SKY, DIFFERENT STORIES</div></div></div>
-<nav class="nav"><button class="active" data-page="home">FEATURED</button><button data-page="mapPage">LIVE SKY</button><button data-page="flights">MY FLIGHTS</button></nav>
+<nav class="nav" aria-label="Main navigation"><button class="active" data-page="home" aria-label="Featured" title="Featured"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12 12 4l9 8M6 10v9h12v-9M10 19v-5h4v5"/></svg><span class="nav-label">Featured</span></button><button data-page="mapPage" aria-label="Live sky" title="Live sky"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m14.9 9.1-2 4.3-4.2 1.5 1.6-4.1zM12 2v2M22 12h-2"/></svg><span class="nav-label">Live sky</span></button><button data-page="flights" aria-label="My flights" title="My flights"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.5 10.1 16l6.6-10.3a1.8 1.8 0 0 1 3.1 1.8L13 18l-1.4 3-2.3-3-5.3-.5zM4.5 12.5l3.2-.8M8.3 20l1-3"/></svg><span class="nav-label">Flights</span></button></nav>
 <div class="clock" id="clock">—</div>
 </header>
 <main>
@@ -8116,10 +8402,10 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
 <div class="journey-info" hidden="" id="journeyInfo"><div class="journey-end"><span>FROM</span><b id="journeyFrom">—</b><small id="journeyFromName">—</small></div><div class="journey-center"><div class="journey-percent" id="journeyPercent">—% COMPLETE</div><div class="journey-countdown" id="journeyCountdown"></div><div class="progress journey-progress"><i id="flightProgress"></i><span aria-hidden="true" class="progress-plane" id="progressPlane"><svg aria-hidden="true" focusable="false" viewbox="0 0 64 64"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"></path></svg></span></div></div><div class="journey-end journey-end-right"><span>TO</span><b id="journeyTo">—</b><small id="journeyToName">—</small></div></div>
 <div class="telemetry">
 
-<div class="metric"><label id="mLabel1">DISTANCE TO GO</label><b id="m1">—</b><small id="m1s">remaining</small></div>
-<div class="metric"><label id="mLabel2">ALTITUDE</label><b id="m2">—</b><small id="m2s">above ground</small></div>
-<div class="metric"><label id="mLabel3">SPEED</label><b id="m3">—</b><small id="m3s">ground speed</small></div>
-<div class="metric"><label id="mLabel4">TIME LEFT</label><b id="m4">—</b><small id="m4s">estimated</small></div>
+<div class="metric"><label id="mLabel1" aria-label="distance to go" title="distance to go">DISTANCE TO GO</label><b id="m1">—</b><small id="m1s">remaining</small></div>
+<div class="metric"><label id="mLabel2" aria-label="altitude" title="altitude">ALTITUDE</label><b id="m2">—</b><small id="m2s">above ground</small></div>
+<div class="metric"><label id="mLabel3" aria-label="speed" title="speed">SPEED</label><b id="m3">—</b><small id="m3s">ground speed</small></div>
+<div class="metric"><label id="mLabel4" aria-label="time left" title="time left">TIME LEFT</label><b id="m4">—</b><small id="m4s">estimated</small></div>
 </div>
 </div>
 <div class="feature-special-panel" hidden="" id="featureSpecialPanel"></div><div class="edit-panel" id="editPanel"><div class="form"><div><label>FLIGHT NUMBER</label><input id="flightInput" placeholder="e.g. SQ23"/></div><div><label>DATE</label><input id="dateInput" type="date"/></div><div class="wide"><label>NAME</label><input id="nameInput" placeholder="Flight Name"/></div><button class="btn primary" id="saveFlight">SAVE WATCHED FLIGHT</button></div></div>
@@ -8138,10 +8424,10 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
 <div class="watch-compact-metrics">
 <div class="watch-compact-metric"><label>REGISTRATION</label><b id="homeWatchReg">—</b></div>
 <div class="watch-compact-metric"><label>CALLSIGN</label><b id="homeWatchCallsign">—</b></div>
-<div class="watch-compact-metric"><label>STATUS</label><b id="homeWatchStatus">—</b><small id="homeWatchStatusSub"> </small></div>
-<div class="watch-compact-metric"><label>DEPARTURE</label><b id="homeWatchDeparture"><span class="watch-time-local">—</span><span class="watch-time-device">—</span></b><small id="homeWatchDepartureSub"> </small></div>
-<div class="watch-compact-metric"><label>ARRIVAL</label><b id="homeWatchArrival"><span class="watch-time-local">—</span><span class="watch-time-device">—</span></b><small id="homeWatchArrivalSub"> </small></div>
-<div class="watch-compact-metric"><label>FLIGHT</label><b id="homeWatchFlight">—</b><small id="homeWatchFlightSub"> </small></div>
+<div class="watch-compact-metric"><label id="homeWatchMetricStatusLabel" aria-label="status" title="status">STATUS</label><b id="homeWatchStatus">—</b><small id="homeWatchStatusSub"> </small></div>
+<div class="watch-compact-metric"><label id="homeWatchMetricDepartureLabel" aria-label="departure" title="departure">DEPARTURE</label><b id="homeWatchDeparture"><span class="watch-time-local">—</span><span class="watch-time-device">—</span></b><small id="homeWatchDepartureSub"> </small></div>
+<div class="watch-compact-metric"><label id="homeWatchMetricArrivalLabel" aria-label="arrival" title="arrival">ARRIVAL</label><b id="homeWatchArrival"><span class="watch-time-local">—</span><span class="watch-time-device">—</span></b><small id="homeWatchArrivalSub"> </small></div>
+<div class="watch-compact-metric"><label id="homeWatchMetricFlightLabel" aria-label="flight" title="flight">FLIGHT</label><b id="homeWatchFlight">—</b><small id="homeWatchFlightSub"> </small></div>
 </div>
 <div class="watch-compact-route" id="homeWatchProgressRow">
 <div class="watch-compact-end"><span>FROM</span><b id="homeWatchProgressFrom">—</b><small id="homeWatchFromName">—</small></div>
@@ -8167,7 +8453,7 @@ body .hero .hero-bottom.feature-special-selected{overflow:visible!important;z-in
 </div>
 <div class="hud top-hud"><div class="pill"><span class="live-dot"></span><b id="mapStatus">LIVE</b> · <span id="mapLocation">LUSK</span></div><div class="top-hud-right"><div class="pill special-count-pill" hidden="" id="specialCountPill">● <span id="specialCountText">SPECIAL 0</span></div><div class="pill" id="countPill">0 aircraft found · —</div></div></div>
 <div class="hud bottom-hud"><div class="pill range" id="rangePill">100 KM AIRSPACE RADIUS</div><div class="pill range extended-pill" hidden="" id="extendedPill">EXTENDED · 100 KM</div></div>
-<div class="map-card" id="mapCard"><div class="map-card-special-summary" hidden="" id="mapCardSpecialSummary"></div><div class="map-card-kicker" id="status">LIVE AIRCRAFT</div><div class="map-card-title" id="call">—</div><div class="map-card-sub" id="detail">Select an aircraft for flight details.</div><div class="map-card-special-info" hidden="" id="mapCardSpecialInfo"></div><div class="map-card-route" hidden="" id="mapCardRoute"><div class="map-card-route-head"><div><span>FROM</span><b id="liveFrom">—</b><small id="liveFromName"></small></div><div class="map-card-route-arrow">→</div><div class="map-card-route-to"><span>TO</span><b id="liveTo">—</b><small id="liveToName"></small></div></div><div class="map-card-progress"><div class="map-card-progress-label" id="liveProgressLabel">—% COMPLETE</div><div class="map-card-progress-track"><i id="liveProgressBar"></i><span class="progress-plane" id="liveProgressPlane"><svg aria-hidden="true" focusable="false" viewbox="0 0 64 64"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"></path></svg></span></div></div></div><div class="map-stats"><div class="map-stat"><span>DISTANCE TO GO</span><b id="dist">—</b></div><div class="map-stat"><span>ALTITUDE</span><b id="alt">—</b></div><div class="map-stat"><span>SPEED</span><b id="speed">—</b></div><div class="map-stat"><span>HEADING</span><b id="heading">—</b></div></div></div>
+<div class="map-card" id="mapCard"><div class="map-card-special-summary" hidden="" id="mapCardSpecialSummary"></div><div class="map-card-kicker" id="status">LIVE AIRCRAFT</div><div class="map-card-title" id="call">—</div><div class="map-card-sub" id="detail">Select an aircraft for flight details.</div><div class="map-card-special-info" hidden="" id="mapCardSpecialInfo"></div><div class="map-card-route" hidden="" id="mapCardRoute"><div class="map-card-route-head"><div><span>FROM</span><b id="liveFrom">—</b><small id="liveFromName"></small></div><div class="map-card-route-arrow">→</div><div class="map-card-route-to"><span>TO</span><b id="liveTo">—</b><small id="liveToName"></small></div></div><div class="map-card-progress"><div class="map-card-progress-label" id="liveProgressLabel">—% COMPLETE</div><div class="map-card-progress-track"><i id="liveProgressBar"></i><span class="progress-plane" id="liveProgressPlane"><svg aria-hidden="true" focusable="false" viewbox="0 0 64 64"><path d="M32 3 C34 3 35 5 35 8 L36 25 L56 34 L56 39 L36 35 L36 50 L43 57 L43 60 L32 55 L21 60 L21 57 L28 50 L28 35 L8 39 L8 34 L28 25 L29 8 C29 5 30 3 32 3 Z" fill="currentColor"></path></svg></span></div></div></div><div class="map-stats"><div class="map-stat" role="group" aria-label="DISTANCE TO GO" title="DISTANCE TO GO"><span class="map-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 18c4 0 5-2 7-5s4-3 6-6" stroke-dasharray="2.2 3"/><circle cx="4" cy="18" r="2"/><circle cx="19" cy="6" r="3"/></svg></span><b id="dist">—</b></div><div class="map-stat" role="group" aria-label="ALTITUDE" title="ALTITUDE"><span class="map-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M2 21 7.5 14l2.5 2.5L14 11l2 3 1.5-1 4.5 8"/><path d="M16 5v15m0-15-3 3m3-3 3 3m-3 12-3-3m3 3 3-3"/><path d="M3 4h2m3 0h2m3 0h2m6 0h1" stroke-dasharray="1 1"/></svg></span><b id="alt">—</b></div><div class="map-stat" role="group" aria-label="SPEED" title="SPEED"><span class="map-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 18a9 9 0 1 1 18 0M12 13l4-4M6 18h12"/></svg></span><b id="speed">—</b></div><div class="map-stat" role="group" aria-label="HEADING" title="HEADING"><span class="map-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/></svg></span><b id="heading">—</b></div><div class="map-stat" role="group" aria-label="VERTICAL SPEED" title="VERTICAL SPEED"><span class="map-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7 20V5m0 0L4 8m3-3 3 3M17 4v15m0 0-3-3m3 3 3-3"/></svg></span><b id="verticalSpeed">—</b></div><div class="map-stat" role="group" aria-label="TIME LEFT" title="TIME LEFT"><span class="map-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><b id="timeLeft">—</b></div><div class="map-stat" role="group" aria-label="ICAO" title="ICAO"><span class="map-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 5v14M8 5v14m3-14v14m4-14v14m3-14v14m3-14v14"/></svg></span><b id="icao">—</b></div><div class="map-stat" role="group" aria-label="DATA SOURCE" title="DATA SOURCE"><span class="map-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="2"/><path d="M7 7a7 7 0 0 0 0 10m10 0a7 7 0 0 0 0-10M4 4a11 11 0 0 0 0 16m16 0a11 11 0 0 0 0-16"/></svg></span><b id="dataSource">—</b></div></div></div>
 </div>
 </section>
 
@@ -8301,6 +8587,17 @@ function heroSelectedAircraftPanelHtml(x){
   const time=formatLiveTimeLeft(parseFloat(dist),x?.speed==null?null:Number(x.speed)*1.94384);
   const vs=x?.vs==null?'—':(Number(x.vs)*196.850394).toFixed(0)+' ft/min';
   const icao=String(x?.icao||x?.hex||'—').toUpperCase();
+  const icons={
+    altitude:`<path d="M2 21 7.5 14l2.5 2.5L14 11l2 3 1.5-1 4.5 8"/><path d="M16 5v15m0-15-3 3m3-3 3 3m-3 12-3-3m3 3 3-3"/><path d="M3 4h2m3 0h2m3 0h2m6 0h1" stroke-dasharray="1 1"/>`,
+    speed:'<path d="M3 18a9 9 0 1 1 18 0M12 13l4-4M6 18h12"/>',
+    heading:'<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/>',
+    vertical:'<path d="M7 20V5m0 0L4 8m3-3 3 3M17 4v15m0 0-3-3m3 3 3-3"/>',
+    distance:'<circle cx="4" cy="18" r="2"/><circle cx="20" cy="6" r="2"/><path d="M6 18c8 0 4-12 12-12"/>',
+    time:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    code:'<path d="M4 5v14M8 5v14m3-14v14m4-14v14m3-14v14m3-14v14"/>',
+    source:'<circle cx="12" cy="12" r="2"/><path d="M7 7a7 7 0 0 0 0 10m10 0a7 7 0 0 0 0-10M4 4a11 11 0 0 0 0 16m16 0a11 11 0 0 0 0-16"/>'
+  };
+  const stat=(label,value,key)=>`<div class="hero-selected-stat"><span class="hero-selected-stat-label"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icons[key]}</svg><span>${label}</span></span><b>${escapeHtml(value)}</b></div>`;
   return `<div class="hero-selected-aircraft-panel">
     <div class="hero-selected-head">
       <div class="hero-selected-title-block">
@@ -8313,14 +8610,14 @@ function heroSelectedAircraftPanelHtml(x){
     </div>
     ${route&&route.fromCode&&route.toCode?`<div class="hero-selected-route"><div><span>FROM</span><b>${escapeHtml(route.fromCode)}</b><small>${escapeHtml(airportDisplayName(route.fromCode,route.from||route.fromName||''))}</small></div><div class="hero-selected-route-arrow">→</div><div class="to"><span>TO</span><b>${escapeHtml(route.toCode)}</b><small>${escapeHtml(airportDisplayName(route.toCode,route.to||route.toName||''))}</small></div></div>`:''}
     <div class="hero-selected-stats">
-      <div><span>ALTITUDE</span><b>${escapeHtml(alt)}</b></div>
-      <div><span>SPEED</span><b>${escapeHtml(speed)}</b></div>
-      <div><span>HEADING</span><b>${escapeHtml(heading)}</b></div>
-      <div><span>VERTICAL SPEED</span><b>${escapeHtml(vs)}</b></div>
-      <div><span>DISTANCE TO GO</span><b>${escapeHtml(dist)}</b></div>
-      <div><span>TIME LEFT</span><b>${escapeHtml(time)}</b></div>
-      <div><span>ICAO</span><b>${escapeHtml(icao)}</b></div>
-      <div><span>DATA SOURCE</span><b>${escapeHtml(x?.source||'ADS-B')}</b></div>
+      ${stat('ALTITUDE',alt,'altitude')}
+      ${stat('SPEED',speed,'speed')}
+      ${stat('HEADING',heading,'heading')}
+      ${stat('VERTICAL SPEED',vs,'vertical')}
+      ${stat('DISTANCE TO GO',dist,'distance')}
+      ${stat('TIME LEFT',time,'time')}
+      ${stat('ICAO',icao,'code')}
+      ${stat('DATA SOURCE',x?.source||'ADS-B','source')}
     </div>
     <div class="hero-selected-footer">SELECTED AIRCRAFT · LIVE DATA CONTINUES TO REFRESH</div>
   </div>`;
@@ -10971,7 +11268,7 @@ function updateMapCard(x){
  if(!x){
   resetLiveProgress('');
   $('status').textContent='NO AIRCRAFT SELECTED';$('call').textContent='—';$('detail').textContent='Select an aircraft for flight details.';
-  $('mapCardRoute').hidden=true;$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';
+  $('mapCardRoute').hidden=true;$('dist').textContent='—';$('alt').textContent='—';$('speed').textContent='—';$('heading').textContent='—';$('verticalSpeed').textContent='—';$('timeLeft').textContent='—';$('icao').textContent='—';$('dataSource').textContent='—';
   if(specialInfo){specialInfo.hidden=true;specialInfo.innerHTML='';}
   return;
  }
@@ -11008,6 +11305,10 @@ function updateMapCard(x){
  $('alt').textContent=x.alt==null?'—':Math.round(x.alt*3.28084).toLocaleString()+' ft';
  $('speed').textContent=x.speed==null?'—':Math.round(x.speed*1.94384)+' kt';
  $('heading').textContent=x.heading==null?'—':Math.round(x.heading)+'°';
+ $('verticalSpeed').textContent=x.vs==null?'—':(Number(x.vs)*196.850394).toFixed(0)+' ft/min';
+ $('timeLeft').textContent=isSpecial?'—':formatLiveTimeLeft(dest==null?null:Number(dest),x.speed==null?null:Number(x.speed)*1.94384);
+ $('icao').textContent=String(x.icao||x.hex||'—').toUpperCase();
+ $('dataSource').textContent=x.source||'ADS-B';
 }
 async function selectLiveAircraft(icao){
  const x=(S.lastItems||[]).find(a=>a.icao===icao);if(!x){selectSpecialAircraft(icao);return;}
@@ -11607,6 +11908,8 @@ updateSkySettingsUI();updateSpecialSquawkCounter();if(S.extendedAirspace&&S.rang
 <script>
 window.addEventListener('resize',()=>requestAnimationFrame(fitQuietHeroTitle));
 </script>
+
+<script id="watch-status-icon-state">(()=>{const value=document.getElementById('homeWatchStatus');if(!value)return;const sync=()=>{const card=value.closest('.watch-compact-metric');if(!card)return;const text=(value.textContent||'').trim().toUpperCase();card.classList.toggle('status-is-live',text.includes('LIVE')||text.includes('AIRBORNE'));card.classList.toggle('status-is-landed',text.includes('LANDED')||text.includes('ARRIVED'));};new MutationObserver(sync).observe(value,{childList:true,subtree:true,characterData:true});sync();})();</script>
 
 </body>
 </html>
