@@ -142,7 +142,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .watched-progress-center{min-width:0}
 .watched-progress-center .progress-track{margin-top:11px}
 .watched-status{overflow:hidden;margin-top:7px;color:#678198;font-size:8px;font-weight:900;letter-spacing:.07em;text-align:center;text-overflow:ellipsis;white-space:nowrap}
-.watched-data-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}.watched-data-grid>div{min-width:0;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 8px;border:1px solid rgba(23,46,79,.08);border-radius:10px;background:rgba(234,243,250,.62);text-align:center}.watch-data-icon{width:21px;height:21px;display:block;margin-bottom:3px;color:var(--flight-blue);fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.watched-data-grid b{display:block;max-width:100%;overflow:hidden;margin-top:2px;color:var(--navy);font:800 13px "Manrope",sans-serif;text-overflow:ellipsis;white-space:nowrap}
+.watched-data-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}.watched-data-grid>div{min-width:0;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 8px;border:1px solid rgba(23,46,79,.08);border-radius:10px;background:rgba(234,243,250,.62);text-align:center}.watch-data-icon{width:21px;height:21px;display:block;margin-bottom:3px;color:var(--flight-blue);fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.watch-data-label{display:block;color:#7890a6;font-size:7px;font-weight:900;letter-spacing:.08em;line-height:1.15}.watched-data-grid b{display:block;max-width:100%;overflow:hidden;margin-top:2px;color:var(--navy);font:800 13px "Manrope",sans-serif;text-overflow:ellipsis;white-space:nowrap}
 .sheet-handle{display:none}
 .screen{position:absolute;z-index:800;inset:0;overflow:auto;padding:24px 26px 34px;background:rgba(234,243,250,.88);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
 .screen[hidden]{display:none!important}
@@ -281,8 +281,8 @@ body[data-tab="special"] .map-controls{z-index:850}
  .watched-status{margin-top:4px;font-size:6px;letter-spacing:.04em}
  .watched-data-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}
  .watched-data-grid>div{min-height:32px;padding:3px 4px;border-radius:8px}
- .watched-data-grid>div:first-child{display:none}
  .watch-data-icon{width:15px;height:15px;margin-bottom:0}
+ .watch-data-label{font-size:6px}
  .watched-data-grid b{margin-top:1px;font-size:9px}
 }
 @media (max-width:700px){
@@ -396,14 +396,11 @@ body[data-tab="special"] .map-controls{z-index:850}
  .watched-progress-center .progress-track{margin-top:4px;height:5px}
  .watched-progress-center .progress-plane{width:16px;height:16px}
  .watched-status{margin-top:4px;font-size:7px;letter-spacing:.04em}
- .watched-data-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:0}
+ .watched-data-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:0}
  .watched-data-grid>div{min-height:25px;padding:2px 4px;border-radius:7px}
- .watched-data-grid>div:first-child,.watched-data-grid>div:last-child{display:none}
  .watch-data-icon{display:none}
+ .watch-data-label{font-size:6px}
  .watched-data-grid b{margin-top:1px;font-size:10px}
- .watched-data-grid>div:nth-child(2)::before,.watched-data-grid>div:nth-child(3)::before{display:block;margin-bottom:1px;color:#7890a6;font-size:6px;font-weight:900;letter-spacing:.08em;line-height:1}
- .watched-data-grid>div:nth-child(2)::before{content:"DEPARTURE"}
- .watched-data-grid>div:nth-child(3)::before{content:"ARRIVAL"}
 }
 /* iPad 8 landscape: use two full-width information bars like the reference,
    instead of squeezing Next Watched into a narrow companion card. */
@@ -442,14 +439,10 @@ body[data-tab="special"] .map-controls{z-index:850}
  .watched-status{margin-top:4px;font-size:8px;letter-spacing:.05em}
  .watched-data-grid{grid-column:3;grid-row:1;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:8px;margin:0}
  .watched-data-grid>div{min-height:64px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:20px auto auto;align-content:center;justify-items:center;gap:2px;padding:4px 5px;border-radius:9px;text-align:center}
- .watched-data-grid>div:first-child{display:none}
- .watched-data-grid>div:last-child{display:grid}
  .watch-data-icon{display:block;grid-column:1;grid-row:1;width:22px;height:22px;margin:0}
+ .watch-data-label{grid-column:1;grid-row:2}
  .watched-data-grid b{grid-column:1;grid-row:3;width:100%;margin:0;font-size:clamp(13px,1.15vw,17px)}
- .watched-data-grid>div::before{display:block;grid-column:1;grid-row:2;margin:0;color:#7890a6;font-size:8px;font-weight:900;letter-spacing:.08em;line-height:1}
- .watched-data-grid>div:nth-child(2)::before{content:"DEPARTURE"}
- .watched-data-grid>div:nth-child(3)::before{content:"ARRIVAL"}
- .watched-data-grid>div:nth-child(4)::before{content:"FLIGHT"}
+ .watch-data-label{font-size:8px}
 }
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
@@ -517,7 +510,12 @@ body[data-tab="special"] .map-controls{z-index:850}
     <article class="dashboard-card watched-card" id="watchedPreview">
       <div class="watched-card-head"><h2>NEXT WATCHED FLIGHT</h2><button class="icon-button" type="button" data-tab-link="watched" aria-label="Open watched flights"><svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button></div>
       <div><div class="watched-flight-code" id="previewFlight">NO FLIGHT</div><div class="watched-route" id="previewRoute">Add a flight in Watched</div><div class="watched-meta" id="previewMeta"></div></div>
-      <div class="watched-route-progress"><div class="watched-route-stop"><span>FROM</span><b id="previewFromCode">—</b><small id="previewFromName"></small></div><div class="watched-progress-center"><div class="progress-track"><div class="progress-fill" id="watchProgressFill"></div><span class="progress-plane" id="watchProgressPlane"><svg viewBox="0 0 64 64"><path d="M32 3c2 0 3 2 3 5v17l20 9v5l-20-4v15l7 7v3l-10-4-10 4v-3l7-7V35L12 39v-5l17-9V8c0-3 1-5 3-5Z"/></svg></span></div><div class="watched-status" id="previewStatus">YOUR SAVED FLIGHT</div></div><div class="watched-route-stop"><span>TO</span><b id="previewToCode">—</b><small id="previewToName"></small></div></div><div class="watched-data-grid"><div role="group" aria-label="Status" title="Status"><svg class="watch-data-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16.5 9"/></svg><b id="previewState">—</b></div><div role="group" aria-label="Departure" title="Departure"><svg class="watch-data-icon" viewBox="0 0 24 24"><path d="M3 20h18M5 17h4"/><path d="M12 15.5 17 5l2 .7-1.8 7.2 4.2 1.2v1.5l-6-.7-2.2 4-1.4-.2.7-3.8-4.7 1.1Z" transform="rotate(36 12 12)"/></svg><b id="previewDeparture">—</b></div><div role="group" aria-label="Arrival" title="Arrival"><svg class="watch-data-icon" viewBox="0 0 24 24"><path d="M3 20h18M7 18v-2m10 2v-2"/><path d="M12 15.5 17 5l2 .7-1.8 7.2 4.2 1.2v1.5l-6-.7-2.2 4-1.4-.2.7-3.8-4.7 1.1Z" transform="rotate(142 12 12)"/></svg><b id="previewArrival">—</b></div><div role="group" aria-label="Flight" title="Flight"><svg class="watch-data-icon" viewBox="0 0 24 24"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM8 4v16m8-16v16M10 9h4m-4 6h4" stroke-dasharray="none"/></svg><b id="previewFlightTag">—</b></div></div>
+      <div class="watched-route-progress"><div class="watched-route-stop"><span>FROM</span><b id="previewFromCode">—</b><small id="previewFromName"></small></div><div class="watched-progress-center"><div class="progress-track"><div class="progress-fill" id="watchProgressFill"></div><span class="progress-plane" id="watchProgressPlane"><svg viewBox="0 0 64 64"><path d="M32 3c2 0 3 2 3 5v17l20 9v5l-20-4v15l7 7v3l-10-4-10 4v-3l7-7V35L12 39v-5l17-9V8c0-3 1-5 3-5Z"/></svg></span></div><div class="watched-status" id="previewStatus">YOUR SAVED FLIGHT</div></div><div class="watched-route-stop"><span>TO</span><b id="previewToCode">—</b><small id="previewToName"></small></div></div>
+      <div class="watched-data-grid" id="previewTelemetry">
+        <div class="watch-data-item" id="previewTile1" role="group" aria-label="Departure"><svg class="watch-data-icon" viewBox="0 0 24 24"><path d="M3 20h18M5 17h4"/><path d="M12 15.5 17 5l2 .7-1.8 7.2 4.2 1.2v1.5l-6-.7-2.2 4-1.4-.2.7-3.8-4.7 1.1Z" transform="rotate(36 12 12)"/></svg><span class="watch-data-label" id="previewTile1Label">DEPARTURE</span><b id="previewTile1Value">—</b></div>
+        <div class="watch-data-item" id="previewTile2" role="group" aria-label="Arrival"><svg class="watch-data-icon" viewBox="0 0 24 24"><path d="M3 20h18M7 18v-2m10 2v-2"/><path d="M12 15.5 17 5l2 .7-1.8 7.2 4.2 1.2v1.5l-6-.7-2.2 4-1.4-.2.7-3.8-4.7 1.1Z" transform="rotate(142 12 12)"/></svg><span class="watch-data-label" id="previewTile2Label">ARRIVAL</span><b id="previewTile2Value">—</b></div>
+        <div class="watch-data-item" id="previewTile3" role="group" aria-label="Flight"><svg class="watch-data-icon" viewBox="0 0 24 24"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM8 4v16m8-16v16M10 9h4m-4 6h4"/></svg><span class="watch-data-label" id="previewTile3Label">FLIGHT</span><b id="previewTile3Value">—</b></div>
+      </div>
     </article>
   </section>
   <section id="watchedScreen" class="screen" hidden>
@@ -583,7 +581,7 @@ body[data-tab="special"] .map-controls{z-index:850}
 const API_ENDPOINT = "https://magenta-syrniki-2f4749.netlify.app/.netlify/functions/adsb";
 const AIRPORTS = {
   LHR:[51.47,-.4543], LGW:[51.1537,-.1821], STN:[51.886,.2389], MAN:[53.365,-2.272], DUB:[53.4264,-6.2499],
-  EDI:[55.95,-3.3725], AGP:[36.6749,-4.4991], CDG:[49.0097,2.5479], AMS:[52.31,4.7683], FRA:[50.0379,8.5622],
+  EDI:[55.95,-3.3725], AGP:[36.6749,-4.4991], TFS:[28.0445,-16.5725], CDG:[49.0097,2.5479], AMS:[52.31,4.7683], FRA:[50.0379,8.5622],
   JFK:[40.6413,-73.7781], EWR:[40.6895,-74.1745], LGA:[40.7769,-73.874], SFO:[37.6213,-122.379], LAX:[33.9416,-118.4085],
   SIN:[1.3644,103.9915], DXB:[25.2532,55.3657], DOH:[25.2731,51.6081], HND:[35.5494,139.7798], SYD:[-33.9399,151.1753],
   BRS:[51.3827,-2.7191], BHX:[52.4539,-1.748], LBA:[53.8659,-1.660], FAO:[37.0144,-7.9659], DUS:[51.2895,6.7668],
@@ -618,7 +616,7 @@ const haversine=(a,b,c,d)=>{const r=Math.PI/180,p1=Number(a)*r,p2=Number(c)*r,dp
 function greatCirclePoints(start,end){
   const rad=Math.PI/180,toVector=([lat,lon])=>{const p=lat*rad,l=lon*rad;return [Math.cos(p)*Math.cos(l),Math.cos(p)*Math.sin(l),Math.sin(p)]};
   const a=toVector(start),b=toVector(end),dot=clamp(a[0]*b[0]+a[1]*b[1]+a[2]*b[2],-1,1),omega=Math.acos(dot),distance=omega*6371;
-  const steps=Math.max(24,Math.min(180,Math.ceil(distance/65))),sinOmega=Math.sin(omega),points=[];let previousLon=Number(start[1]);
+  const steps=Math.max(72,Math.min(360,Math.ceil(distance/25))),sinOmega=Math.sin(omega),points=[];let previousLon=Number(start[1]);
   for(let i=0;i<=steps;i++){
     const t=i/steps;let v;
     if(omega<1e-8)v=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
@@ -627,6 +625,29 @@ function greatCirclePoints(start,end){
     while(lon-previousLon>180)lon-=360;while(lon-previousLon< -180)lon+=360;previousLon=lon;points.push([lat,lon]);
   }
   return points;
+}
+function routeGeometry(route,aircraft){
+  const from=route?.fromLat!=null&&route?.fromLon!=null?[Number(route.fromLat),Number(route.fromLon)]:AIRPORTS[route?.fromCode];
+  const to=route?.toLat!=null&&route?.toLon!=null?[Number(route.toLat),Number(route.toLon)]:AIRPORTS[route?.toCode];
+  if(!from||!to||!from.every(Number.isFinite)||!to.every(Number.isFinite))return null;
+  const points=greatCirclePoints(from,to),position=aircraft&&Number.isFinite(Number(aircraft.lat))&&Number.isFinite(Number(aircraft.lon))?[Number(aircraft.lat),Number(aircraft.lon)]:null;
+  if(!position)return {points,splitIndex:0,progress:0,deviationKm:null};
+  let splitIndex=0,deviationKm=Infinity;
+  for(let i=0;i<points.length;i++){
+    const distance=haversine(position[0],position[1],points[i][0],points[i][1]);
+    if(distance<deviationKm){deviationKm=distance;splitIndex=i}
+  }
+  const cumulative=[0];for(let i=1;i<points.length;i++)cumulative.push(cumulative[i-1]+haversine(points[i-1][0],points[i-1][1],points[i][0],points[i][1]));
+  const total=cumulative[cumulative.length-1]||0;
+  return {points,splitIndex,progress:total?cumulative[splitIndex]/total:0,deviationKm};
+}
+function watchedPositionMatchesRoute(flight,aircraft){
+  if(!flight?.fromCode||!flight?.toCode)return true;
+  const geometry=routeGeometry({fromCode:flight.fromCode,toCode:flight.toCode,fromLat:flight.fromLat,fromLon:flight.fromLon,toLat:flight.toLat,toLon:flight.toLon},aircraft);
+  // Airline routes can bend around weather and airspace, so allow a wide
+  // corridor; positions hundreds of kilometres away are almost certainly a
+  // different aircraft returned by a broad callsign/route search.
+  return !geometry||geometry.deviationKm<=600;
 }
 const planeSvg='<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3c2 0 3 2 3 5v17l20 9v5l-20-4v15l7 7v3l-10-4-10 4v-3l7-7V35L12 39v-5l17-9V8c0-3 1-5 3-5Z"/></svg>';
 
@@ -664,15 +685,16 @@ class Api {
   }
   async schedule(flight,date){const p=new URLSearchParams({lookup:"schedule",flight:normalizeCode(flight),date});return this.json(API_ENDPOINT+"?"+p.toString())}
   async watchedAircraft(flight){
+    this.lastWatchedRouteMismatch=false;
     const lookup=watchedFlightLookup(flight),base={lookup:"watched-adsb",flight:normalizeCode(flight.flightNumber||flight.flight),date:flight.date||"",hex:flight.hex||"",registration:flight.registration||"",from:flight.fromCode||"",to:flight.toCode||"",fromLat:String(flight.fromLat??""),fromLon:String(flight.fromLon??"")};
     let result=null;
     for(const callsign of lookup.callsigns){
-      try{const p=new URLSearchParams({...base,callsign});result=await this.json(API_ENDPOINT+"?"+p.toString());if(result.status==="FOUND"&&result.ac?.length)return adaptWatchedAircraft(result.ac[0],result.source||"ADS-B")}catch{}
+      try{const p=new URLSearchParams({...base,callsign});result=await this.json(API_ENDPOINT+"?"+p.toString());if(result.status==="FOUND"&&result.ac?.length){const aircraft=adaptWatchedAircraft(result.ac[0],result.source||"ADS-B");if(watchedPositionMatchesRoute(flight,aircraft)){this.lastWatchedRouteMismatch=false;return aircraft}this.lastWatchedRouteMismatch=true}}catch{}
     }
     if(flight.fromCode&&flight.toCode&&flight.departureUtc){
       const routeParams=new URLSearchParams({lookup:"watched-discovery",flight:normalizeCode(flight.flightNumber||flight.flight),date:flight.date||"",from:flight.fromCode,to:flight.toCode,fromLat:String(flight.fromLat??AIRPORTS[flight.fromCode]?.[0]??""),fromLon:String(flight.fromLon??AIRPORTS[flight.fromCode]?.[1]??""),toLat:String(flight.toLat??AIRPORTS[flight.toCode]?.[0]??""),toLon:String(flight.toLon??AIRPORTS[flight.toCode]?.[1]??""),departureUtc:flight.departureUtc||"",arrivalUtc:flight.arrivalUtc||"",airlinePrefix:lookup.airlinePrefix});
       result=await this.json(API_ENDPOINT+"?"+routeParams.toString());
-      if(result.status==="FOUND"&&result.ac?.length){const x=adaptWatchedAircraft(result.ac[0],result.source||"ADS-B route");x.flightNumber=flight.flightNumber||flight.flight;x.watchGlobal=true;return x}
+      if(result.status==="FOUND"&&result.ac?.length){const x=adaptWatchedAircraft(result.ac[0],result.source||"ADS-B route");if(!watchedPositionMatchesRoute(flight,x)){this.lastWatchedRouteMismatch=true;return null}this.lastWatchedRouteMismatch=false;x.flightNumber=flight.flightNumber||flight.flight;x.watchGlobal=true;return x}
     }
     return null;
   }
@@ -694,7 +716,7 @@ function isMilitary(x){const text=[x.callsign,x.operator,x.desc,x.type].join(" "
 function isCommercialType(x){if(isMilitary(x)||isHelicopter(x))return false;const type=String(x.type||"").toUpperCase(),text=[x.callsign,x.registration,x.operator,x.desc].join(" ").toUpperCase();if(["PRIVATE","BUSINESS JET","EXECUTIVE","CORPORATE","CHARTER"].some(w=>text.includes(w)))return false;if(/^(C1[0-9][0-9]|C2[0-9][0-9]|C3[0-9][0-9]|C4[0-9][0-9]|C5[0-9][0-9]|C6[0-9][0-9]|C7[0-9][0-9]|C8[0-9][0-9]|C9[0-9][0-9]|PA[0-9]|DA[0-9]|R22|R44|PC12|PC24|GLF|C25)/.test(type))return false;return /^(A[23][0-9]{2}|A3[0-9]{2}|A4[0-9]{2}|B7[0-9]{2}|B38M|B39M|B3[0-9]{2}|B4[0-9]{2}|E1[79][0-9]|E2[0-9]{2}|CRJ[0-9]|DH8[0-9]|AT7[0-9])/.test(type)||!!(x.callsign&&x.callsign.trim())}
 function regionFor(lat,lon){const a=Number(lat),o=Number(lon);if(a>=-60&&a<=85&&o>=-170&&o<=-20)return "america";if(a>=34&&a<=72&&o>=-25&&o<45)return "europe";if(a>=-50&&a<=82&&o>=45&&o<=180)return "asia";return ""}
 class MapView {
-  constructor(app){this.app=app;this.map=null;this.markers=new Map();this.specialMarkers=new Map();this.outerMarkers=new Map();this.outer=[];this.aircraftCircle=null;this.extendedCircle=null;this.userMarker=null;this.routeLayers=[];this.fromAirportMarker=null;this.toAirportMarker=null;this.routePoints=[];this.selected=null;this.active=true;this.cameraMode="local";}
+  constructor(app){this.app=app;this.map=null;this.markers=new Map();this.specialMarkers=new Map();this.outerMarkers=new Map();this.watchedMarker=null;this.outer=[];this.aircraftCircle=null;this.extendedCircle=null;this.userMarker=null;this.routeLayers=[];this.fromAirportMarker=null;this.toAirportMarker=null;this.routePoints=[];this.selected=null;this.active=true;this.cameraMode="local";}
   init(){
     if(!window.L)return;
     this.map=L.map("map",{zoomControl:false,rotate:true,bearing:this.app.settings.value.rotationDeg,dragRotate:false,touchRotate:false,shiftKeyRotate:false}).setView([this.app.settings.value.lat,this.app.settings.value.lon],8);
@@ -757,7 +779,18 @@ class MapView {
     const outerSeen=new Set();(outer||[]).forEach(x=>{if(x.lat==null||x.lon==null)return;outerSeen.add(x.icao);let m=this.outerMarkers.get(x.icao);if(!m){m=L.marker([x.lat,x.lon],{icon:this.markerIcon(x),interactive:false,opacity:.42,zIndexOffset:-200}).addTo(this.map);this.outerMarkers.set(x.icao,m)}else m.setLatLng([x.lat,x.lon])});this.outerMarkers.forEach((m,id)=>{if(!outerSeen.has(id)){this.map.removeLayer(m);this.outerMarkers.delete(id)}});
     this.setRange();this.updateMode();
   }
-  updateMode(){const special=$("specialScreen"),isSpecial=!special.hidden;this.markers.forEach(m=>{const active=!isSpecial;if(active&&!this.map.hasLayer(m))m.addTo(this.map);if(!active&&this.map.hasLayer(m))this.map.removeLayer(m)});this.outerMarkers.forEach(m=>{const active=!isSpecial;if(active&&!this.map.hasLayer(m))m.addTo(this.map);if(!active&&this.map.hasLayer(m))this.map.removeLayer(m)});this.specialMarkers.forEach(m=>{const active=isSpecial||this.app.settings.value.specialCodes.length>0;if(active&&!this.map.hasLayer(m))m.addTo(this.map);if(!active&&this.map.hasLayer(m))this.map.removeLayer(m)});}
+  updateWatchedFlight(aircraft){
+    if(!this.map)return;
+    if(!aircraft||aircraft.lat==null||aircraft.lon==null||this.app.nearest){
+      if(this.watchedMarker){this.map.removeLayer(this.watchedMarker);this.watchedMarker=null}
+      return;
+    }
+    const icon=this.markerIcon(aircraft,true,false);
+    if(!this.watchedMarker)this.watchedMarker=L.marker([aircraft.lat,aircraft.lon],{icon,bubblingMouseEvents:false,zIndexOffset:500}).addTo(this.map);
+    else this.watchedMarker.setLatLng([aircraft.lat,aircraft.lon]).setIcon(icon);
+    this.watchedMarker.off("click").on("click",()=>this.select(aircraft));
+  }
+  updateMode(){const special=$("specialScreen"),isSpecial=!special.hidden;this.markers.forEach(m=>{const active=!isSpecial;if(active&&!this.map.hasLayer(m))m.addTo(this.map);if(!active&&this.map.hasLayer(m))this.map.removeLayer(m)});this.outerMarkers.forEach(m=>{const active=!isSpecial;if(active&&!this.map.hasLayer(m))m.addTo(this.map);if(!active&&this.map.hasLayer(m))this.map.removeLayer(m)});this.specialMarkers.forEach(m=>{const active=isSpecial||this.app.settings.value.specialCodes.length>0;if(active&&!this.map.hasLayer(m))m.addTo(this.map);if(!active&&this.map.hasLayer(m))this.map.removeLayer(m)});if(this.watchedMarker){if(!isSpecial&&!this.map.hasLayer(this.watchedMarker))this.watchedMarker.addTo(this.map);if(isSpecial&&this.map.hasLayer(this.watchedMarker))this.map.removeLayer(this.watchedMarker)}}
   select(x){
     this.selected=x;this.app.renderNearest();if(x.callsign)this.app.resolveRoute(x);const popup=$("aircraftPopup");popup.hidden=false;
     const d=x.d!=null?x.d.toFixed(1)+" km":"—";
@@ -773,8 +806,9 @@ class MapView {
     const from=[safeNumber(route.fromLat)??AIRPORTS[route.fromCode]?.[0],safeNumber(route.fromLon)??AIRPORTS[route.fromCode]?.[1]];
     const to=[safeNumber(route.toLat)??AIRPORTS[route.toCode]?.[0],safeNumber(route.toLon)??AIRPORTS[route.toCode]?.[1]];
     if(from.some(x=>!Number.isFinite(x))||to.some(x=>!Number.isFinite(x))||!Number.isFinite(aircraft.lat)||!Number.isFinite(aircraft.lon)){this.clearAirportMarkers();return}
-    const position=[aircraft.lat,aircraft.lon],completed=greatCirclePoints(from,position),remaining=greatCirclePoints(position,to);
-    this.routePoints=[...completed,...remaining.slice(1)];
+    const geometry=routeGeometry(route,aircraft);if(!geometry){this.clearAirportMarkers();return}
+    const completed=geometry.points.slice(0,geometry.splitIndex+1),remaining=geometry.points.slice(geometry.splitIndex);
+    this.routePoints=geometry.points;
     this.routeLayers.push(L.polyline(completed,{color:"#fff",weight:7,opacity:.96,lineCap:"round",lineJoin:"round",interactive:false}).addTo(this.map));
     this.routeLayers.push(L.polyline(completed,{color:"#2999F5",weight:3.5,opacity:1,lineCap:"round",lineJoin:"round",interactive:false}).addTo(this.map));
     this.routeLayers.push(L.polyline(remaining,{color:"#fff",weight:7,opacity:.96,dashArray:"2 7",lineCap:"round",lineJoin:"round",interactive:false}).addTo(this.map));
@@ -793,7 +827,7 @@ class MapView {
 }
 class SkyAroundMe {
   constructor(){
-    this.api=new Api();this.settings=new SettingsStore();this.aircraft=[];this.allAircraft=[];this.outerAircraft=[];this.specials=[];this.nearest=null;this.watchLive=null;this.watchlist=Storage.get(WATCHLIST_KEY,[])||[];if(!Array.isArray(this.watchlist))this.watchlist=[];const legacy=Storage.get(WATCH_KEY,null);if(!this.watchlist.length&&legacy?.flight)this.watchlist=[legacy];this.selectedWatch=null;this.map=new MapView(this);this.pollTimer=null;this.watchTimer=null;this.specialNextFetchAt=0;this.scanCount=0;this.lastScan=null;this.progressIdentity=null;this.progressDisplayed=0;this.progressTarget=0;this.progressMode="";this.progressFrame=null;this.progressGeneration=0;this.progressStart=0;this.progressFrom=0;this.progressTo=0;this.progressDuration=0;this.routeCache=new Map(Object.entries(Storage.get("skyAroundMeRouteCacheV2",{})||{}).filter(([,v])=>v&&Date.now()-Number(v.at||0)<600000));this.routePending=new Set();this.soundContext=null;this.soundUnlocked=false;this.activeTab="map";this.toastTimer=null;this.specialLastGood=this.restoreSpecialSnapshot();const cachedLive=Storage.get("skyAroundMeWatchLive",null),next=this.nextFlight();if(cachedLive&&next&&cachedLive.watchKey===this.watchKey(next)&&Date.now()-Number(cachedLive.lastSeenAt||0)<90*60*1000)this.watchLive=cachedLive;
+    this.api=new Api();this.settings=new SettingsStore();this.aircraft=[];this.allAircraft=[];this.outerAircraft=[];this.specials=[];this.nearest=null;this.watchLive=null;this.watchMismatchKey="";this.watchlist=Storage.get(WATCHLIST_KEY,[])||[];if(!Array.isArray(this.watchlist))this.watchlist=[];const legacy=Storage.get(WATCH_KEY,null);if(!this.watchlist.length&&legacy?.flight)this.watchlist=[legacy];this.selectedWatch=null;this.map=new MapView(this);this.pollTimer=null;this.watchTimer=null;this.specialNextFetchAt=0;this.scanCount=0;this.lastScan=null;this.progressIdentity=null;this.progressDisplayed=0;this.progressTarget=0;this.progressMode="";this.progressFrame=null;this.progressGeneration=0;this.progressStart=0;this.progressFrom=0;this.progressTo=0;this.progressDuration=0;this.routeCache=new Map(Object.entries(Storage.get("skyAroundMeRouteCacheV2",{})||{}).filter(([,v])=>v&&Date.now()-Number(v.at||0)<600000));this.routePending=new Set();this.soundContext=null;this.soundUnlocked=false;this.activeTab="map";this.toastTimer=null;this.specialLastGood=this.restoreSpecialSnapshot();const cachedLive=Storage.get("skyAroundMeWatchLive",null),next=this.nextFlight();if(cachedLive&&next&&cachedLive.watchKey===this.watchKey(next)&&Date.now()-Number(cachedLive.lastSeenAt||0)<90*60*1000){if(watchedPositionMatchesRoute(next,cachedLive))this.watchLive=cachedLive;else{this.watchMismatchKey=this.watchKey(next);Storage.set("skyAroundMeWatchLive",null);if(next.hex===cachedLive.icao)delete next.hex;if(next.registration&&next.registration===cachedLive.registration)delete next.registration}}
   }
   restoreSpecialSnapshot(){const v=Storage.get(SPECIAL_SNAPSHOT_KEY,null);if(!v||Date.now()-Number(v.savedAt||0)>600000||!Array.isArray(v.items))return[];return v.items.map(x=>({...x,d:haversine(this.settings.value.lat,this.settings.value.lon,x.lat,x.lon)})).filter(x=>this.settings.value.specialCodes.includes(String(x.squawk))&&this.regionAllowed(x))}
   start(){
@@ -807,7 +841,7 @@ class SkyAroundMe {
   }
   today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
   cameraJourney(){
-    const aircraft=this.nearest;
+    const aircraft=this.map.selected||this.nearest||this.activeWatchedAircraft();
     const route=aircraft?.liveRoute;
     if(!aircraft||!route||aircraft.lat==null||aircraft.lon==null||!route.fromCode||!route.toCode)return null;
     const fromLat=safeNumber(route.fromLat)??AIRPORTS[route.fromCode]?.[0],fromLon=safeNumber(route.fromLon)??AIRPORTS[route.fromCode]?.[1];
@@ -816,6 +850,10 @@ class SkyAroundMe {
   }
   advanceCamera(){
     if(this.activeTab!=="map")return;
+    if(!this.nearest&&this.activeWatchedAircraft()){
+      if(this.map.cameraMode!=="journey")this.map.setCamera("journey");
+      return;
+    }
     if(!this.cameraJourney()){
       if(this.map.cameraMode!=="local"){this.map.setCamera("local");this.updateCameraBadge()}
       return;
@@ -933,21 +971,41 @@ class SkyAroundMe {
     const status=$("nearestStatus");
     $("nearestEyebrow").textContent=selected?"SELECTED AIRCRAFT":"NEAREST AIRCRAFT";
     if(!x){
-      const quiet=$("quietMapState"),next=this.nextFlight();
+      const watched=this.activeWatchedAircraft();
+      if(watched){
+        const flight=this.activeWatchedFlight(),route=watched.liveRoute;
+        const deviceDistance=safeNumber(watched.d);
+        const toLat=safeNumber(route.toLat)??AIRPORTS[route.toCode]?.[0]??null,toLon=safeNumber(route.toLon)??AIRPORTS[route.toCode]?.[1]??null;
+        const distance=toLat===null||toLon===null?null:haversine(watched.lat,watched.lon,toLat,toLon);
+        const speedKt=safeNumber(watched.speed)===null?null:watched.speed*1.94384;
+        const geometry=routeGeometry(route,watched),pct=geometry?progressPercent(route,watched):0;
+        $("quietMapState").hidden=true;
+        $("nearestEyebrow").textContent="LIVE WATCHED FLIGHT";
+        $("nearestCode").textContent=(flight?.flightNumber||flight?.flight||watched.flightNumber||watched.callsign||watched.icao).toUpperCase();
+        $("nearestDescription").textContent=[flight?.name,flight?.aircraftDesc||watched.desc||watched.type,watched.callsign&&watched.callsign!==watched.flightNumber?watched.callsign:""].filter(Boolean).join(" · ");
+        status.innerHTML='<span class="dot"></span>LIVE · '+(deviceDistance===null?'TRACKING':deviceDistance.toFixed(1)+' KM FROM DEVICE')+(geometry?.deviationKm>250?' · ROUTE DEVIATION '+Math.round(geometry.deviationKm)+' KM':'');
+        $("nearestRoute").hidden=false;$("fromCode").textContent=route.fromCode||"—";$("fromName").textContent=route.from||"";$("toCode").textContent=route.toCode||"—";$("toName").textContent=route.to||"";
+        this.updateProgress(pct,watched);$("metricDistanceLabel").textContent="DISTANCE TO GO";$("metricDistance").textContent=distance===null?"—":Math.round(distance).toLocaleString()+" km";
+        $("metricAltitudeLabel").textContent="ALTITUDE";$("metricAltitude").textContent=watched.alt==null?"—":Math.round(watched.alt*3.28084).toLocaleString()+" ft";
+        $("metricSpeedLabel").textContent="SPEED";$("metricSpeed").textContent=speedKt===null?"—":Math.round(speedKt)+" kt";
+        $("metricTimeLabel").textContent="TIME LEFT";$("metricTime").textContent=distance===null||!speedKt?"—":this.timeLeft(distance,speedKt);
+        this.map.updateWatchedFlight(watched);this.map.drawRoute(route,watched);this.map.setCamera("journey",false);return;
+      }
+      const quiet=$("quietMapState"),active=this.activeWatchedFlight(),next=active||this.nextFlight();
       $("nearestEyebrow").textContent="SKIES ARE QUIET";$("nearestCode").textContent="NO AIRCRAFTS";$("nearestDescription").textContent="Within the selected airspace";status.innerHTML='<span class="dot"></span>QUIET · '+this.settings.value.rangeKm+' KM';
       $("fromCode").textContent="—";$("toCode").textContent="—";$("fromName").textContent="";$("toName").textContent="";$("nearestRoute").hidden=true;$("progressLabel").textContent="AIRSPACE SCAN";this.resetProgress();
       $("metricDistanceLabel").textContent="RANGE";$("metricDistance").textContent=this.settings.value.rangeKm+" km";
       $("metricAltitudeLabel").textContent="AIRSPACE";$("metricAltitude").textContent="QUIET";
       $("metricSpeedLabel").textContent="TRAFFIC";$("metricSpeed").textContent="NONE";
       $("metricTimeLabel").textContent="LAST SCAN";$("metricTime").textContent=this.lastScan?this.elapsedSinceScan():"—";
-      if(quiet){quiet.hidden=false;$("quietNextFlight").hidden=!next;if(next){const flight=(next.flightNumber||next.flight||"WATCHED FLIGHT").toUpperCase();$("quietFlightName").textContent=next.name||flight;$("quietFlightRoute").textContent=[flight,next.fromCode&&next.toCode?next.fromCode+" → "+next.toCode:"ROUTE PENDING"].join(" · ");$("quietFlightCountdown").textContent=this.flightState(next)==="SCHEDULED"?"DEPARTS IN "+this.countdownText(next):this.watchedStatus(next)}}
-      this.map.drawRoute(null,null);return
+      if(quiet){quiet.hidden=false;const quietCard=$("quietNextFlight");quietCard.hidden=!next;const quietLabel=quietCard.querySelector("span");if(quietLabel)quietLabel.textContent=this.activeWatchedAircraft()?"LIVE WATCHED FLIGHT":"NEXT WATCHED FLIGHT";if(next){const flight=(next.flightNumber||next.flight||"WATCHED FLIGHT").toUpperCase();$("quietFlightName").textContent=next.name||flight;$("quietFlightRoute").textContent=[flight,next.fromCode&&next.toCode?next.fromCode+" → "+next.toCode:"ROUTE PENDING"].join(" · ");$("quietFlightCountdown").textContent=this.watchMismatchKey===this.watchKey(next)?"AIRCRAFT POSITION OFF ROUTE · SEARCHING":this.watchedStatus(next)==="LIVE"?"LIVE · FULL JOURNEY":this.flightState(next)==="SCHEDULED"?"DEPARTS IN "+this.countdownText(next):this.watchedStatus(next)}}
+      const liveOnMap=this.activeWatchedAircraft();this.map.updateWatchedFlight(liveOnMap);this.map.drawRoute(liveOnMap?.liveRoute||null,liveOnMap);if(liveOnMap?.liveRoute)this.map.setCamera("journey",false);return
     }
-    $("quietMapState").hidden=true;$("nearestRoute").hidden=false;
+    $("quietMapState").hidden=true;$("nearestRoute").hidden=false;this.map.updateWatchedFlight(null);
     ["metricDistanceLabel","metricAltitudeLabel","metricSpeedLabel","metricTimeLabel"].forEach((id,i)=>$(id).textContent=["DISTANCE TO GO","ALTITUDE","SPEED","TIME LEFT"][i]);
-    const route=x.liveRoute||null;
+    const route=x.liveRoute||null,geometry=route?routeGeometry(route,x):null;
     const deviceDistance=safeNumber(x.d);
-    $("nearestCode").textContent=x.callsign||x.icao.toUpperCase();$("nearestDescription").textContent=[x.operator||"",x.desc||x.type||"Aircraft",x.registration||""].filter(Boolean).join(" · ");status.innerHTML='<span class="dot"></span>'+(selected?"SELECTED · ":"LIVE · ")+(deviceDistance===null?"—":deviceDistance.toFixed(1))+" KM";
+    $("nearestCode").textContent=x.callsign||x.icao.toUpperCase();$("nearestDescription").textContent=[x.operator||"",x.desc||x.type||"Aircraft",x.registration||""].filter(Boolean).join(" · ");status.innerHTML='<span class="dot"></span>'+(selected?"SELECTED · ":"LIVE · ")+(deviceDistance===null?"—":deviceDistance.toFixed(1))+" KM"+(geometry?.deviationKm>250?' · ROUTE DEVIATION '+Math.round(geometry.deviationKm)+' KM':'');
     $("fromCode").textContent=route?.fromCode||"—";$("fromName").textContent=route?.from||"";
     $("toCode").textContent=route?.toCode||"—";$("toName").textContent=route?.to||"";
     const dest=route?.toLat!=null&&route?.toLon!=null?haversine(x.lat,x.lon,route.toLat,route.toLon):null;
@@ -957,7 +1015,7 @@ class SkyAroundMe {
     $("metricAltitude").textContent=x.alt===null?"—":Math.round(x.alt*3.28084).toLocaleString()+" ft";
     $("metricSpeed").textContent=x.speed===null?"—":Math.round(x.speed*1.94384)+" kt";
     $("metricTime").textContent=dest===null||!x.speed?"—":this.timeLeft(dest,x.speed*1.94384);
-    this.map.drawRoute(route,x);if(this.map.cameraMode==="journey")this.map.setCamera("journey",false);
+    this.map.drawRoute(route,x);if(this.map.cameraMode==="journey"||(selected&&route))this.map.setCamera("journey",false);
   }
   timeLeft(distance,speedKt){const minutes=Math.max(1,Math.round(distance/(speedKt*1.852)*60));return minutes>=60?Math.floor(minutes/60)+"h "+String(minutes%60).padStart(2,"0")+"m":minutes+"m"}
   progress(route,x){return route&&x?progressPercent(route,x):0}
@@ -977,12 +1035,28 @@ class SkyAroundMe {
     if(this.isAirborne(live))return "LIVE";
     return this.flightState(f)==="SCHEDULED"?"SCHEDULED":"WAITING FOR TAKEOFF";
   }
+  setPreviewTelemetry(items){
+    const icons={
+      departure:'<path d="M3 20h18M5 17h4"/><path d="M12 15.5 17 5l2 .7-1.8 7.2 4.2 1.2v1.5l-6-.7-2.2 4-1.4-.2.7-3.8-4.7 1.1Z" transform="rotate(36 12 12)"/>',
+      arrival:'<path d="M3 20h18M7 18v-2m10 2v-2"/><path d="M12 15.5 17 5l2 .7-1.8 7.2 4.2 1.2v1.5l-6-.7-2.2 4-1.4-.2.7-3.8-4.7 1.1Z" transform="rotate(142 12 12)"/>',
+      flight:'<path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM8 4v16m8-16v16M10 9h4m-4 6h4"/>',
+      distance:'<path d="M3 18c4 0 5-2 7-5s4-3 6-6"/><circle cx="4" cy="18" r="2"/><circle cx="19" cy="6" r="3"/>',
+      altitude:'<path d="M2 21 7.5 14l2.5 2.5L14 11l2 3 1.5-1 4.5 8M16 5v15m-3-12 3-3 3 3m-6 9 3 3 3-3"/>',
+      time:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+    };
+    items.forEach((item,index)=>{
+      const tile=$("previewTile"+(index+1));
+      tile.setAttribute("aria-label",item.label+": "+item.value);tile.title=item.label+": "+item.value;
+      $("previewTile"+(index+1)+"Label").textContent=item.label.toUpperCase();
+      $("previewTile"+(index+1)+"Value").textContent=item.value;
+      tile.querySelector("svg").innerHTML=icons[item.icon];
+    });
+  }
   renderPreview(){
-    const f=this.nextFlight();
-    if(!f){$("previewState").textContent="—";$("previewDeparture").textContent="—";$("previewArrival").textContent="—";$("previewFlightTag").textContent="—";$("previewFlight").textContent="NO FLIGHT";$("previewRoute").textContent="Add a flight in Watched";$("previewMeta").textContent="";$("previewFromCode").textContent="—";$("previewFromName").textContent="";$("previewToCode").textContent="—";$("previewToName").textContent="";$("previewStatus").textContent="YOUR SAVED FLIGHT";$("watchProgressFill").style.width="0";$("watchProgressPlane").style.left="0";return}
+    const f=this.previewFlight();
+    if(!f){this.setPreviewTelemetry([{label:"DEPARTURE",value:"—",icon:"departure"},{label:"ARRIVAL",value:"—",icon:"arrival"},{label:"FLIGHT",value:"—",icon:"flight"}]);$("previewFlight").textContent="NO FLIGHT";$("previewRoute").textContent="Add a flight in Watched";$("previewMeta").textContent="";$("previewFromCode").textContent="—";$("previewFromName").textContent="";$("previewToCode").textContent="—";$("previewToName").textContent="";$("previewStatus").textContent="YOUR SAVED FLIGHT";$("watchProgressFill").style.width="0";$("watchProgressPlane").style.left="0";return}
     const flightNumber=(f.flightNumber||f.flight||"FLIGHT").toUpperCase();
     $("previewFlight").textContent=(f.name||flightNumber).trim();
-    $("previewDeparture").textContent=f.departureTime||"—";$("previewArrival").textContent=f.arrivalTime||"—";$("previewFlightTag").textContent=(f.flightNumber||f.flight||"—").toUpperCase();
     $("previewRoute").textContent=flightNumber;
     $("previewMeta").textContent=[formatDateDisplay(f.date),f.departureTime?"DEP "+f.departureTime:""].filter(Boolean).join(" · ");
     $("previewFromCode").textContent=f.fromCode||"—";$("previewFromName").textContent=f.from||"";
@@ -992,15 +1066,38 @@ class SkyAroundMe {
     const airborne=!!(live&&this.isAirborne(live));
     const isLive=fresh&&airborne;
     const state=this.watchedStatus(f);
-    $("previewState").textContent=state;
     const pct=airborne?progressPercent(f,live):0;
     $("watchProgressFill").style.width=pct+"%";$("watchProgressPlane").style.left=pct+"%";
-    $("previewStatus").textContent=isLive?pct.toFixed(1)+"% COMPLETE · LIVE":(live&&!fresh?"SIGNAL SEARCHING · LAST POSITION RETAINED":state);
+    $("previewStatus").textContent=this.watchMismatchKey===this.watchKey(f)?"ROUTE MISMATCH · SEARCHING FOR AIRCRAFT":isLive?pct.toFixed(1)+"% COMPLETE · LIVE":(live&&!fresh?"SIGNAL SEARCHING · LAST POSITION RETAINED":state);
+    if(isLive){
+      const toLat=safeNumber(f.toLat)??AIRPORTS[f.toCode]?.[0]??null,toLon=safeNumber(f.toLon)??AIRPORTS[f.toCode]?.[1]??null;
+      const distance=toLat===null||toLon===null||live.lat==null||live.lon==null?null:haversine(live.lat,live.lon,toLat,toLon);
+      const speedKt=safeNumber(live.speed)===null?null:live.speed*1.94384;
+      this.setPreviewTelemetry([{label:"DISTANCE TO GO",value:distance===null?"—":Math.round(distance).toLocaleString()+" km",icon:"distance"},{label:"ALTITUDE",value:live.alt===null?"—":Math.round(live.alt*3.28084).toLocaleString()+" ft",icon:"altitude"},{label:"TIME LEFT",value:distance===null||!speedKt?"—":this.timeLeft(distance,speedKt),icon:"time"}]);
+    }else this.setPreviewTelemetry([{label:"DEPARTURE",value:f.departureTime||"—",icon:"departure"},{label:"ARRIVAL",value:f.arrivalTime||"—",icon:"arrival"},{label:"FLIGHT",value:(f.flightNumber||f.flight||"—").toUpperCase(),icon:"flight"}]);
   }
   nextFlight(){
     const today=this.today();
     const sorted=this.watchlist.slice().sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")));
     return sorted.find(f=>this.flightState(f)!=="COMPLETED")||sorted[0]||null;
+  }
+  activeWatchedFlight(){
+    const key=this.watchLive?.watchKey;
+    return key?this.watchlist.find(f=>this.watchKey(f)===key)||null:null;
+  }
+  activeWatchedAircraft(){
+    const f=this.activeWatchedFlight(),live=this.watchLive;
+    if(!f||!live||!this.isAirborne(live)||Date.now()-Number(live.lastSeenAt||live.watchLiveAt||Date.now())>=150000)return null;
+    const route=live.liveRoute||(f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:f.fromLat,toLat:f.toLat,fromLon:f.fromLon,toLon:f.toLon}:null);
+    return route?{...live,liveRoute:route}:null;
+  }
+  previewFlight(){
+    const active=this.activeWatchedFlight();
+    if(!this.nearest&&active&&this.watchedStatus(active)==="LIVE"){
+      const next=this.watchlist.slice().sort((a,b)=>String(a.date||"").localeCompare(String(b.date||""))).find(f=>this.watchKey(f)!==this.watchKey(active)&&this.flightState(f)!=="COMPLETED");
+      return next||null;
+    }
+    return this.nextFlight();
   }
   flightState(f){
     if(!f)return "READY";
@@ -1014,15 +1111,16 @@ class SkyAroundMe {
   }
   watchKey(f){return normalizeCode(f.flightNumber||f.flight)+"|"+String(f.date||"")}
   async refreshWatched(){
-    const f=this.nextFlight();if(!f){this.watchLive=null;this.renderPreview();return}
+    const f=this.nextFlight();if(!f){this.watchLive=null;this.renderPreview();this.renderNearest();return}
     if(String(f.date||"")!==this.today()){this.renderPreview();return}
     const dep=f.departureUtc?new Date(f.departureUtc).getTime():0;
     if(this.flightState(f)==="SCHEDULED"||(dep&&Date.now()<dep-45*60000)){this.renderPreview();return}
     try{
       const live=await this.api.watchedAircraft(f);
-      if(live){live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:f.fromLat,toLat:f.toLat,fromLon:f.fromLon,toLon:f.toLon}:null;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();this.watchLive=live;f.watchKnown=true;f.hex=live.icao;f.registration=live.registration;Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f)}
-      this.renderPreview();this.renderWatchlist();
-    }catch{this.renderPreview()}
+      if(live){live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:f.fromLat,toLat:f.toLat,fromLon:f.fromLon,toLon:f.toLon}:null;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();this.watchLive=live;this.watchMismatchKey="";f.watchKnown=true;f.hex=live.icao;f.registration=live.registration;Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f)}
+      else if(this.api.lastWatchedRouteMismatch){this.watchMismatchKey=this.watchKey(f);const rejected=this.watchLive;if(rejected?.watchKey===this.watchKey(f)){this.watchLive=null;Storage.set("skyAroundMeWatchLive",null);if(f.hex===rejected.icao)delete f.hex;if(f.registration&&f.registration===rejected.registration)delete f.registration;Storage.set(WATCHLIST_KEY,this.watchlist)}}
+      this.renderPreview();this.renderWatchlist();this.renderNearest();
+    }catch{this.renderPreview();this.renderNearest()}
   }
   async repairNextFlight(){const f=this.nextFlight();if(!f||!f.flight||!f.date)return;if(f.fromCode&&f.toCode&&f.departureUtc)return;if(Date.now()-Number(f.scheduleRepairAt||0)<30*60*1000)return;f.scheduleRepairAt=Date.now();this.persistWatchlist();try{const schedule=await this.api.schedule(f.flightNumber||f.flight,f.date);if(schedule&&(schedule.status==="FOUND"||schedule.status==="ROUTE_FOUND")){Object.assign(f,{departureTime:schedule.departureTime||f.departureTime||"",departureUtc:schedule.departureUtc||f.departureUtc||"",arrivalTime:schedule.arrivalTime||f.arrivalTime||"",arrivalUtc:schedule.arrivalUtc||f.arrivalUtc||"",fromCode:schedule.fromCode||f.fromCode||"",toCode:schedule.toCode||f.toCode||"",from:schedule.from||f.from||"",to:schedule.to||f.to||"",fromLat:safeNumber(schedule.fromLat)??f.fromLat,fromLon:safeNumber(schedule.fromLon)??f.fromLon,toLat:safeNumber(schedule.toLat)??f.toLat,toLon:safeNumber(schedule.toLon)??f.toLon,lookupStatus:"ROUTE FOUND",scheduleRepairAt:0});this.persistWatchlist();this.renderWatchlist();this.renderPreview()}}catch{}}
   async addFlight(){
@@ -1108,13 +1206,11 @@ class SkyAroundMe {
 }
 function progressPercent(route,aircraft){
   if(!route||aircraft?.lat==null||aircraft?.lon==null)return 0;
-  const from=route.fromLat!=null&&route.fromLon!=null?[Number(route.fromLat),Number(route.fromLon)]:AIRPORTS[route.fromCode];
+  const geometry=routeGeometry(route,aircraft);if(!geometry)return 0;
   const to=route.toLat!=null&&route.toLon!=null?[Number(route.toLat),Number(route.toLon)]:AIRPORTS[route.toCode];
-  if(!from||!to)return 0;
-  const done=haversine(from[0],from[1],aircraft.lat,aircraft.lon),left=haversine(aircraft.lat,aircraft.lon,to[0],to[1]),total=done+left;
-  if(!total)return 0;
-  const remain=haversine(aircraft.lat,aircraft.lon,to[0],to[1]);
-  return Number((remain>.5?Math.min(99.99,done/total*100):100).toFixed(2));
+  const remain=to?haversine(aircraft.lat,aircraft.lon,to[0],to[1]):Infinity;
+  const progress=geometry.progress*100;
+  return Number((remain>.5?Math.min(99.99,progress):100).toFixed(2));
 }
 window.addEventListener("DOMContentLoaded",()=>new SkyAroundMe().start(),{once:true});
 </script>
