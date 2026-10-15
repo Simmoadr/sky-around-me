@@ -81,8 +81,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .aircraft-marker.nearest{width:42px;height:42px;color:var(--frost);background:var(--flight-blue);box-shadow:0 0 0 5px rgba(41,153,245,.19),0 8px 18px rgba(23,46,79,.24)}
 .aircraft-marker.kind-helicopter{color:#137f97}
 .aircraft-marker.kind-private{color:#59728c}
+.aircraft-marker.kind-commercial{color:#176fc1}
+.aircraft-marker.kind-unknown{color:#6c7785}
 .aircraft-marker.kind-military{color:#d44b37;background:#fff3ed}
 .aircraft-marker.nearest.kind-helicopter{color:#fff;background:#137f97;box-shadow:0 0 0 5px rgba(19,127,151,.2),0 8px 18px rgba(23,46,79,.24)}
+.aircraft-marker.nearest.kind-private{color:#fff;background:#59728c;box-shadow:0 0 0 5px rgba(89,114,140,.2),0 8px 18px rgba(23,46,79,.24)}
+.aircraft-marker.nearest.kind-commercial{color:#fff;background:#176fc1;box-shadow:0 0 0 5px rgba(23,111,193,.2),0 8px 18px rgba(23,46,79,.24)}
+.aircraft-marker.nearest.kind-unknown{color:#fff;background:#6c7785;box-shadow:0 0 0 5px rgba(108,119,133,.2),0 8px 18px rgba(23,46,79,.24)}
 .aircraft-marker.nearest.kind-military{color:#fff;background:#d44b37;box-shadow:0 0 0 5px rgba(212,75,55,.2),0 8px 18px rgba(23,46,79,.24)}
 .aircraft-marker.special{background:var(--frost);color:#df6427;border-color:#fff}
 .marker-squawk{position:absolute;left:21px;top:-6px;padding:2px 4px;border:1px solid #fff;border-radius:6px;background:#fff1e5;color:#9a4c22;font-size:7px;font-weight:900;box-shadow:0 2px 5px rgba(23,46,79,.16)}
@@ -471,7 +476,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div class="hud-right"><div class="glass-pill" id="placeBadge">LUSK, IRELAND</div></div>
   </div>
   <section class="quiet-map-state" id="quietMapState" hidden aria-live="polite">
-    <div class="quiet-brand">SKY AROUND ME</div><h2>Skies are quiet</h2><p>No aircraft nearby right now.</p>
+    <div class="quiet-brand">SKY AROUND ME</div><h2 id="quietTitle">Skies are quiet</h2><p id="quietMessage">No aircraft nearby right now.</p>
     <div class="quiet-next-flight" id="quietNextFlight" hidden><span>NEXT WATCHED FLIGHT</span><strong id="quietFlightName"></strong><small id="quietFlightRoute"></small><em id="quietFlightCountdown"></em></div>
     <div class="quiet-divider"></div><div class="quiet-quote">“Same sky. Different stories.”</div>
   </section>
@@ -550,7 +555,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
         <div class="setting-stack">
           <div class="setting-row"><div class="setting-copy"><strong>Refresh interval</strong><small>Shorter intervals use more data requests.</small><input id="refreshInput" type="range" min="2" max="60" step="1"></div><input id="refreshNumber" type="number" min="2" max="60" aria-label="Refresh interval in seconds"></div>
           <div class="setting-row"><div class="setting-copy"><strong>Radar ping</strong><small>Play one short sound when the nearest aircraft changes.</small></div><label class="switch"><input id="soundToggle" type="checkbox"><span></span></label></div>
-          <div class="setting-row"><div class="setting-copy"><strong>Aircraft shown</strong><small>Choose the traffic included in the local map.</small><select class="location-select" id="aircraftFilter"><option value="commercial">Commercial aircraft</option><option value="all">All non-military traffic</option><option value="helicopter">Helicopters</option><option value="military">Military traffic</option></select></div></div>
+          <div class="setting-row"><div class="setting-copy"><strong>Aircraft shown</strong><small>Choose the traffic included in the local map.</small><select class="location-select" id="aircraftFilter"><option value="all-aircraft">All aircraft</option><option value="commercial">Commercial aircraft</option><option value="all">All non-military traffic</option><option value="helicopter">Helicopters</option><option value="military">Military traffic</option></select></div></div>
           <div class="setting-row"><div class="setting-copy"><strong>Rotation</strong><small>Rotate the map in 15° steps. Rotation is saved on this device.</small></div><button class="action-button secondary" id="rotationToggle" type="button">UNLOCK ROTATION</button></div>
           <div class="setting-row"><div class="setting-copy"><strong>Feed activity</strong><small id="refreshUsage">No scans yet</small></div><span class="status-chip" id="lastUpdateText">—</span></div>
         </div>
@@ -640,7 +645,19 @@ function watchedPositionMatchesRoute(flight,aircraft){
   // Airline routes can bend around weather and airspace, so allow a wide
   // corridor; positions hundreds of kilometres away are almost certainly a
   // different aircraft returned by a broad callsign/route search.
-  return !geometry||geometry.deviationKm<=600;
+  if(geometry&&geometry.deviationKm>600)return false;
+  // A callsign can be reused or an ADS-B lookup can return an earlier record
+  // from the same route. Reject positions that are far behind the scheduled
+  // flight phase (for example near BRS when LS1891 is due into TFS shortly).
+  const dep=Date.parse(flight.departureUtc||""),arr=Date.parse(flight.arrivalUtc||"");
+  if(geometry&&Number.isFinite(dep)&&Number.isFinite(arr)&&arr>dep){
+    const now=Date.now(),duration=arr-dep;
+    if(now>=dep-20*60000&&now<=arr+45*60000&&duration>=60*60000&&duration<=18*60*60000){
+      const expected=clamp((now-dep)/duration,0,1);
+      if(Math.abs(geometry.progress-expected)>.38)return false;
+    }
+  }
+  return true;
 }
 function liveRouteGeometry(route,aircraft){
   const from=route?.fromLat!=null&&route?.fromLon!=null?[Number(route.fromLat),Number(route.fromLon)]:AIRPORTS[route?.fromCode];
@@ -666,7 +683,7 @@ class SettingsStore {
     locationName:old.locationName||(old.location==="device"?"Device Location":PLACES[old.location]?.name||PLACES.lusk.name),
     locationMode:old.location||"lusk",rangeKm:clamp(Number(old.rangeKm)||100,1,250),
     refreshSec:clamp(Number(old.refreshSec)||45,2,60),extendedAirspace:old.extendedAirspace!==false,
-    nearestSound:old.nearestSound!==false,filter:["commercial","all","helicopter","military"].includes(old.filter)?old.filter:"commercial",rotationDeg:Number(old.rotationDeg)||0,rotationLocked:old.rotationLocked!==false,
+    nearestSound:old.nearestSound!==false,filter:["all-aircraft","commercial","all","helicopter","military"].includes(old.filter)?old.filter:"commercial",rotationDeg:Number(old.rotationDeg)||0,rotationLocked:old.rotationLocked!==false,
     specialCodes:Array.isArray(old.specialSquawkCodes)?old.specialSquawkCodes.filter(c=>SPECIAL_CODES.includes(String(c))):((old.specialSquawks===false)?[]:["7700","7600","7500"]),
     regions:old.specialSquawkRegions&&typeof old.specialSquawkRegions==="object"?old.specialSquawkRegions:Object.fromEntries(SPECIAL_CODES.map(c=>[c,REGIONS.slice()])),
     specialLabels:old.specialSquawkLabels===true
@@ -794,7 +811,7 @@ class MapView {
     x.visualHeading=this.motionHeadings.get(x.icao)??x.heading;
   }
   markerIcon(x,nearest=false,special=false){
-    const kind=aircraftKind(x),helicopter=kind.includes("HELICOPTER"),military=kind.includes("MILITARY"),privateAircraft=kind.includes("PRIVATE / GENERAL"),kindClass=military?" kind-military":helicopter?" kind-helicopter":privateAircraft?" kind-private":"";
+    const kind=aircraftKind(x),helicopter=kind.includes("HELICOPTER"),military=kind.includes("MILITARY"),privateAircraft=kind.includes("PRIVATE / GENERAL"),commercial=kind==="COMMERCIAL",kindClass=military?" kind-military":helicopter?" kind-helicopter":privateAircraft?" kind-private":commercial?" kind-commercial":" kind-unknown";
     const glyph=helicopter?helicopterSvg:military?militaryPlaneSvg:privateAircraft?privatePlaneSvg:planeSvg;
     const track=safeNumber(x.visualHeading)??safeNumber(x.heading),toLat=safeNumber(x.liveRoute?.toLat)??AIRPORTS[x.liveRoute?.toCode]?.[0],toLon=safeNumber(x.liveRoute?.toLon)??AIRPORTS[x.liveRoute?.toCode]?.[1];
     // When a route is drawn, point along its remaining segment so the marker
@@ -829,7 +846,7 @@ class MapView {
   }
   updateWatchedFlight(aircraft){
     if(!this.map)return;
-    if(!aircraft||aircraft.lat==null||aircraft.lon==null||this.app.nearest){
+    if(!aircraft||aircraft.lat==null||aircraft.lon==null){
       if(this.watchedMarker){this.map.removeLayer(this.watchedMarker);this.watchedMarker=null}
       return;
     }
@@ -889,7 +906,8 @@ class SkyAroundMe {
   }
   today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
   cameraJourney(){
-    const aircraft=this.map.selected||this.nearest||this.activeWatchedAircraft();
+    const watched=this.map.cameraMode==="journey"?this.activeWatchedAircraft():null;
+    const aircraft=this.map.selected||watched||this.nearest||this.activeWatchedAircraft();
     const route=aircraft?.liveRoute;
     if(!aircraft||!route||aircraft.lat==null||aircraft.lon==null||!route.fromCode||!route.toCode)return null;
     const fromLat=safeNumber(route.fromLat)??AIRPORTS[route.fromCode]?.[0],fromLon=safeNumber(route.fromLon)??AIRPORTS[route.fromCode]?.[1];
@@ -921,7 +939,7 @@ class SkyAroundMe {
     $("refreshNumber").addEventListener("change",e=>this.setRefresh(e.target.value));
     $("extendedToggle").addEventListener("change",e=>this.changeSetting("extendedAirspace",e.target.checked,true));
     $("soundToggle").addEventListener("change",e=>this.changeSetting("nearestSound",e.target.checked,false));
-    $("aircraftFilter").addEventListener("change",e=>{this.settings.value.filter=e.target.value;this.persist();this.map.update(this.aircraft,this.specials,this.nearest,this.outerAircraft)});
+    $("aircraftFilter").addEventListener("change",e=>{this.settings.value.filter=e.target.value;this.persist();this.nearest=this.chooseNearest();const visible=this.filteredAircraft(this.aircraft).length;$("aircraftCount").textContent=visible===this.aircraft.length?this.aircraft.length+" AIRCRAFT IN RANGE":visible+" MATCH · "+this.aircraft.length+" IN RANGE";this.map.update(this.aircraft,this.specials,this.nearest,this.outerAircraft);this.renderNearest()});
     $("locationSelect").addEventListener("change",e=>this.chooseLocation(e.target.value));
     
     $("findPlace").onclick=()=>this.searchPlace();
@@ -956,7 +974,9 @@ class SkyAroundMe {
       else if(status==="UNAVAILABLE"&&Date.now()-Number(Storage.get(SPECIAL_SNAPSHOT_KEY,{savedAt:0}).savedAt||0)<180000){this.specials=this.specialLastGood}
       else if(status!=="DISABLED"){this.specials=got}
       this.lastScan=Date.now();$("connectionText").textContent="LIVE";$("lastScan").textContent="UPDATED "+new Date(this.lastScan).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
-      $("aircraftCount").textContent=this.aircraft.length+" AIRCRAFT IN RANGE";$("refreshUsage").textContent="SESSION SCANS "+this.scanCount+" · ABOUT "+Math.round(3600/this.settings.value.refreshSec)+" / HOUR";$("lastUpdateText").textContent="LIVE";
+      const visibleCount=this.filteredAircraft(this.aircraft).length;
+      $("aircraftCount").textContent=visibleCount===this.aircraft.length?this.aircraft.length+" AIRCRAFT IN RANGE":visibleCount+" MATCH · "+this.aircraft.length+" IN RANGE";
+      $("refreshUsage").textContent="SESSION SCANS "+this.scanCount+" · ABOUT "+Math.round(3600/this.settings.value.refreshSec)+" / HOUR";$("lastUpdateText").textContent="LIVE";
       const previousNearest=this.nearest?.icao||null;this.nearest=this.chooseNearest();if(previousNearest&&this.nearest?.icao&&previousNearest!==this.nearest.icao)this.ping();
       this.map.update(this.aircraft,this.specials,this.nearest,this.outerAircraft);
       this.renderNearest();
@@ -967,15 +987,15 @@ class SkyAroundMe {
     }finally{this.busy=false}
   }
   chooseNearest(){
-    let list=this.aircraft.filter(x=>!isMilitary(x));
     const filter=this.settings.value.filter;
+    let list=filter==="all-aircraft"?this.aircraft.slice():this.aircraft.filter(x=>!isMilitary(x));
     if(filter==="military")list=this.aircraft.filter(x=>isMilitary(x));
     else if(filter==="helicopter")list=list.filter(x=>isHelicopter(x));
     else if(filter==="commercial")list=list.filter(x=>isCommercialType(x));
     const airborne=list.filter(x=>(x.alt??0)>45||(x.speed??0)>35);
     return (airborne.length?airborne:list).sort((a,b)=>a.d-b.d)[0]||null;
   }
-  filteredAircraft(aircraft){const mode=this.settings.value.filter;return (aircraft||[]).filter(x=>mode==="military"?isMilitary(x):mode==="helicopter"?isHelicopter(x):mode==="commercial"?isCommercialType(x):!isMilitary(x))}
+  filteredAircraft(aircraft){const mode=this.settings.value.filter;return (aircraft||[]).filter(x=>mode==="all-aircraft"?true:mode==="military"?isMilitary(x):mode==="helicopter"?isHelicopter(x):mode==="commercial"?isCommercialType(x):!isMilitary(x))}
   regionAllowed(x){const region=regionFor(x.lat,x.lon);return !!region&&(this.settings.value.regions[String(x.squawk)]||REGIONS).includes(region)}
   async resolveRoute(x){
     const id=x.icao+":"+x.callsign;if(!x.callsign||x.liveRoute||this.routePending.has(id))return;
@@ -1042,7 +1062,10 @@ class SkyAroundMe {
       }
       const quiet=$("quietMapState"),active=this.activeWatchedFlight(),next=active||this.nextFlight();
       $("nearestKind").hidden=true;
-      $("nearestEyebrow").textContent="SKIES ARE QUIET";$("nearestCode").textContent="NO AIRCRAFTS";$("nearestDescription").textContent="Within the selected airspace";status.innerHTML='<span class="dot"></span>QUIET · '+this.settings.value.rangeKm+' KM';
+      const visibleCount=this.filteredAircraft(this.aircraft).length,hasFilteredOut=this.aircraft.length>0&&visibleCount===0;
+      const filterNames={"all-aircraft":"aircraft",commercial:"commercial aircraft",all:"non-military aircraft",helicopter:"helicopters",military:"military aircraft"};
+      $("nearestEyebrow").textContent=hasFilteredOut?"NO MATCHING AIRCRAFT":"SKIES ARE QUIET";$("nearestCode").textContent=hasFilteredOut?"NO "+filterNames[this.settings.value.filter].toUpperCase():"NO AIRCRAFTS";$("nearestDescription").textContent=hasFilteredOut?this.aircraft.length+" aircraft in range, but none match the selected filter. Change “Aircraft shown” in Settings.":"Within the selected airspace";status.innerHTML='<span class="dot"></span>'+(hasFilteredOut?this.aircraft.length+" AIRCRAFT · 0 MATCH":"QUIET · "+this.settings.value.rangeKm+" KM");
+      $("quietTitle").textContent=hasFilteredOut?"Aircraft nearby, but filtered out":"Skies are quiet";$("quietMessage").textContent=hasFilteredOut?"There are "+this.aircraft.length+" aircraft in range, but none match "+filterNames[this.settings.value.filter]+". Change the aircraft filter in Settings to see them.":"No aircraft nearby right now.";
       $("fromCode").textContent="—";$("toCode").textContent="—";$("fromName").textContent="";$("toName").textContent="";$("nearestRoute").hidden=true;$("progressLabel").textContent="AIRSPACE SCAN";this.resetProgress();
       $("metricDistanceLabel").textContent="RANGE";$("metricDistance").textContent=this.settings.value.rangeKm+" km";
       $("metricAltitudeLabel").textContent="AIRSPACE";$("metricAltitude").textContent="QUIET";
@@ -1066,7 +1089,9 @@ class SkyAroundMe {
     $("metricAltitude").textContent=x.alt===null?"—":Math.round(x.alt*3.28084).toLocaleString()+" ft";
     $("metricSpeed").textContent=x.speed===null?"—":Math.round(x.speed*1.94384)+" kt";
     $("metricTime").textContent=dest===null||!x.speed?"—":this.timeLeft(dest,x.speed*1.94384);
-    this.map.drawRoute(route,x);if(this.map.cameraMode==="journey"||(selected&&route))this.map.setCamera("journey",false);
+    const watchedForJourney=this.map.cameraMode==="journey"&&!selected?this.activeWatchedAircraft():null;
+    if(watchedForJourney){this.map.updateWatchedFlight(watchedForJourney);this.map.drawRoute(watchedForJourney.liveRoute,watchedForJourney);this.map.setCamera("journey",false)}
+    else{this.map.updateWatchedFlight(null);this.map.drawRoute(route,x);if(this.map.cameraMode==="journey"||(selected&&route))this.map.setCamera("journey",false)}
   }
   timeLeft(distance,speedKt){const minutes=Math.max(1,Math.round(distance/(speedKt*1.852)*60));return minutes>=60?Math.floor(minutes/60)+"h "+String(minutes%60).padStart(2,"0")+"m":minutes+"m"}
   progress(route,x){return route&&x?progressPercent(route,x):0}
@@ -1088,9 +1113,9 @@ class SkyAroundMe {
   }
   setPreviewTelemetry(items){
     const icons={
-      departure:'<path d="M3 20h18M5 17h4"/><path d="M12 15.5 17 5l2 .7-1.8 7.2 4.2 1.2v1.5l-6-.7-2.2 4-1.4-.2.7-3.8-4.7 1.1Z" transform="rotate(36 12 12)"/>',
-      arrival:'<path d="M3 20h18M7 18v-2m10 2v-2"/><path d="M12 15.5 17 5l2 .7-1.8 7.2 4.2 1.2v1.5l-6-.7-2.2 4-1.4-.2.7-3.8-4.7 1.1Z" transform="rotate(142 12 12)"/>',
-      flight:'<path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM8 4v16m8-16v16M10 9h4m-4 6h4"/>',
+      departure:'<path d="M3 21h18M5 18h2m10 0h2"/><path d="M12 2c.7 0 1 .5 1 1.2v5l7 4v1.8l-7-1.7v5.3l2.5 2v1l-3.5-.9-3.5.9v-1l2.5-2v-5.3L4 14v-1.8l7-4v-5c0-.7.3-1.2 1-1.2Z" transform="rotate(35 12 12)"/>',
+      arrival:'<path d="M3 21h18M5 18h2m10 0h2"/><path d="M12 2c.7 0 1 .5 1 1.2v5l7 4v1.8l-7-1.7v5.3l2.5 2v1l-3.5-.9-3.5.9v-1l2.5-2v-5.3L4 14v-1.8l7-4v-5c0-.7.3-1.2 1-1.2Z" transform="rotate(145 12 12)"/>',
+      flight:'<path d="M5 3.5h14a2 2 0 0 1 2 2v3a3 3 0 0 0 0 7v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a3 3 0 0 0 0-7v-3a2 2 0 0 1 2-2Z"/><path d="M15 4v16" stroke-dasharray="1.5 2"/><path d="M8 9h4m-4 3h4m-4 3h4"/>',
       distance:'<path d="M3 18c4 0 5-2 7-5s4-3 6-6"/><circle cx="4" cy="18" r="2"/><circle cx="19" cy="6" r="3"/>',
       altitude:'<path d="M2 21 7.5 14l2.5 2.5L14 11l2 3 1.5-1 4.5 8M16 5v15m-3-12 3-3 3 3m-6 9 3 3 3-3"/>',
       time:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
@@ -1117,7 +1142,10 @@ class SkyAroundMe {
     const airborne=!!(live&&this.isAirborne(live));
     const isLive=fresh&&airborne;
     const state=this.watchedStatus(f);
-    const pct=airborne?progressPercent(f,live):0;
+    const measuredPct=airborne?progressPercent(f,live):0;
+    const progressFloor=safeNumber(f.progressFloor)??0;
+    const pct=airborne?Math.max(progressFloor,measuredPct):0;
+    if(airborne&&pct>progressFloor+.05){f.progressFloor=pct;Storage.set(WATCHLIST_KEY,this.watchlist)}
     $("watchProgressFill").style.width=pct+"%";$("watchProgressPlane").style.left=pct+"%";
     $("previewStatus").textContent=this.watchMismatchKey===this.watchKey(f)?"ROUTE MISMATCH · SEARCHING FOR AIRCRAFT":isLive?pct.toFixed(1)+"% COMPLETE · LIVE":(live&&!fresh?"SIGNAL SEARCHING · LAST POSITION RETAINED":state);
     if(isLive){
@@ -1239,11 +1267,12 @@ class SkyAroundMe {
 }
 function progressPercent(route,aircraft){
   if(!route||aircraft?.lat==null||aircraft?.lon==null)return 0;
-  const geometry=liveRouteGeometry(route,aircraft);if(!geometry)return 0;
+  const geometry=routeGeometry(route,aircraft);if(!geometry)return 0;
   const to=route.toLat!=null&&route.toLon!=null?[Number(route.toLat),Number(route.toLon)]:AIRPORTS[route.toCode];
   const remain=to?haversine(aircraft.lat,aircraft.lon,to[0],to[1]):Infinity;
-  const progress=geometry.progress*100;
-  return Number((remain>.5?Math.min(99.99,progress):100).toFixed(2));
+  // Project onto the ordered origin-to-destination route. A travelled/remaining
+  // distance ratio can move backward when the real flight follows a curved path.
+  return Number((remain>.5?Math.min(99.99,geometry.progress*100):100).toFixed(2));
 }
 window.addEventListener("DOMContentLoaded",()=>new SkyAroundMe().start(),{once:true});
 </script>
