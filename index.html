@@ -32,10 +32,9 @@ button{color:inherit}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(41,153,245,.45);outline-offset:2px}
 [hidden]{display:none!important}
 .app{height:100dvh;min-height:520px;display:grid;grid-template-rows:66px minmax(0,1fr);overflow:hidden;background:linear-gradient(145deg,#f7fbff 0%,var(--cloud) 55%,#e3effa 100%)}
-.topbar{z-index:1000;display:grid;grid-template-columns:minmax(220px,1fr) auto minmax(220px,1fr);align-items:center;gap:20px;padding:9px 20px;background:rgba(255,255,255,.78);border-bottom:1px solid rgba(255,255,255,.9);box-shadow:0 8px 30px rgba(23,46,79,.06);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%)}
+.topbar{z-index:1000;display:grid;grid-template-columns:minmax(220px,1fr) auto minmax(220px,1fr);align-items:center;gap:20px;padding:4px 20px;background:rgba(255,255,255,.78);border-bottom:1px solid rgba(255,255,255,.9);box-shadow:0 8px 30px rgba(23,46,79,.06);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%)}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
-.brand-mark{width:42px;height:42px;display:grid;place-items:center;flex:0 0 auto;color:var(--frost);background:var(--navy);border:1px solid rgba(255,255,255,.7);border-radius:14px;box-shadow:0 5px 14px rgba(23,46,79,.18)}
-.brand-mark svg{width:27px;height:27px}
+.brand-logo{display:block;width:195px;height:auto;max-height:58px;object-fit:contain;object-position:left center;flex:0 0 auto}
 .brand-copy{min-width:0}
 .brand-name{font:800 17px/1 "Manrope",sans-serif;letter-spacing:.02em;color:var(--navy);white-space:nowrap}
 .brand-tagline{margin-top:4px;font-size:8px;font-weight:800;letter-spacing:.2em;color:#7188a0;white-space:nowrap}
@@ -77,7 +76,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .hud-bottom{left:18px;top:62px;display:flex;gap:8px}
 .range-ring{border:2px solid rgba(41,153,245,.58);background:rgba(41,153,245,.055);border-radius:50%}
 .aircraft-marker{width:34px;height:34px;display:grid;place-items:center;border:2px solid #fff;border-radius:50%;background:var(--frost);color:var(--navy);box-shadow:0 4px 14px rgba(23,46,79,.24)}
-.aircraft-marker svg{width:19px;height:19px;fill:currentColor;transform-origin:center}
+.aircraft-marker svg{width:24px;height:24px;fill:currentColor;transform-origin:center}
 .aircraft-marker.nearest{width:42px;height:42px;color:var(--frost);background:var(--flight-blue);box-shadow:0 0 0 5px rgba(41,153,245,.19),0 8px 18px rgba(23,46,79,.24)}
 .aircraft-marker.kind-helicopter{color:#137f97}
 .aircraft-marker.kind-private{color:#59728c}
@@ -222,11 +221,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .code-setting:first-child{border-top:0}
 .code-setting b{font:800 14px "Manrope",sans-serif}
 .code-setting .region-options{grid-column:2}
+.special-settings-card{grid-column:1/-1}
+.special-settings-card>.panel-lede{margin:-7px 0 10px}
+.special-code-setting{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 14px;padding:11px 0;border-top:1px solid var(--line)}
+.special-code-setting:first-of-type{border-top:0}
+.special-code-copy strong{display:block;font-size:11px}.special-code-copy small{display:block;margin-top:3px;color:#7b8fa2;font-size:9px}
+.special-code-setting .region-options{grid-column:1/-1}
 .toast{position:absolute;z-index:1500;left:50%;bottom:25px;transform:translate(-50%,15px);opacity:0;pointer-events:none;padding:10px 14px;border:1px solid #fff;border-radius:13px;background:rgba(23,46,79,.92);color:#fff;font-size:11px;box-shadow:var(--shadow);transition:.2s}
 .toast.visible{opacity:1;transform:translate(-50%,0)}
-.app-footer{max-width:1120px;display:flex;align-items:center;gap:11px;margin:24px auto 0;padding:18px 0;color:var(--navy)}.app-footer .brand-mark{width:36px;height:36px}.app-footer strong{display:block;font:800 12px "Manrope",sans-serif;letter-spacing:.03em}.app-footer small{display:block;margin-top:3px;color:#8497a8;font-size:7px;font-weight:800;letter-spacing:.18em}.app-footer p{margin:0 0 0 auto;color:#8295a7;font-size:9px}
+.app-footer{max-width:1120px;display:flex;flex-direction:column;align-items:center;gap:0;margin:30px auto 0;padding:22px 8px 12px;border-top:1px solid var(--line);text-align:center;color:var(--muted)}.app-footer-logo{display:block;width:220px;height:auto;max-height:74px;object-fit:contain}.app-footer-copy{margin-top:12px;color:#546c74;font-size:9px;line-height:1.65}.app-footer-copy a{color:inherit;text-decoration:none;border-bottom:1px solid #cfd3d0}.app-footer-version{font-size:7px;letter-spacing:.12em;margin-top:8px;color:#8295a7;font-weight:800}
 .bottom-nav{display:none}
-@media (min-width:701px) and (max-width:900px){.app{grid-template-rows:88px minmax(0,1fr)}.topbar{height:88px;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:42px 38px;padding:5px 12px}.topbar .nav{display:flex;grid-column:1/-1;grid-row:2;justify-self:center}.header-tools{grid-column:2;grid-row:1}.scan-state{display:none}}
+@media (min-width:701px) and (max-width:900px){.app{grid-template-rows:88px minmax(0,1fr)}.topbar{height:88px;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:42px 38px;padding:5px 12px}.brand-logo{width:150px;max-height:42px}.topbar .nav{display:flex;grid-column:1/-1;grid-row:2;justify-self:center}.header-tools{grid-column:2;grid-row:1}.scan-state{display:none}}
 @media (min-width:701px) and (max-width:900px) and (orientation:portrait){#dashboard{grid-template-columns:minmax(0,1fr);max-height:37svh;overflow:auto}.watched-card{display:none}.nearest-top{grid-template-columns:minmax(160px,.8fr) minmax(185px,1fr) minmax(190px,1.15fr)}.telemetry{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:700px){
  .topbar{grid-template-columns:1fr auto;gap:10px;padding:8px 14px}
@@ -293,10 +298,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 }
 @media (max-width:700px){
  body{overflow:hidden}
- .app-footer{flex-wrap:wrap;gap:8px;padding:14px 4px}.app-footer p{width:100%;margin:3px 0 0 45px;font-size:8px}
+ .app-footer{margin-top:22px;padding:18px 5px calc(14px + env(safe-area-inset-bottom))}.app-footer-logo{width:190px;max-height:64px}.app-footer-copy{font-size:8px}
  .app{height:100svh;min-height:480px;grid-template-rows:54px minmax(0,1fr)}
  .topbar{height:54px;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:1fr;padding:5px 10px;gap:8px}
- .brand-mark{width:36px;height:36px;border-radius:12px}
+ .brand-logo{width:160px;max-height:44px}
  .brand-name{font-size:13px}
  .brand-tagline{font-size:6px;letter-spacing:.15em}
  .searchbox{height:36px;width:min(126px,35vw);min-width:0;max-width:126px;padding:0 8px;justify-content:flex-start;border-radius:12px}
@@ -457,8 +462,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="app">
 <header class="topbar">
   <div class="brand">
-    <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 3c1.2 0 2 1.2 2.1 3.2l.8 7.1 8.1 3.1v2.2l-8.2-1.4.2 5.6 2.8 3v1.4L16 26l-5.8 1.2v-1.4l2.8-3 .2-5.6L5 18.6v-2.2l8.1-3.1.8-7.1C14 4.2 14.8 3 16 3Z" fill="currentColor"/><circle cx="27" cy="25" r="2" fill="#2999F5"/></svg></div>
-    <div class="brand-copy"><div class="brand-name">SKY AROUND ME</div><div class="brand-tagline">SAME SKY, DIFFERENT STORIES</div></div>
+    <img class="brand-logo" src="./original-logo.png" alt="Sky Around Me — Same sky, different stories">
   </div>
   <nav class="nav" aria-label="Main navigation">
     <button type="button" data-tab="map" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M6 10v10h12V10M10 20v-6h4v6"/></svg>Map</button>
@@ -537,7 +541,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       </section>
       <section class="panel list-panel"><h2>Saved flights</h2><div class="flight-list" id="watchList"></div></section>
     </div>
-    <footer class="app-footer"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 3c1.2 0 2 1.2 2.1 3.2l.8 7.1 8.1 3.1v2.2l-8.2-1.4.2 5.6 2.8 3v1.4L16 26l-5.8 1.2v-1.4l2.8-3 .2-5.6L5 18.6v-2.2l8.1-3.1.8-7.1C14 4.2 14.8 3 16 3Z" fill="currentColor"/><circle cx="27" cy="25" r="2" fill="#2999F5"/></svg></div><div><strong>SKY AROUND ME</strong><small>SAME SKY, DIFFERENT STORIES</small></div><p>Flight data for informational use only · © OpenStreetMap contributors</p></footer>
+    <footer aria-label="Sky Around Me credits" class="app-footer"><img class="app-footer-logo" src="./original-logo.png" alt="Sky Around Me — Same sky, different stories"><div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V1.0 · BACKEND V66.80</span></div></footer>
   </section>
   <section id="settingsScreen" class="screen" hidden>
     <header class="screen-header"><div><div class="eyebrow">PERSONALISE YOUR SKY</div><h1>Settings</h1><p>Choose your watch location, airspace radius, map filters and refresh behaviour.</p></div></header>
@@ -560,8 +564,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
           <div class="setting-row"><div class="setting-copy"><strong>Feed activity</strong><small id="refreshUsage">No scans yet</small></div><span class="status-chip" id="lastUpdateText">—</span></div>
         </div>
       </section>
+      <section class="panel setting-card special-settings-card"><h2>Special aircraft</h2><p class="panel-lede">Choose which special squawk codes and regions to monitor. Enabled aircraft are highlighted on the map.</p>
+        <div class="special-code-setting"><div class="special-code-copy"><strong>7700 · General emergency</strong><small>Emergency</small></div><label class="switch" aria-label="Show 7700 aircraft"><input type="checkbox" data-special-toggle="7700"><span></span></label><div class="region-options" aria-label="7700 regions"><button type="button" data-special-region-code="7700" data-region="america" aria-pressed="true">AMERICA</button><button type="button" data-special-region-code="7700" data-region="europe" aria-pressed="true">EUROPE</button><button type="button" data-special-region-code="7700" data-region="asia" aria-pressed="true">ASIA</button></div></div>
+        <div class="special-code-setting"><div class="special-code-copy"><strong>7600 · Radio failure</strong><small>Communications failure</small></div><label class="switch" aria-label="Show 7600 aircraft"><input type="checkbox" data-special-toggle="7600"><span></span></label><div class="region-options" aria-label="7600 regions"><button type="button" data-special-region-code="7600" data-region="america" aria-pressed="true">AMERICA</button><button type="button" data-special-region-code="7600" data-region="europe" aria-pressed="true">EUROPE</button><button type="button" data-special-region-code="7600" data-region="asia" aria-pressed="true">ASIA</button></div></div>
+        <div class="special-code-setting"><div class="special-code-copy"><strong>7500 · Unlawful interference</strong><small>Hijack code</small></div><label class="switch" aria-label="Show 7500 aircraft"><input type="checkbox" data-special-toggle="7500"><span></span></label><div class="region-options" aria-label="7500 regions"><button type="button" data-special-region-code="7500" data-region="america" aria-pressed="true">AMERICA</button><button type="button" data-special-region-code="7500" data-region="europe" aria-pressed="true">EUROPE</button><button type="button" data-special-region-code="7500" data-region="asia" aria-pressed="true">ASIA</button></div></div>
+        <div class="special-code-setting"><div class="special-code-copy"><strong>7000 · VFR / conspicuity</strong><small>Regional VFR code</small></div><label class="switch" aria-label="Show 7000 aircraft"><input type="checkbox" data-special-toggle="7000"><span></span></label><div class="region-options" aria-label="7000 regions"><button type="button" data-special-region-code="7000" data-region="america" aria-pressed="true">AMERICA</button><button type="button" data-special-region-code="7000" data-region="europe" aria-pressed="true">EUROPE</button><button type="button" data-special-region-code="7000" data-region="asia" aria-pressed="true">ASIA</button></div></div>
+        <div class="special-code-setting"><div class="special-code-copy"><strong>1200 · VFR</strong><small>United States VFR code</small></div><label class="switch" aria-label="Show 1200 aircraft"><input type="checkbox" data-special-toggle="1200"><span></span></label><div class="region-options" aria-label="1200 regions"><button type="button" data-special-region-code="1200" data-region="america" aria-pressed="true">AMERICA</button><button type="button" data-special-region-code="1200" data-region="europe" aria-pressed="true">EUROPE</button><button type="button" data-special-region-code="1200" data-region="asia" aria-pressed="true">ASIA</button></div></div>
+        <div class="setting-row"><div class="setting-copy"><strong>Display squawk labels</strong><small>Show the squawk code beside special aircraft markers.</small></div><label class="switch"><input id="specialLabelsToggle" type="checkbox"><span></span></label></div>
+      </section>
       <section class="panel setting-card"><h2>About this app</h2><p class="panel-lede">Sky Around Me uses ADS-B position reports for live aircraft and OpenStreetMap for map tiles and place search. Flight data is informational and may be delayed or incomplete.</p><div class="setting-row"><div class="setting-copy"><strong>Map attribution</strong><small>© OpenStreetMap contributors</small></div><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">Details</a></div></section>
     </div>
+    <footer aria-label="Sky Around Me credits" class="app-footer"><img class="app-footer-logo" src="./original-logo.png" alt="Sky Around Me — Same sky, different stories"><div class="app-footer-copy">Created by <strong>Adrian Simmonds</strong><br>Flight data for informational use only · <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">© OpenStreetMap contributors</a><br><span class="app-footer-version">FRONTEND V1.0 · BACKEND V66.80</span></div></footer>
   </section>
   <nav class="bottom-nav" aria-label="Mobile navigation">
     <button type="button" data-tab="map" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M6 10v10h12V10M10 20v-6h4v6"/></svg>Map</button>
@@ -669,7 +682,7 @@ function liveRouteGeometry(route,aircraft){
   return {completed,remaining,points:[...completed,...remaining.slice(1)],progress:total?done/total:0,position};
 }
 const planeSvg='<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3c2 0 3 2 3 5v17l20 9v5l-20-4v15l7 7v3l-10-4-10 4v-3l7-7V35L12 39v-5l17-9V8c0-3 1-5 3-5Z"/></svg>';
-const helicopterSvg='<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M9 14h46M32 14v8m0 0c-2 0-3 2-3 4v15c0 5 4 8 10 8h4l7 5h3v-3l-7-8V30c0-5-5-8-10-8m-8 14h24M17 53h25M21 48l-4 5m25-5 4 5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="11" r="3"/></svg>';
+const helicopterSvg='<svg viewBox="0 0 64 64" aria-hidden="true"><g fill="currentColor"><path d="M30 8h4l2 15h-8l2-15Zm-2 17h8l3 13-4 8h-6l-4-8 3-13Zm3 20h2l2 10h-6l2-10Z"/><path d="M8 25h48v3H8zM30 4h4v7h-4zM28 23h8v7h-8z"/></g><path d="M29 29h6l2 8-3 5h-4l-3-5 2-8Z" fill="#fff" opacity=".8"/><path d="M18 24v5m28-5v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 const privatePlaneSvg='<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M31 8c1-3 4-3 5 0l2 17 15 9v5l-16-4 1 12 7 6v3l-11-3-10 3v-3l6-6 1-12-16 4v-5l15-9 1-17Z"/><circle cx="33" cy="5" r="2.5"/></svg>';
 const militaryPlaneSvg='<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3c2 0 3 2 3 5v17l20 9v5l-20-4v15l7 7v3l-10-4-10 4v-3l7-7V35L12 39v-5l17-9V8c0-3 1-5 3-5Z"/><path d="m49 7 1.6 3.3 3.7.5-2.7 2.6.7 3.7-3.3-1.8-3.3 1.8.7-3.7-2.7-2.6 3.7-.5L49 7Z" fill="#f59e0b" stroke="#fff" stroke-width="1.4"/></svg>';
 
@@ -939,6 +952,9 @@ class SkyAroundMe {
     $("refreshNumber").addEventListener("change",e=>this.setRefresh(e.target.value));
     $("extendedToggle").addEventListener("change",e=>this.changeSetting("extendedAirspace",e.target.checked,true));
     $("soundToggle").addEventListener("change",e=>this.changeSetting("nearestSound",e.target.checked,false));
+    document.querySelectorAll("[data-special-toggle]").forEach(input=>input.addEventListener("change",()=>{const code=input.dataset.specialToggle,next=new Set(this.settings.value.specialCodes);if(input.checked)next.add(code);else next.delete(code);this.settings.value.specialCodes=SPECIAL_CODES.filter(c=>next.has(c));this.persist();this.specialNextFetchAt=0;this.specials=this.specials.filter(x=>this.settings.value.specialCodes.includes(String(x.squawk))&&this.regionAllowed(x));this.map.update(this.aircraft,this.specials,this.nearest,this.outerAircraft);this.poll()}));
+    document.querySelectorAll("[data-special-region-code]").forEach(button=>button.addEventListener("click",()=>{const code=button.dataset.specialRegionCode,region=button.dataset.region,current=new Set(this.settings.value.regions[code]||REGIONS);if(current.has(region))current.delete(region);else current.add(region);this.settings.value.regions[code]=REGIONS.filter(r=>current.has(r));this.persist();document.querySelectorAll('[data-special-region-code="'+code+'"]').forEach(el=>el.setAttribute("aria-pressed",String((this.settings.value.regions[code]||[]).includes(el.dataset.region))));this.specials=this.specials.filter(x=>this.settings.value.specialCodes.includes(String(x.squawk))&&this.regionAllowed(x));this.map.update(this.aircraft,this.specials,this.nearest,this.outerAircraft);this.specialNextFetchAt=0;this.poll()}));
+    $("specialLabelsToggle").addEventListener("change",e=>{this.settings.value.specialLabels=e.target.checked;this.persist();this.map.update(this.aircraft,this.specials,this.nearest,this.outerAircraft)});
     $("aircraftFilter").addEventListener("change",e=>{this.settings.value.filter=e.target.value;this.persist();this.nearest=this.chooseNearest();const visible=this.filteredAircraft(this.aircraft).length;$("aircraftCount").textContent=visible===this.aircraft.length?this.aircraft.length+" AIRCRAFT IN RANGE":visible+" MATCH · "+this.aircraft.length+" IN RANGE";this.map.update(this.aircraft,this.specials,this.nearest,this.outerAircraft);this.renderNearest()});
     $("locationSelect").addEventListener("change",e=>this.chooseLocation(e.target.value));
     
@@ -1239,6 +1255,9 @@ class SkyAroundMe {
     $("placeBadge").textContent=s.locationName.toUpperCase();$("rangeValue").textContent=s.rangeKm+" KM";$("rangeSummary").textContent=s.rangeKm+" km radius";this.updateCameraBadge();
     $("rangeInput").value=s.rangeKm;$("rangeNumber").value=s.rangeKm;$("refreshInput").value=s.refreshSec;$("refreshNumber").value=s.refreshSec;
     $("extendedToggle").checked=s.extendedAirspace;$("soundToggle").checked=s.nearestSound;$("aircraftFilter").value=s.filter;
+    document.querySelectorAll("[data-special-toggle]").forEach(input=>{input.checked=s.specialCodes.includes(input.dataset.specialToggle)});
+    document.querySelectorAll("[data-special-region-code]").forEach(button=>button.setAttribute("aria-pressed",String((s.regions[button.dataset.specialRegionCode]||REGIONS).includes(button.dataset.region))));
+    $("specialLabelsToggle").checked=s.specialLabels;
     $("rotationToggle").textContent=s.rotationLocked?"UNLOCK ROTATION":"LOCK ROTATION";
   }
   persist(){this.settings.save()}
