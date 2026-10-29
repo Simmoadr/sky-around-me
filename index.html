@@ -50,7 +50,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .dot{width:8px;height:8px;border-radius:50%;background:#21bd91;box-shadow:0 0 0 4px rgba(33,189,145,.12)}
 #stage{position:relative;min-width:0;min-height:0;overflow:hidden}
 #map{position:absolute;inset:0;background:#dceaf3}
-.quiet-map-state{position:absolute;z-index:500;left:50%;top:50%;width:min(460px,calc(100% - 36px));max-height:calc(100% - 150px);overflow:auto;transform:translate(-50%,-50%);padding:24px 28px 20px;border:1px solid rgba(255,255,255,.96);border-radius:24px;background:linear-gradient(145deg,rgba(255,255,255,.86),rgba(234,243,250,.78) 55%,rgba(255,255,255,.84));box-shadow:0 18px 48px rgba(23,46,79,.17),inset 0 1px 1px #fff;backdrop-filter:blur(28px) saturate(155%);-webkit-backdrop-filter:blur(28px) saturate(155%);text-align:center;color:var(--navy);pointer-events:none}
+.quiet-map-state{position:absolute;z-index:500;left:50%;top:36%;width:min(460px,calc(100% - 36px));max-height:calc(100% - 150px);overflow:auto;transform:translate(-50%,-50%);padding:24px 28px 20px;border:1px solid rgba(255,255,255,.96);border-radius:24px;background:linear-gradient(145deg,rgba(255,255,255,.86),rgba(234,243,250,.78) 55%,rgba(255,255,255,.84));box-shadow:0 18px 48px rgba(23,46,79,.17),inset 0 1px 1px #fff;backdrop-filter:blur(28px) saturate(155%);-webkit-backdrop-filter:blur(28px) saturate(155%);text-align:center;color:var(--navy);pointer-events:none}
 .quiet-map-state[hidden],.quiet-next-flight[hidden]{display:none}
 .quiet-brand{font:900 9px/1 "Manrope",sans-serif;letter-spacing:.2em;color:#668098}
 .quiet-map-state h2{margin:13px 0 4px;font:700 clamp(27px,3vw,38px)/1.1 Georgia,serif;letter-spacing:-.03em}
@@ -592,7 +592,7 @@ const AIRPORTS = {
   LHR:[51.47,-.4543], LGW:[51.1537,-.1821], STN:[51.886,.2389], MAN:[53.365,-2.272], DUB:[53.4264,-6.2499],
   EDI:[55.95,-3.3725], AGP:[36.6749,-4.4991], TFS:[28.0445,-16.5725], CDG:[49.0097,2.5479], AMS:[52.31,4.7683], FRA:[50.0379,8.5622],
   JFK:[40.6413,-73.7781], EWR:[40.6895,-74.1745], LGA:[40.7769,-73.874], SFO:[37.6213,-122.379], LAX:[33.9416,-118.4085], YVR:[49.1947,-123.1792],
-  SIN:[1.3644,103.9915], DXB:[25.2532,55.3657], DOH:[25.2731,51.6081], HND:[35.5494,139.7798], SYD:[-33.9399,151.1753],
+  SIN:[1.3644,103.9915], HKG:[22.308,113.9185], DXB:[25.2532,55.3657], DOH:[25.2731,51.6081], HND:[35.5494,139.7798], SYD:[-33.9399,151.1753],
   BRS:[51.3827,-2.7191], BHX:[52.4539,-1.748], LBA:[53.8659,-1.660], FAO:[37.0144,-7.9659], DUS:[51.2895,6.7668], BQN:[18.4949,-67.1294],
   MUC:[48.3538,11.7861], RDU:[35.8801,-78.788], CLT:[35.214,-80.9431], MEX:[19.4363,-99.0721], ORD:[41.9742,-87.9073], DFW:[32.8998,-97.0403]
 };
@@ -695,7 +695,7 @@ class SettingsStore {
     lat:safeNumber(old.lat)??PLACES.lusk.lat,lon:safeNumber(old.lon)??PLACES.lusk.lon,
     locationName:old.locationName||(old.location==="device"?"Device Location":PLACES[old.location]?.name||PLACES.lusk.name),
     locationMode:old.location||"lusk",rangeKm:clamp(Number(old.rangeKm)||100,1,250),
-    refreshSec:clamp(Number(old.refreshSec)||45,2,60),extendedAirspace:old.extendedAirspace!==false,
+    refreshSec:clamp(Number(old.refreshSec)===45?15:(Number(old.refreshSec)||15),2,60),extendedAirspace:old.extendedAirspace!==false,
     nearestSound:old.nearestSound!==false,filter:["all-aircraft","commercial","all","helicopter","military"].includes(old.filter)?old.filter:"commercial",rotationDeg:Number(old.rotationDeg)||0,rotationLocked:old.rotationLocked!==false,
     specialCodes:Array.isArray(old.specialSquawkCodes)?old.specialSquawkCodes.filter(c=>SPECIAL_CODES.includes(String(c))):((old.specialSquawks===false)?[]:["7700","7600","7500"]),
     regions:old.specialSquawkRegions&&typeof old.specialSquawkRegions==="object"?old.specialSquawkRegions:Object.fromEntries(SPECIAL_CODES.map(c=>[c,REGIONS.slice()])),
@@ -905,7 +905,7 @@ class MapView {
 }
 class SkyAroundMe {
   constructor(){
-    this.api=new Api();this.settings=new SettingsStore();this.aircraft=[];this.allAircraft=[];this.outerAircraft=[];this.specials=[];this.nearest=null;this.watchLive=null;this.watchMismatchKey="";this.watchlist=Storage.get(WATCHLIST_KEY,[])||[];if(!Array.isArray(this.watchlist))this.watchlist=[];const legacy=Storage.get(WATCH_KEY,null);if(!this.watchlist.length&&legacy?.flight)this.watchlist=[legacy];this.selectedWatch=null;this.map=new MapView(this);this.pollTimer=null;this.watchTimer=null;this.specialNextFetchAt=0;this.scanCount=0;this.lastScan=null;this.progressIdentity=null;this.progressDisplayed=0;this.progressTarget=0;this.progressMode="";this.progressFrame=null;this.progressGeneration=0;this.progressStart=0;this.progressFrom=0;this.progressTo=0;this.progressDuration=0;this.routeCache=new Map(Object.entries(Storage.get("skyAroundMeRouteCacheV2",{})||{}).filter(([,v])=>v&&Date.now()-Number(v.at||0)<600000));this.routePending=new Set();this.soundContext=null;this.soundUnlocked=false;this.activeTab="map";this.toastTimer=null;this.specialLastGood=this.restoreSpecialSnapshot();const cachedLive=Storage.get("skyAroundMeWatchLive",null),next=this.nextFlight();if(cachedLive&&next&&cachedLive.watchKey===this.watchKey(next)&&Date.now()-Number(cachedLive.lastSeenAt||0)<90*60*1000){if(watchedPositionMatchesRoute(next,cachedLive))this.watchLive=cachedLive;else{this.watchMismatchKey=this.watchKey(next);Storage.set("skyAroundMeWatchLive",null);if(next.hex===cachedLive.icao)delete next.hex;if(next.registration&&next.registration===cachedLive.registration)delete next.registration}}
+    this.api=new Api();this.settings=new SettingsStore();this.aircraft=[];this.allAircraft=[];this.outerAircraft=[];this.specials=[];this.nearest=null;this.watchLive=null;this.busy=false;this.watchBusy=false;this.previousInRangeIds=null;this.pollQueued=false;this.watchMismatchKey="";this.watchlist=Storage.get(WATCHLIST_KEY,[])||[];if(!Array.isArray(this.watchlist))this.watchlist=[];const legacy=Storage.get(WATCH_KEY,null);if(!this.watchlist.length&&legacy?.flight)this.watchlist=[legacy];this.selectedWatch=null;this.map=new MapView(this);this.pollTimer=null;this.watchTimer=null;this.specialNextFetchAt=0;this.scanCount=0;this.lastScan=null;this.progressIdentity=null;this.progressDisplayed=0;this.progressTarget=0;this.progressMode="";this.progressFrame=null;this.progressGeneration=0;this.progressStart=0;this.progressFrom=0;this.progressTo=0;this.progressDuration=0;this.routeCache=new Map(Object.entries(Storage.get("skyAroundMeRouteCacheV2",{})||{}).filter(([,v])=>v&&Date.now()-Number(v.at||0)<600000));this.routePending=new Set();this.soundContext=null;this.soundUnlocked=false;this.activeTab="map";this.toastTimer=null;this.specialLastGood=this.restoreSpecialSnapshot();const cachedLive=Storage.get("skyAroundMeWatchLive",null),cachedFlight=cachedLive&&this.watchlist.find(f=>cachedLive.watchKey===this.watchKey(f));if(cachedLive&&cachedFlight&&Date.now()-Number(cachedLive.lastSeenAt||0)<90*60*1000){if(watchedPositionMatchesRoute(cachedFlight,cachedLive))this.watchLive=cachedLive;else{this.watchMismatchKey=this.watchKey(cachedFlight);Storage.set("skyAroundMeWatchLive",null);if(cachedFlight.hex===cachedLive.icao)delete cachedFlight.hex;if(cachedFlight.registration&&cachedFlight.registration===cachedLive.registration)delete cachedFlight.registration}}
   }
   restoreSpecialSnapshot(){const v=Storage.get(SPECIAL_SNAPSHOT_KEY,null);if(!v||Date.now()-Number(v.savedAt||0)>600000||!Array.isArray(v.items))return[];return v.items.map(x=>({...x,d:haversine(this.settings.value.lat,this.settings.value.lon,x.lat,x.lon)})).filter(x=>this.settings.value.specialCodes.includes(String(x.squawk))&&this.regionAllowed(x))}
   start(){
@@ -913,8 +913,8 @@ class SkyAroundMe {
     $("watchDateInput").value=this.today();$("watchDateInput").min=this.today();
     this.poll();this.pollTimer=setInterval(()=>this.poll(),this.settings.value.refreshSec*1000);
     this.cameraTimer=setInterval(()=>this.advanceCamera(),10000);
-    this.watchTimer=setInterval(()=>this.refreshWatched(),60000);this.refreshWatched();
-    setInterval(()=>this.clock(),30000);window.addEventListener("resize",()=>{this.map.invalidate();if(this.map.cameraMode==="journey")setTimeout(()=>this.map.setCamera("journey",false),80)},{passive:true});
+    this.watchTimer=setInterval(()=>this.refreshWatched(),15000);this.refreshWatched();
+    setInterval(()=>this.clock(),30000);window.addEventListener("resize",()=>{this.map.invalidate();this.positionQuietState();if(this.map.cameraMode==="journey")setTimeout(()=>this.map.setCamera("journey",false),80)},{passive:true});
     if(this.settings.value.locationMode==="device")this.locate(false);
   }
   today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -929,7 +929,7 @@ class SkyAroundMe {
   }
   advanceCamera(){
     if(this.activeTab!=="map")return;
-    if(!this.nearest&&this.activeWatchedAircraft()){
+    if(!this.nearest&&this.activeWatchedAircraft()?.liveRoute){
       if(this.map.cameraMode!=="journey")this.map.setCamera("journey");
       return;
     }
@@ -975,9 +975,10 @@ class SkyAroundMe {
     if(tab==="watched")this.renderWatchlist();
   }
   toggleSheet(){this.setSheet($("dashboard").classList.contains("collapsed"))}
-  setSheet(expanded){const panel=$("dashboard");panel.classList.toggle("expanded",expanded);panel.classList.toggle("collapsed",!expanded);$("detailsToggle").setAttribute("aria-expanded",String(expanded));$("detailsToggle").querySelector("span").textContent=expanded?"HIDE DETAILS":"FLIGHT DETAILS"}
+  setSheet(expanded){const panel=$("dashboard");panel.classList.toggle("expanded",expanded);panel.classList.toggle("collapsed",!expanded);$("detailsToggle").setAttribute("aria-expanded",String(expanded));$("detailsToggle").querySelector("span").textContent=expanded?"HIDE DETAILS":"FLIGHT DETAILS";requestAnimationFrame(()=>this.positionQuietState())}
+  positionQuietState(){const stage=$("stage"),dashboard=$("dashboard"),quiet=$("quietMapState");if(!stage||!dashboard||!quiet||quiet.hidden)return;const bounds=stage.getBoundingClientRect(),dock=dashboard.getBoundingClientRect(),available=Math.max(120,Math.min(bounds.height,dock.top-bounds.top)-18);quiet.style.top=(available/2)+"px";quiet.style.maxHeight=Math.max(120,available-20)+"px"}
   async poll(){
-    if(this.busy)return;this.busy=true;this.scanCount++;$("connectionText").textContent="SCANNING";$("lastScan").textContent="SCANNING";
+    if(this.busy){this.pollQueued=true;return}this.busy=true;this.scanCount++;$("connectionText").textContent="SCANNING";$("lastScan").textContent="SCANNING";
     try{
       const specialDue=this.settings.value.specialCodes.length>0&&Date.now()>=this.specialNextFetchAt;const data=await this.api.nearby(this.settings.value,specialDue);if(specialDue)this.specialNextFetchAt=Date.now()+(String(data._skySpecialStatus||"").toUpperCase()==="UNAVAILABLE"?20000:60000);
       const raw=Array.isArray(data.ac)?data.ac:[];
@@ -990,17 +991,21 @@ class SkyAroundMe {
       else if(status==="UNAVAILABLE"&&Date.now()-Number(Storage.get(SPECIAL_SNAPSHOT_KEY,{savedAt:0}).savedAt||0)<180000){this.specials=this.specialLastGood}
       else if(status!=="DISABLED"){this.specials=got}
       this.lastScan=Date.now();$("connectionText").textContent="LIVE";$("lastScan").textContent="UPDATED "+new Date(this.lastScan).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
-      const visibleCount=this.filteredAircraft(this.aircraft).length;
+      const visible=this.filteredAircraft(this.aircraft),visibleCount=visible.length;
+      // Entry alerts follow the selected airspace, independent of the display filter.
+      const currentIds=new Set([...this.aircraft,...this.specials.filter(x=>x.d<=this.settings.value.rangeKm)].map(x=>x.icao).filter(Boolean));
+      if(this.previousInRangeIds!==null&&[...currentIds].some(id=>!this.previousInRangeIds.has(id)))this.ping();
+      this.previousInRangeIds=currentIds;
       $("aircraftCount").textContent=visibleCount===this.aircraft.length?this.aircraft.length+" AIRCRAFT IN RANGE":visibleCount+" MATCH · "+this.aircraft.length+" IN RANGE";
       $("refreshUsage").textContent="SESSION SCANS "+this.scanCount+" · ABOUT "+Math.round(3600/this.settings.value.refreshSec)+" / HOUR";$("lastUpdateText").textContent="LIVE";
-      const previousNearest=this.nearest?.icao||null;this.nearest=this.chooseNearest();if(previousNearest&&this.nearest?.icao&&previousNearest!==this.nearest.icao)this.ping();
+      this.nearest=this.chooseNearest();
       this.map.update(this.aircraft,this.specials,this.nearest,this.outerAircraft);
       this.renderNearest();
       if(this.nearest)this.resolveRoute(this.nearest);
     }catch(error){
       $("connectionText").textContent=this.aircraft.length?"RECONNECTING":"FEED UNAVAILABLE";$("lastScan").textContent=this.aircraft.length?"KEEPING LAST POSITIONS":"RETRYING";
       if(!this.aircraft.length){this.nearest=null;this.renderNearest()}
-    }finally{this.busy=false}
+    }finally{this.busy=false;if(this.pollQueued){this.pollQueued=false;queueMicrotask(()=>this.poll())}}
   }
   chooseNearest(){
     const filter=this.settings.value.filter;
@@ -1057,24 +1062,25 @@ class SkyAroundMe {
     if(!x){
       const watched=this.activeWatchedAircraft();
       if(watched){
-        const flight=this.activeWatchedFlight(),route=watched.liveRoute;
+        const flight=this.activeWatchedFlight(),route=watched.liveRoute||null;
         const deviceDistance=safeNumber(watched.d);
-        const toLat=safeNumber(route.toLat)??AIRPORTS[route.toCode]?.[0]??null,toLon=safeNumber(route.toLon)??AIRPORTS[route.toCode]?.[1]??null;
+        const toLat=safeNumber(route?.toLat)??safeNumber(flight?.toLat)??AIRPORTS[route?.toCode||flight?.toCode]?.[0]??null,toLon=safeNumber(route?.toLon)??safeNumber(flight?.toLon)??AIRPORTS[route?.toCode||flight?.toCode]?.[1]??null;
         const distance=toLat===null||toLon===null?null:haversine(watched.lat,watched.lon,toLat,toLon);
         const speedKt=safeNumber(watched.speed)===null?null:watched.speed*1.94384;
-        const geometry=routeGeometry(route,watched),pct=geometry?progressPercent(route,watched):0;
+        const geometry=route?routeGeometry(route,watched):null,measuredPct=geometry?progressPercent(route,watched):0,storedFloor=safeNumber(flight?.progressFloor)??0,pct=route?Math.max(storedFloor,measuredPct):storedFloor;
         $("quietMapState").hidden=true;
         $("nearestEyebrow").textContent="LIVE WATCHED FLIGHT";
         $("nearestKind").textContent=aircraftKind(watched);$("nearestKind").hidden=!aircraftKind(watched);
         $("nearestCode").textContent=(flight?.flightNumber||flight?.flight||watched.flightNumber||watched.callsign||watched.icao).toUpperCase();
         $("nearestDescription").textContent=[flight?.name,flight?.aircraftDesc||watched.desc||watched.type,watched.callsign&&watched.callsign!==watched.flightNumber?watched.callsign:""].filter(Boolean).join(" · ");
-        status.innerHTML='<span class="dot"></span>LIVE · '+(deviceDistance===null?'TRACKING':deviceDistance.toFixed(1)+' KM FROM DEVICE')+(geometry?.deviationKm>250?' · ROUTE DEVIATION '+Math.round(geometry.deviationKm)+' KM':'');
-        $("nearestRoute").hidden=false;$("fromCode").textContent=route.fromCode||"—";$("fromName").textContent=route.from||"";$("toCode").textContent=route.toCode||"—";$("toName").textContent=route.to||"";
-        this.updateProgress(pct,watched);$("metricDistanceLabel").textContent="DISTANCE TO GO";$("metricDistance").textContent=distance===null?"—":Math.round(distance).toLocaleString()+" km";
+        status.innerHTML='<span class="dot"></span>'+(watched.watchStale||this.watchMismatchKey===this.watchKey(flight)?'SIGNAL SEARCHING · LAST POSITION RETAINED':'LIVE')+' · '+(deviceDistance===null?'TRACKING':deviceDistance.toFixed(1)+' KM FROM DEVICE')+(geometry?.deviationKm>250?' · ROUTE DEVIATION '+Math.round(geometry.deviationKm)+' KM':'');
+        $("nearestRoute").hidden=false;$("fromCode").textContent=route?.fromCode||flight?.fromCode||"—";$("fromName").textContent=route?.from||flight?.from||"";$("toCode").textContent=route?.toCode||flight?.toCode||"—";$("toName").textContent=route?.to||flight?.to||"";
+        if(route){this.updateProgress(pct,watched);if(pct>storedFloor+.05&&flight){flight.progressFloor=pct;Storage.set(WATCHLIST_KEY,this.watchlist)}}else{this.resetProgress();this.progressIdentity=String(watched.icao||watched.callsign||"").toLowerCase();this.progressDisplayed=storedFloor;this.progressTarget=storedFloor;this.writeProgressVisual(storedFloor);$("progressLabel").textContent="ROUTE SEARCHING"}
+        $("metricDistanceLabel").textContent="DISTANCE TO GO";$("metricDistance").textContent=distance===null?"—":Math.round(distance).toLocaleString()+" km";
         $("metricAltitudeLabel").textContent="ALTITUDE";$("metricAltitude").textContent=watched.alt==null?"—":Math.round(watched.alt*3.28084).toLocaleString()+" ft";
         $("metricSpeedLabel").textContent="SPEED";$("metricSpeed").textContent=speedKt===null?"—":Math.round(speedKt)+" kt";
         $("metricTimeLabel").textContent="TIME LEFT";$("metricTime").textContent=distance===null||!speedKt?"—":this.timeLeft(distance,speedKt);
-        this.map.updateWatchedFlight(watched);this.map.drawRoute(route,watched);this.map.setCamera("journey",false);return;
+        this.map.updateWatchedFlight(watched);this.map.drawRoute(route,watched);if(route)this.map.setCamera("journey",false);return;
       }
       const quiet=$("quietMapState"),active=this.activeWatchedFlight(),next=active||this.nextFlight();
       $("nearestKind").hidden=true;
@@ -1087,7 +1093,7 @@ class SkyAroundMe {
       $("metricAltitudeLabel").textContent="AIRSPACE";$("metricAltitude").textContent="QUIET";
       $("metricSpeedLabel").textContent="TRAFFIC";$("metricSpeed").textContent="NONE";
       $("metricTimeLabel").textContent="LAST SCAN";$("metricTime").textContent=this.lastScan?this.elapsedSinceScan():"—";
-      if(quiet){quiet.hidden=false;const quietCard=$("quietNextFlight");quietCard.hidden=!next;const quietLabel=quietCard.querySelector("span");if(quietLabel)quietLabel.textContent=this.activeWatchedAircraft()?"LIVE WATCHED FLIGHT":"NEXT WATCHED FLIGHT";if(next){const flight=(next.flightNumber||next.flight||"WATCHED FLIGHT").toUpperCase();$("quietFlightName").textContent=next.name||flight;$("quietFlightRoute").textContent=[flight,next.fromCode&&next.toCode?next.fromCode+" → "+next.toCode:"ROUTE PENDING"].join(" · ");$("quietFlightCountdown").textContent=this.watchMismatchKey===this.watchKey(next)?"AIRCRAFT POSITION OFF ROUTE · SEARCHING":this.watchedStatus(next)==="LIVE"?"LIVE · FULL JOURNEY":this.flightState(next)==="SCHEDULED"?"DEPARTS IN "+this.countdownText(next):this.watchedStatus(next)}}
+      if(quiet){quiet.hidden=false;this.positionQuietState();const quietCard=$("quietNextFlight");quietCard.hidden=!next;const quietLabel=quietCard.querySelector("span");if(quietLabel)quietLabel.textContent=this.activeWatchedAircraft()?"LIVE WATCHED FLIGHT":"NEXT WATCHED FLIGHT";if(next){const flight=(next.flightNumber||next.flight||"WATCHED FLIGHT").toUpperCase();$("quietFlightName").textContent=next.name||flight;$("quietFlightRoute").textContent=[flight,next.fromCode&&next.toCode?next.fromCode+" → "+next.toCode:"ROUTE PENDING"].join(" · ");$("quietFlightCountdown").textContent=this.watchMismatchKey===this.watchKey(next)?"AIRCRAFT POSITION OFF ROUTE · SEARCHING":this.watchedStatus(next)==="LIVE"?"LIVE · FULL JOURNEY":this.flightState(next)==="SCHEDULED"?"DEPARTS IN "+this.countdownText(next):this.watchedStatus(next)}}
       const liveOnMap=this.activeWatchedAircraft();this.map.updateWatchedFlight(liveOnMap);this.map.drawRoute(liveOnMap?.liveRoute||null,liveOnMap);if(liveOnMap?.liveRoute)this.map.setCamera("journey",false);return
     }
     $("quietMapState").hidden=true;$("nearestRoute").hidden=false;this.map.updateWatchedFlight(null);
@@ -1098,7 +1104,8 @@ class SkyAroundMe {
     $("nearestKind").textContent=aircraftKind(x);$("nearestKind").hidden=false;
     $("fromCode").textContent=route?.fromCode||"—";$("fromName").textContent=route?.from||"";
     $("toCode").textContent=route?.toCode||"—";$("toName").textContent=route?.to||"";
-    const dest=route?.toLat!=null&&route?.toLon!=null?haversine(x.lat,x.lon,route.toLat,route.toLon):null;
+    const destinationLat=safeNumber(route?.toLat)??AIRPORTS[route?.toCode]?.[0]??null,destinationLon=safeNumber(route?.toLon)??AIRPORTS[route?.toCode]?.[1]??null;
+    const dest=destinationLat===null||destinationLon===null?null:haversine(x.lat,x.lon,destinationLat,destinationLon);
     let pct=route?progressPercent(route,x):0;
     if(route)this.updateProgress(pct,x);else{this.resetProgress();$("progressLabel").textContent=x.routeStatus==="unavailable"?"ROUTE UNAVAILABLE":"ROUTE SEARCHING"}
     $("metricDistance").textContent=dest===null?"—":Math.round(dest).toLocaleString()+" km";
@@ -1172,6 +1179,9 @@ class SkyAroundMe {
     }else this.setPreviewTelemetry([{label:"DEPARTURE",value:f.departureTime||"—",icon:"departure"},{label:"ARRIVAL",value:f.arrivalTime||"—",icon:"arrival"},{label:"FLIGHT",value:(f.flightNumber||f.flight||"—").toUpperCase(),icon:"flight"}]);
   }
   nextFlight(){
+    const active=this.activeWatchedFlight();
+    const activeAge=Date.now()-Number(this.watchLive?.lastSeenAt||this.watchLive?.watchLiveAt||0);
+    if(active&&this.watchLive&&activeAge<15*60*1000&&this.isAirborne(this.watchLive))return active;
     const today=this.today();
     const sorted=this.watchlist.slice().sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")));
     return sorted.find(f=>this.flightState(f)!=="COMPLETED")||sorted[0]||null;
@@ -1182,9 +1192,12 @@ class SkyAroundMe {
   }
   activeWatchedAircraft(){
     const f=this.activeWatchedFlight(),live=this.watchLive;
-    if(!f||!live||!this.isAirborne(live)||Date.now()-Number(live.lastSeenAt||live.watchLiveAt||Date.now())>=150000)return null;
+    // A stale timetable must not hide an aircraft that is still being tracked live.
+    if(!f||!live||!this.isAirborne(live))return null;
+    const age=Date.now()-Number(live.lastSeenAt||live.watchLiveAt||0);
+    if(!Number.isFinite(age)||age>=15*60*1000)return null;
     const route=live.liveRoute||(f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:f.fromLat,toLat:f.toLat,fromLon:f.fromLon,toLon:f.toLon}:null);
-    return route?{...live,liveRoute:route}:null;
+    return {...live,liveRoute:route,watchStale:age>=150000};
   }
   previewFlight(){
     const active=this.activeWatchedFlight();
@@ -1206,18 +1219,26 @@ class SkyAroundMe {
   }
   watchKey(f){return normalizeCode(f.flightNumber||f.flight)+"|"+String(f.date||"")}
   async refreshWatched(){
-    const f=this.nextFlight();if(!f){this.watchLive=null;this.renderPreview();this.renderNearest();return}
-    if(String(f.date||"")!==this.today()){this.renderPreview();return}
-    const dep=f.departureUtc?new Date(f.departureUtc).getTime():0;
-    if(this.flightState(f)==="SCHEDULED"||(dep&&Date.now()<dep-45*60000)){this.renderPreview();return}
+    if(this.watchBusy)return;this.watchBusy=true;
     try{
+      const f=this.nextFlight();if(!f){this.watchLive=null;Storage.set("skyAroundMeWatchLive",null);this.renderPreview();this.renderNearest();return}
+      const isCurrentTrackedFlight=this.activeWatchedFlight()&&this.watchKey(this.activeWatchedFlight())===this.watchKey(f)&&this.activeWatchedAircraft();
+      if(String(f.date||"")!==this.today()&&!isCurrentTrackedFlight){this.renderPreview();return}
+      await this.repairNextFlight(f);
+      const dep=f.departureUtc?new Date(f.departureUtc).getTime():0;
+      if(this.flightState(f)==="SCHEDULED"||(dep&&Date.now()<dep-45*60000)){this.renderPreview();this.renderNearest();return}
       const live=await this.api.watchedAircraft(f);
-      if(live){live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:f.fromLat,toLat:f.toLat,fromLon:f.fromLon,toLon:f.toLon}:null;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();this.watchLive=live;this.watchMismatchKey="";f.watchKnown=true;f.hex=live.icao;f.registration=live.registration;Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f)}
-      else if(this.api.lastWatchedRouteMismatch){this.watchMismatchKey=this.watchKey(f);const rejected=this.watchLive;if(rejected?.watchKey===this.watchKey(f)){this.watchLive=null;Storage.set("skyAroundMeWatchLive",null);if(f.hex===rejected.icao)delete f.hex;if(f.registration&&f.registration===rejected.registration)delete f.registration;Storage.set(WATCHLIST_KEY,this.watchlist)}}
+      if(live){
+        const hasRoutePoint=(code,lat,lon)=>Number.isFinite(safeNumber(lat))&&Number.isFinite(safeNumber(lon))||!!AIRPORTS[code];
+        if((!f.fromCode||!f.toCode||!hasRoutePoint(f.fromCode,f.fromLat,f.fromLon)||!hasRoutePoint(f.toCode,f.toLat,f.toLon))&&live.callsign){try{const foundRoute=await this.api.liveRoute(live);if(foundRoute&&(!f.fromCode||f.fromCode===foundRoute.fromCode)&&(!f.toCode||f.toCode===foundRoute.toCode)){Object.assign(f,{fromCode:f.fromCode||foundRoute.fromCode,toCode:f.toCode||foundRoute.toCode,from:f.from||foundRoute.from,to:f.to||foundRoute.to,fromLat:safeNumber(f.fromLat)??safeNumber(foundRoute.fromLat),fromLon:safeNumber(f.fromLon)??safeNumber(foundRoute.fromLon),toLat:safeNumber(f.toLat)??safeNumber(foundRoute.toLat),toLon:safeNumber(f.toLon)??safeNumber(foundRoute.toLon),lookupStatus:"ROUTE FOUND"});this.persistWatchlist()}}catch{}}
+        const route=f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:f.fromLat,toLat:f.toLat,fromLon:f.fromLon,toLon:f.toLon}:null;
+        live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=route;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();live.lastSeenAt=live.watchLiveAt;this.watchLive=live;this.watchMismatchKey="";f.watchKnown=true;f.hex=live.icao;f.registration=live.registration;Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f);Storage.set("skyAroundMeWatchLive",live);
+      }else if(this.api.lastWatchedRouteMismatch){this.watchMismatchKey=this.watchKey(f);const rejected=this.watchLive;if(rejected?.watchKey===this.watchKey(f)){if(f.hex===rejected.icao)delete f.hex;if(f.registration&&f.registration===rejected.registration)delete f.registration;Storage.set(WATCHLIST_KEY,this.watchlist)}}
       this.renderPreview();this.renderWatchlist();this.renderNearest();
     }catch{this.renderPreview();this.renderNearest()}
+    finally{this.watchBusy=false}
   }
-  async repairNextFlight(){const f=this.nextFlight();if(!f||!f.flight||!f.date)return;if(f.fromCode&&f.toCode&&f.departureUtc)return;if(Date.now()-Number(f.scheduleRepairAt||0)<30*60*1000)return;f.scheduleRepairAt=Date.now();this.persistWatchlist();try{const schedule=await this.api.schedule(f.flightNumber||f.flight,f.date);if(schedule&&(schedule.status==="FOUND"||schedule.status==="ROUTE_FOUND")){Object.assign(f,{departureTime:schedule.departureTime||f.departureTime||"",departureUtc:schedule.departureUtc||f.departureUtc||"",arrivalTime:schedule.arrivalTime||f.arrivalTime||"",arrivalUtc:schedule.arrivalUtc||f.arrivalUtc||"",fromCode:schedule.fromCode||f.fromCode||"",toCode:schedule.toCode||f.toCode||"",from:schedule.from||f.from||"",to:schedule.to||f.to||"",fromLat:safeNumber(schedule.fromLat)??f.fromLat,fromLon:safeNumber(schedule.fromLon)??f.fromLon,toLat:safeNumber(schedule.toLat)??f.toLat,toLon:safeNumber(schedule.toLon)??f.toLon,lookupStatus:"ROUTE FOUND",scheduleRepairAt:0});this.persistWatchlist();this.renderWatchlist();this.renderPreview()}}catch{}}
+  async repairNextFlight(flight=null){const f=flight||this.nextFlight();if(!f||!(f.flightNumber||f.flight)||!f.date)return;const hasCoords=code=>Number.isFinite(safeNumber(f[code+"Lat"]))&&Number.isFinite(safeNumber(f[code+"Lon"]))||!!AIRPORTS[f[code+"Code"]];if(f.fromCode&&f.toCode&&f.departureUtc&&f.arrivalUtc&&hasCoords("from")&&hasCoords("to"))return;if(Date.now()-Number(f.scheduleRepairAt||0)<5*60*1000)return;f.scheduleRepairAt=Date.now();this.persistWatchlist();try{const schedule=await this.api.schedule(f.flightNumber||f.flight,f.date);if(schedule&&(schedule.status==="FOUND"||schedule.status==="ROUTE_FOUND")){Object.assign(f,{departureTime:schedule.departureTime||f.departureTime||"",departureUtc:schedule.departureUtc||f.departureUtc||"",arrivalTime:schedule.arrivalTime||f.arrivalTime||"",arrivalUtc:schedule.arrivalUtc||f.arrivalUtc||"",fromCode:schedule.fromCode||f.fromCode||"",toCode:schedule.toCode||f.toCode||"",from:schedule.from||f.from||"",to:schedule.to||f.to||"",fromLat:safeNumber(schedule.fromLat)??f.fromLat,fromLon:safeNumber(schedule.fromLon)??f.fromLon,toLat:safeNumber(schedule.toLat)??f.toLat,toLon:safeNumber(schedule.toLon)??f.toLon,lookupStatus:"ROUTE FOUND",scheduleRepairAt:0});this.persistWatchlist();this.renderWatchlist();this.renderPreview()}}catch{}}
   async addFlight(){
     const flight=normalizeCode($("watchFlightInput").value);
     const date=$("watchDateInput").value;
@@ -1238,8 +1259,8 @@ class SkyAroundMe {
     this.watchlist.unshift(item);this.persistWatchlist();$("flightForm").reset();$("watchDateInput").value=this.today();button.disabled=false;button.textContent="LOOK UP AND SAVE";this.renderWatchlist();this.renderPreview();this.refreshWatched();
   }
   persistWatchlist(){Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,this.watchlist[0]||{})}
-  removeFlight(index){this.watchlist.splice(index,1);if(!this.watchlist.length){this.watchLive=null;Storage.set("skyAroundMeWatchLive",null)}this.persistWatchlist();this.renderWatchlist();this.renderPreview()}
-  chooseWatched(index){const f=this.watchlist[index];if(!f)return;this.watchlist=[f,...this.watchlist.filter((_,i)=>i!==index)];this.persistWatchlist();this.renderWatchlist();this.renderPreview();this.refreshWatched()}
+  removeFlight(index){const [removed]=this.watchlist.splice(index,1);if(removed&&this.watchLive?.watchKey===this.watchKey(removed)){this.watchLive=null;Storage.set("skyAroundMeWatchLive",null)}if(!this.watchlist.length){this.watchLive=null;Storage.set("skyAroundMeWatchLive",null)}this.persistWatchlist();this.renderWatchlist();this.renderPreview();this.renderNearest();this.refreshWatched()}
+  chooseWatched(index){const f=this.watchlist[index];if(!f)return;if(this.watchLive&&this.watchLive.watchKey!==this.watchKey(f)){this.watchLive=null;Storage.set("skyAroundMeWatchLive",null)}this.watchlist=[f,...this.watchlist.filter((_,i)=>i!==index)];this.persistWatchlist();this.renderWatchlist();this.renderPreview();this.refreshWatched()}
   renderWatchlist(){
     const host=$("watchList");
     if(!this.watchlist.length){host.innerHTML='<div class="empty">No saved flights yet.</div>';return}
@@ -1277,11 +1298,11 @@ class SkyAroundMe {
   }
   rotateMap(){if(this.settings.value.rotationLocked){this.toast("Unlock rotation in Settings first");return}this.settings.value.rotationDeg=(this.settings.value.rotationDeg+15)%360;this.persist();if(typeof this.map.map.setBearing==="function")this.map.map.setBearing(this.settings.value.rotationDeg)}
   toggleRotation(){this.settings.value.rotationLocked=!this.settings.value.rotationLocked;this.persist();this.syncSettings()}
-  unlockSound(){if(!this.settings.value.nearestSound)return;try{this.soundContext=this.soundContext||new (window.AudioContext||window.webkitAudioContext)();if(this.soundContext.state==="suspended")this.soundContext.resume();this.soundUnlocked=true}catch{}}
-  ping(){if(!this.settings.value.nearestSound||!this.soundUnlocked||!this.soundContext)return;try{const c=this.soundContext,o=c.createOscillator(),g=c.createGain(),t=c.currentTime;o.frequency.setValueAtTime(880,t);o.frequency.exponentialRampToValueAtTime(1320,t+.07);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.06,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.18);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.2)}catch{}}
+  unlockSound(){if(!this.settings.value.nearestSound)return;try{this.soundContext=this.soundContext||new (window.AudioContext||window.webkitAudioContext)();if(this.soundContext.state==="suspended")this.soundContext.resume().catch(()=>{});this.soundUnlocked=true}catch{}}
+  async ping(){if(!this.settings.value.nearestSound||!this.soundUnlocked||!this.soundContext)return;try{const c=this.soundContext;if(c.state==="suspended")await c.resume();if(c.state!=="running")return;const o=c.createOscillator(),g=c.createGain(),t=c.currentTime;o.frequency.setValueAtTime(880,t);o.frequency.exponentialRampToValueAtTime(1320,t+.07);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.06,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.18);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.2)}catch{}}
   elapsedSinceScan(){const seconds=Math.max(0,Math.floor((Date.now()-this.lastScan)/1000));return String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0")}
   countdownText(f){const departure=f.departureUtc?new Date(f.departureUtc).getTime():NaN;if(Number.isFinite(departure)){const minutes=Math.max(0,Math.ceil((departure-Date.now())/60000));return minutes<60?minutes+" MIN":Math.floor(minutes/60)+"H "+String(minutes%60).padStart(2,"0")+"M"}return f.departureTime?"DEP "+f.departureTime:"DEPARTURE TIME PENDING"}
-  clock(){if(this.previousNearest&&this.nearest&&this.previousNearest!==this.nearest.icao)this.ping();if(this.nearest)this.previousNearest=this.nearest.icao;else{$("metricTime").textContent=this.lastScan?this.elapsedSinceScan():"—";const next=this.nextFlight();if(next&&this.flightState(next)==="SCHEDULED")$("quietFlightCountdown").textContent="DEPARTS IN "+this.countdownText(next)}}
+  clock(){if(!this.nearest){$("metricTime").textContent=this.lastScan?this.elapsedSinceScan():"—";const next=this.nextFlight();if(next&&this.flightState(next)==="SCHEDULED")$("quietFlightCountdown").textContent="DEPARTS IN "+this.countdownText(next)}}
   toast(message){const t=$("toast");t.textContent=message;t.classList.add("visible");clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>t.classList.remove("visible"),2200)}
 }
 function progressPercent(route,aircraft){
