@@ -618,14 +618,16 @@ const escapeHtml=s=>String(s??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;
 function formatDateDisplay(value){const match=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return match?`${match[3]}-${match[2]}-${match[1]}`:String(value||"")}
 const normalizeCode=s=>String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
 function watchedFlightLookup(flight){
-  const number=normalizeCode(flight.flightNumber||flight.flight),match=number.match(/^([A-Z]{1,3})(\d+[A-Z]?)$/);if(!match)return {callsigns:[normalizeCode(flight.flightIcao)].filter(Boolean),airlinePrefix:normalizeCode(flight.airlineIcao)};
-  const [,iata,numberPart]=match,mapped=AIRLINE_CALLSIGNS[iata],explicit=normalizeCode(flight.airlineIcao),prefix=mapped||explicit||iata;
+  const number=normalizeCode(flight.flightNumber||flight.flight),iataPrefix=Object.keys(AIRLINE_CALLSIGNS).sort((a,b)=>b.length-a.length).find(code=>number.startsWith(code)&&/^\d/.test(number.slice(code.length))),match=number.match(/^([A-Z]{1,3})(\d+[A-Z]?)$/);
+  const iata=iataPrefix||(match&&match[1]),numberPart=iataPrefix?number.slice(iataPrefix.length):match?.[2];
+  if(!iata||!numberPart)return {callsigns:[normalizeCode(flight.flightIcao)].filter(Boolean),airlinePrefix:normalizeCode(flight.airlineIcao)};
+  const mapped=AIRLINE_CALLSIGNS[iata],explicit=normalizeCode(flight.airlineIcao),prefix=mapped||explicit||iata;
   // Derive callsigns from the entered flight number. Some schedule responses
   // attach a stale flightIcao from a different flight; never let that override
   // the requested number. Keep a schedule alias only when it is equivalent.
   const primary=prefix+numberPart,candidates=[primary,number],scheduleAlias=normalizeCode(flight.flightIcao);
   if(scheduleAlias&&candidates.some(candidate=>callsignMatchesFlight(scheduleAlias,candidate)))candidates.unshift(scheduleAlias);
-  const callsigns=candidates.map(normalizeCode).filter((value,index,array)=>value&&array.indexOf(value)===index);
+  const callsigns=[...candidates,normalizeCode(flight.liveCallsign)].map(normalizeCode).filter((value,index,array)=>value&&array.indexOf(value)===index);
   return {callsigns,airlinePrefix:prefix};
 }
 function callsignMatchesFlight(actual,expected){
@@ -775,7 +777,21 @@ class Api {
       try{
       const routeParams=new URLSearchParams({lookup:"watched-discovery",flight:normalizeCode(flight.flightNumber||flight.flight),date:flight.date||"",from:flight.fromCode,to:flight.toCode,fromLat:String(flight.fromLat??AIRPORTS[flight.fromCode]?.[0]??""),fromLon:String(flight.fromLon??AIRPORTS[flight.fromCode]?.[1]??""),toLat:String(flight.toLat??AIRPORTS[flight.toCode]?.[0]??""),toLon:String(flight.toLon??AIRPORTS[flight.toCode]?.[1]??""),departureUtc:flight.departureUtc||"",arrivalUtc:flight.arrivalUtc||"",airlinePrefix:lookup.airlinePrefix});
       result=await this.json(API_ENDPOINT+"?"+routeParams.toString());
-      if(result.status==="FOUND"&&result.ac?.length){const candidates=adapt(result),x=candidates.find(a=>lookup.callsigns.some(c=>callsignMatchesFlight(a.callsign,c))&&watchedPositionMatchesRoute(flight,a));if(x){this.lastWatchedRouteMismatch=false;this.lastWatchedIdentityMismatch=false;x.flightNumber=flight.flightNumber||flight.flight;x.watchGlobal=true;return x}if(candidates.length)this.lastWatchedIdentityMismatch=true}
+      if(result.status==="FOUND"&&result.ac?.length){
+        const candidates=adapt(result);
+        let x=candidates.find(a=>lookup.callsigns.some(c=>callsignMatchesFlight(a.callsign,c))&&watchedPositionMatchesRoute(flight,a));
+        // Some airlines broadcast operational callsigns that differ from the
+        // ticket number (for example EZY76PJ for U22771). Accept this only
+        // when the live resolver explicitly used route-corridor discovery,
+        // the callsign has the expected airline prefix, and its position is
+        // close to the scheduled route/expected time point.
+        if(!x&&String(result.resolver||"").startsWith("ROUTE_CORRIDOR")&&result.source&&result.expectedPoint){
+          const route={fromCode:flight.fromCode,toCode:flight.toCode,fromLat:flight.fromLat,fromLon:flight.fromLon,toLat:flight.toLat,toLon:flight.toLon};
+          x=candidates.find(a=>normalizeCode(a.callsign).startsWith(lookup.airlinePrefix)&&watchedPositionMatchesRoute(flight,a)&&routeGeometry(route,a)?.deviationKm<=80&&haversine(a.lat,a.lon,result.expectedPoint.lat,result.expectedPoint.lon)<=120);
+        }
+        if(x){this.lastWatchedRouteMismatch=false;this.lastWatchedIdentityMismatch=false;x.flightNumber=flight.flightNumber||flight.flight;x.watchGlobal=true;x.watchDiscoveryMatch=!lookup.callsigns.some(c=>callsignMatchesFlight(x.callsign,c));return x}
+        if(candidates.length)this.lastWatchedIdentityMismatch=true
+      }
       }catch{}
     }
     // A second ADS-B source can resolve exact callsigns missed by the primary
@@ -810,10 +826,10 @@ class Api {
 function encodeRegions(regions,codes){return codes.map(c=>c+":"+(regions[c]||[]).join("|")).join(";")}
 function adaptAircraft(a,source="ADS-B"){
   const lat=safeNumber(a.lat),lon=safeNumber(a.lon);
-  const positionAgeSec=safeNumber(a.seen_pos??a.lastPosition?.seen_pos),observedAt=positionAgeSec===null?Date.now():Date.now()-positionAgeSec*1000;
-  return {icao:String(a.hex||a.icao||"").toLowerCase(),callsign:String(a.flight||a.callsign||"").trim(),registration:String(a.r||a.registration||"").trim(),lat,lon,alt:safeNumber(a.alt_baro)===null?null:Number(a.alt_baro)*.3048,speed:safeNumber(a.gs)===null?null:Number(a.gs)*.514444,heading:safeNumber(a.track),vs:safeNumber(a.baro_rate)===null?null:Number(a.baro_rate)*.00508,type:String(a.t||a.type||""),desc:String(a.desc||a.t||""),operator:String(a.ownOp||a.operator||""),source:String(a.type||source),squawk:String(a.squawk||a.squawk_code||a.code_7600||""),mil:a.mil===true||a.mil===1,category:String(a.category||""),onGround:a.ground===true||a.alt_baro==="ground"||a.alt_baro==="GROUND",positionAgeSec,positionObservedAt:observedAt};
+  const positionAgeSec=safeNumber(a.positionAgeSec??a.seen_pos??a.lastPosition?.seen_pos),providedObservedAt=safeNumber(a.positionObservedAt??a.lastSeenAt),observedAt=providedObservedAt??(positionAgeSec===null?null:Date.now()-positionAgeSec*1000);
+  return {icao:String(a.hex||a.icao||"").toLowerCase(),callsign:String(a.flight||a.callsign||"").trim(),registration:String(a.r||a.registration||"").trim(),lat,lon,alt:safeNumber(a.alt_baro)===null?null:Number(a.alt_baro)*.3048,speed:safeNumber(a.gs)===null?null:Number(a.gs)*.514444,heading:safeNumber(a.track),vs:safeNumber(a.baro_rate)===null?null:Number(a.baro_rate)*.00508,type:String(a.t||a.type||""),desc:String(a.desc||a.t||""),operator:String(a.ownOp||a.operator||""),source:String(a.type||source),squawk:String(a.squawk||a.squawk_code||a.code_7600||""),mil:a.mil===true||a.mil===1,category:String(a.category||""),onGround:a.onGround===true||a.ground===true||String(a.alt_baro||"").toLowerCase()==="ground",positionAgeSec,positionObservedAt:observedAt};
 }
-function isFreshPosition(aircraft){const age=safeNumber(aircraft?.positionAgeSec);return age!==null&&age>=0&&age<=90}
+function isFreshPosition(aircraft){const age=safeNumber(aircraft?.positionAgeSec);return age===null||(age>=0&&age<=90)}
 function verifiedCachedPosition(live){
   const observed=Number(live?.positionObservedAt),ageSec=Number(live?.positionAgeSec);
   return Number.isFinite(observed)&&observed>0&&Number.isFinite(ageSec)&&ageSec>=0&&ageSec<=90&&Date.now()-observed<=90_000&&Date.now()>=observed-5_000;
@@ -838,7 +854,7 @@ function aircraftKind(x){
 }
 function regionFor(lat,lon){const a=Number(lat),o=Number(lon);if(a>=-60&&a<=85&&o>=-170&&o<=-20)return "america";if(a>=34&&a<=72&&o>=-25&&o<45)return "europe";if(a>=-50&&a<=82&&o>=45&&o<=180)return "asia";return ""}
 class MapView {
-  constructor(app){this.app=app;this.map=null;this.markers=new Map();this.specialMarkers=new Map();this.outerMarkers=new Map();this.motionHeadings=new Map();this.watchedMarker=null;this.outer=[];this.aircraftCircle=null;this.extendedCircle=null;this.userMarker=null;this.routeLayers=[];this.fromAirportMarker=null;this.toAirportMarker=null;this.routePoints=[];this.selected=null;this.active=true;this.cameraMode="local";}
+  constructor(app){this.app=app;this.map=null;this.markers=new Map();this.specialMarkers=new Map();this.outerMarkers=new Map();this.motionHeadings=new Map();this.observedTracks=new Map();this.watchedMarker=null;this.outer=[];this.aircraftCircle=null;this.extendedCircle=null;this.userMarker=null;this.routeLayers=[];this.fromAirportMarker=null;this.toAirportMarker=null;this.routePoints=[];this.selected=null;this.active=true;this.cameraMode="local";}
   init(){
     if(!window.L)return;
     this.map=L.map("map",{zoomControl:false,rotate:true,bearing:this.app.settings.value.rotationDeg,dragRotate:false,touchRotate:false,shiftKeyRotate:false}).setView([this.app.settings.value.lat,this.app.settings.value.lon],8);
@@ -955,17 +971,36 @@ class MapView {
     if(from.some(x=>!Number.isFinite(x))||to.some(x=>!Number.isFinite(x))){this.clearAirportMarkers();return}
     if(!aircraft||!Number.isFinite(aircraft.lat)||!Number.isFinite(aircraft.lon)){
       const planned=greatCirclePoints(from,to);this.routePoints=planned;
-      this.routeLayers.push(L.polyline(planned,{color:"#fff",weight:7,opacity:.96,dashArray:"2 7",lineCap:"round",lineJoin:"round",interactive:false}).addTo(this.map));
-      this.routeLayers.push(L.polyline(planned,{color:"#2999F5",weight:3,opacity:1,dashArray:"2 7",lineCap:"round",lineJoin:"round",interactive:false}).addTo(this.map));
+      this.routeLayers.push(L.polyline(planned,{color:"#fff",weight:7,opacity:.96,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+      this.routeLayers.push(L.polyline(planned,{color:"#2999F5",weight:3,opacity:1,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
       this.updateAirportMarker("fromAirportMarker",from,"FROM",route.fromCode,route.from||route.fromName||route.fromCode,"from");this.updateAirportMarker("toAirportMarker",to,"TO",route.toCode,route.to||route.toName||route.toCode,"to");return;
     }
     const geometry=liveRouteGeometry(route,aircraft);if(!geometry){this.clearAirportMarkers();return}
-    const completed=geometry.completed,remaining=geometry.remaining;
+    // A current ADS-B position plus airport coordinates only gives us a
+    // great-circle estimate, which looks like a straight chord at local zoom.
+    // Preserve successive observed positions during this session and draw the
+    // flown segment from those real samples instead of implying we know the
+    // aircraft's historical airway track.
+    const trackKey=[aircraft.icao||aircraft.callsign||"aircraft",route.fromCode||"",route.toCode||""].join("|");
+    const trackNow=Date.now(),position=geometry.position;
+    let observed=this.observedTracks.get(trackKey)||[];
+    const last=observed[observed.length-1];
+    if(last&&trackNow-last.at>15*60*1000)observed=[];
+    const prior=observed[observed.length-1];
+    if(!prior||haversine(prior.lat,prior.lon,position[0],position[1])>=.08){
+      observed.push({lat:position[0],lon:position[1],at:trackNow});
+      if(observed.length>240)observed=observed.slice(-240);
+      this.observedTracks.set(trackKey,observed);
+    }
+    const completed=observed.length>1?observed.map(point=>[point.lat,point.lon]):[];
+    const remaining=geometry.remaining;
     this.routePoints=geometry.points;
-    this.routeLayers.push(L.polyline(completed,{color:"#fff",weight:7,opacity:.96,lineCap:"round",lineJoin:"round",interactive:false}).addTo(this.map));
-    this.routeLayers.push(L.polyline(completed,{color:"#2999F5",weight:3.5,opacity:1,lineCap:"round",lineJoin:"round",interactive:false}).addTo(this.map));
-    this.routeLayers.push(L.polyline(remaining,{color:"#fff",weight:7,opacity:.96,dashArray:"2 7",lineCap:"round",lineJoin:"round",interactive:false}).addTo(this.map));
-    this.routeLayers.push(L.polyline(remaining,{color:"#2999F5",weight:3,opacity:1,dashArray:"2 7",lineCap:"round",lineJoin:"round",interactive:false}).addTo(this.map));
+    if(completed.length>1){
+      this.routeLayers.push(L.polyline(completed,{color:"#fff",weight:7,opacity:.96,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+      this.routeLayers.push(L.polyline(completed,{color:"#2999F5",weight:3.5,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+    }
+    this.routeLayers.push(L.polyline(remaining,{color:"#fff",weight:7,opacity:.96,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+    this.routeLayers.push(L.polyline(remaining,{color:"#2999F5",weight:3,opacity:1,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
     this.updateAirportMarker("fromAirportMarker",from,"FROM",route.fromCode,route.from||route.fromName||route.fromCode,"from");
     this.updateAirportMarker("toAirportMarker",to,"TO",route.toCode,route.to||route.toName||route.toCode,"to");
   }
@@ -1002,7 +1037,7 @@ class SkyAroundMe {
   start(){
     document.body.dataset.tab="map";this.ensureDataCredits();this.map.init();this.bind();this.syncSettings();this.renderWatchlist();this.renderPreview();this.clock();this.repairNextFlight();
     $("watchDateInput").value=this.today();$("watchDateInput").min=this.today();
-    this.poll();this.pollTimer=setInterval(()=>this.poll(),this.settings.value.refreshSec*1000);
+    this.seedArrivalEstimate();this.poll();this.pollTimer=setInterval(()=>this.poll(),this.settings.value.refreshSec*1000);
     this.cameraTimer=setInterval(()=>this.advanceCamera(),10000);
     this.watchTimer=setInterval(()=>this.refreshWatched(),15000);this.refreshWatched();
     setInterval(()=>this.clock(),1000);window.addEventListener("resize",()=>{this.map.invalidate();this.positionQuietState();if(this.map.cameraMode==="journey")setTimeout(()=>this.map.setCamera("journey",false),80)},{passive:true});
@@ -1156,6 +1191,7 @@ class SkyAroundMe {
       const watched=this.activeWatchedAircraft();
       if(watched){
         const flight=this.activeWatchedFlight(),route=watched.liveRoute||null;
+        const arrivalEstimated=this.isArrivalEstimated(flight,watched);
         const deviceDistance=safeNumber(watched.d);
         const destinationCode=route?.toCode||flight?.toCode,toLat=AIRPORTS[destinationCode]?.[0]??safeNumber(route?.toLat)??safeNumber(flight?.toLat)??null,toLon=AIRPORTS[destinationCode]?.[1]??safeNumber(route?.toLon)??safeNumber(flight?.toLon)??null;
         const distance=toLat===null||toLon===null?null:haversine(watched.lat,watched.lon,toLat,toLon);
@@ -1165,23 +1201,27 @@ class SkyAroundMe {
         let storedFloor=progressBelongsToCurrent?(safeNumber(flight?.progressFloor)??0):0;
         const progressIsUsable=!!(route&&geometry&&flight&&this.watchMismatchKey!==this.watchKey(flight)&&distance!==null);
         if(progressIsUsable&&storedFloor-measuredPct>2&&distance>25){storedFloor=measuredPct;flight.progressFloor=measuredPct;Storage.set(WATCHLIST_KEY,this.watchlist);this.resetProgress()}
-        const landed=this.isLandedAtDestination(flight,watched),pct=landed?100:route?Math.min(99,Math.max(storedFloor,measuredPct)):storedFloor;
+        const positionFresh=this.hasFreshPosition(watched),airborne=positionFresh&&this.isAirborne(watched),landed=positionFresh&&this.isLandedAtDestination(flight,watched),complete=landed||arrivalEstimated,pct=complete?100:airborne&&route?Math.min(99,Math.max(storedFloor,measuredPct)):0;
+        if(landed&&flight&&!flight.arrivalConfirmedAt){flight.arrivalConfirmedAt=Date.now();Storage.set(WATCHLIST_KEY,this.watchlist)}
+        if(arrivalEstimated&&flight&&!flight.arrivalEstimatedAt){flight.arrivalEstimatedAt=Date.now();Storage.set(WATCHLIST_KEY,this.watchlist)}
         $("quietMapState").hidden=true;
-        $("nearestEyebrow").textContent="LIVE WATCHED FLIGHT";
+        $("nearestEyebrow").textContent=complete?"COMPLETED WATCHED FLIGHT":positionFresh?"LIVE WATCHED FLIGHT":"WATCHED FLIGHT · SIGNAL ENDED";
         $("nearestKind").textContent=aircraftKind(watched);$("nearestKind").hidden=!aircraftKind(watched);
         $("nearestCode").textContent=(flight?.flightNumber||flight?.flight||watched.flightNumber||watched.callsign||watched.icao).toUpperCase();
         $("nearestDescription").textContent=[flight?.name,flight?.aircraftDesc||watched.desc||watched.type,watched.callsign&&watched.callsign!==watched.flightNumber?watched.callsign:""].filter(Boolean).join(" · ");
-        const seenAgo=Math.max(1,Math.floor((Date.now()-Number(watched.lastSeenAt||watched.watchLiveAt||Date.now()))/60000));
-        status.innerHTML='<span class="dot"></span>'+(watched.watchStale?'POSITION UPDATING · LAST POSITION '+seenAgo+'M AGO':this.watchedStatus(flight))+' · '+(deviceDistance===null?'TRACKING':deviceDistance.toFixed(1)+' KM FROM DEVICE')+(geometry?.deviationKm>250?' · ROUTE DEVIATION '+Math.round(geometry.deviationKm)+' KM':'');
+        const locationText=deviceDistance===null?'TRACKING':(positionFresh?'':'LAST POSITION ')+deviceDistance.toFixed(1)+' KM FROM DEVICE';
+        status.innerHTML='<span class="dot"></span>'+(arrivalEstimated?"ARRIVAL ESTIMATED · LIVE SIGNAL ENDED":this.watchedStatus(flight))+' · '+locationText+(geometry?.deviationKm>250?' · ROUTE DEVIATION '+Math.round(geometry.deviationKm)+' KM':'');
         $("nearestRoute").hidden=false;$("fromCode").textContent=route?.fromCode||flight?.fromCode||"—";$("fromName").textContent=route?.from||flight?.from||"";$("toCode").textContent=route?.toCode||flight?.toCode||"—";$("toName").textContent=route?.to||flight?.to||"";
-        if(route){this.updateProgress(pct,watched);if(pct>storedFloor+.05&&flight){flight.progressFloor=pct;Storage.set(WATCHLIST_KEY,this.watchlist)}if(landed)$("progressLabel").textContent="LANDED · JOURNEY COMPLETE"}else{this.resetProgress();this.progressIdentity=String(watched.icao||watched.callsign||"").toLowerCase();this.progressDisplayed=storedFloor;this.progressTarget=storedFloor;this.writeProgressVisual(storedFloor);$("progressLabel").textContent="ROUTE SEARCHING"}
-        $("metricDistanceLabel").textContent=landed?"ARRIVAL":"DISTANCE TO GO";$("metricDistance").textContent=landed?(flight?.toCode||"LANDED"):distance===null?"—":Math.round(distance).toLocaleString()+" km";
-        $("metricAltitudeLabel").textContent="ALTITUDE";$("metricAltitude").textContent=watched.alt==null?"—":Math.round(watched.alt*3.28084).toLocaleString()+" ft";
-        $("metricSpeedLabel").textContent="SPEED";$("metricSpeed").textContent=speedKt===null?"—":Math.round(speedKt)+" kt";
-        $("metricTimeLabel").textContent=landed?"FLIGHT STATUS":"TIME LEFT";$("metricTime").textContent=landed?"LANDED":distance===null||!speedKt?"—":this.timeLeft(distance,speedKt);
-        this.map.updateWatchedFlight(watched);this.map.drawRoute(route,watched);if(route)this.map.setCamera("journey",false);return;
+        if(complete){this.resetProgress();this.progressIdentity=String(watched.icao||watched.callsign||"").toLowerCase();this.progressDisplayed=100;this.progressTarget=100;this.writeProgressVisual(100);$("progressLabel").textContent=arrivalEstimated?"ARRIVAL ESTIMATED · SIGNAL ENDED":"LANDED · JOURNEY COMPLETE"}
+        else if(route&&airborne){this.updateProgress(pct,watched);if(pct>storedFloor+.05&&flight){flight.progressFloor=pct;Storage.set(WATCHLIST_KEY,this.watchlist)}}
+        else{this.resetProgress();$("progressLabel").textContent=route?"POSITION NOT AIRBORNE · PROGRESS PAUSED":"ROUTE SEARCHING"}
+        $("metricDistanceLabel").textContent=complete?"ARRIVAL":"DISTANCE TO GO";$("metricDistance").textContent=complete?(flight?.toCode||"LANDED"):airborne&&distance!==null?Math.round(distance).toLocaleString()+" km":"—";
+        $("metricAltitudeLabel").textContent="ALTITUDE";$("metricAltitude").textContent=!positionFresh||watched.alt==null?"—":Math.round(watched.alt*3.28084).toLocaleString()+" ft";
+        $("metricSpeedLabel").textContent="SPEED";$("metricSpeed").textContent=!positionFresh||speedKt===null?"—":Math.round(speedKt)+" kt";
+        $("metricTimeLabel").textContent=complete?"FLIGHT STATUS":"TIME LEFT";$("metricTime").textContent=landed?"LANDED":arrivalEstimated?"ARRIVAL EST.":!airborne||distance===null||!speedKt?"—":this.timeLeft(distance,speedKt);
+        this.map.updateWatchedFlight(positionFresh&&!complete?watched:null);this.map.drawRoute(route,positionFresh&&!complete?watched:null);if(route)this.map.setCamera("journey",false);return;
       }
-      const quiet=$("quietMapState"),active=this.activeWatchedFlight(),next=active||this.nextFlight();
+      const quiet=$("quietMapState"),active=this.activeWatchedAircraft()?this.activeWatchedFlight():null,next=active||this.nextFlight();
       $("nearestKind").hidden=true;
       const visibleCount=this.filteredAircraft(this.aircraft).length,hasFilteredOut=this.aircraft.length>0&&visibleCount===0;
       const filterNames={"all-aircraft":"aircraft",commercial:"commercial aircraft",all:"non-military aircraft",helicopter:"helicopters",military:"military aircraft"};
@@ -1229,18 +1269,41 @@ class SkyAroundMe {
     return (Number.isFinite(altitude)&&altitude>140)||(x.alt==null&&Number.isFinite(speed)&&speed>80);
   }
   watchedStatus(f){
+    const state=this.flightState(f);
+    // Keep completed flights in Saved flights as history, but make their
+    // terminal state take precedence over any retained stale position.
+    if(f?.arrivalConfirmedAt||f?.arrivalEstimatedAt)return "LANDED";
     const live=this.watchLive&&this.watchLive.watchKey===this.watchKey(f)?this.watchLive:null;
-    if(!live)return this.flightState(f);
-    const fresh=Date.now()-Number(live.positionObservedAt||live.lastSeenAt||0)<=90000&&Number(live.positionAgeSec)<=90;
-    if(!fresh)return "POSITION UPDATING · LAST POSITION RETAINED";
-    if(this.isLandedAtDestination(f,live))return "LANDED · POSITION RECEIVED";
+    if(!live)return state;
+    if(!this.hasFreshPosition(live))return safeNumber(live.positionAgeSec)===null?"POSITION AGE UNKNOWN · LAST POSITION RETAINED":"POSITION UPDATING · LAST POSITION RETAINED";
+    if(this.isLandedAtDestination(f,live))return "LANDED";
     if(this.isAirborne(live))return "LIVE";
-    return live.onGround?"ON GROUND · POSITION RECEIVED":this.flightState(f)==="SCHEDULED"?"SCHEDULED":"WAITING FOR TAKEOFF";
+    if(this.isGrounded(live))return "ON GROUND · ROUTE POSITION UNCONFIRMED";
+    const origin=f?.fromCode?AIRPORTS[f.fromCode]:null,nearOrigin=origin&&haversine(live.lat,live.lon,origin[0],origin[1])<=12;
+    return nearOrigin&&this.flightState(f)==="SCHEDULED"?"SCHEDULED":nearOrigin?"WAITING FOR TAKEOFF":"NOT AIRBORNE · POSITION UNCONFIRMED";
   }
   isLandedAtDestination(f,live){
-    if(!live?.onGround)return false;
     const code=f?.toCode,airport=AIRPORTS[code],lat=safeNumber(f?.toLat)??airport?.[0],lon=safeNumber(f?.toLon)??airport?.[1];
-    return lat!==undefined&&lon!==undefined&&haversine(live.lat,live.lon,lat,lon)<=12;
+    if(lat===undefined||lon===undefined||live?.lat==null||live?.lon==null)return false;
+    const distance=haversine(live.lat,live.lon,lat,lon);
+    return distance<=12&&this.isGrounded(live);
+  }
+  isGrounded(live){if(!live)return false;if(live.onGround)return true;const altitude=safeNumber(live.alt),speed=safeNumber(live.speed);return speed!==null&&speed<=25&&(altitude===null||altitude<=140)}
+  hasFreshPosition(live){const age=safeNumber(live?.positionAgeSec),observed=safeNumber(live?.positionObservedAt);return age!==null&&age>=0&&age<=90&&observed!==null&&Date.now()-observed<=90000&&Date.now()>=observed-5000}
+  seedArrivalEstimate(){
+    const live=this.watchLive,f=this.activeWatchedFlight();
+    if(!live||!f||safeNumber(live.estimatedArrivalAt)!==null||!this.isAirborne(live))return;
+    const to=AIRPORTS[f.toCode],lat=safeNumber(f.toLat)??to?.[0],lon=safeNumber(f.toLon)??to?.[1],speed=safeNumber(live.speed);
+    if(lat===undefined||lon===undefined||speed===null||speed<=0)return;
+    const distance=haversine(live.lat,live.lon,lat,lon),base=safeNumber(live.lastFetchedAt||live.watchLiveAt||live.lastSeenAt)??Date.now();
+    live.estimatedArrivalAt=base+distance/(speed*3.6)*3600000;Storage.set("skyAroundMeWatchLive",live);
+  }
+  isArrivalEstimated(f,live){
+    if(!f||!live||this.hasFreshPosition(live)||!live.lastSearchAt||!this.isAirborne(live))return false;
+    // A computed arrival from the last observed airborne position accounts for
+    // delays. Use the timetable only when we never had enough live data to estimate.
+    const estimate=safeNumber(live.estimatedArrivalAt),schedule=f.arrivalUtc?new Date(f.arrivalUtc).getTime():NaN,expected=Number.isFinite(estimate)?estimate:schedule;
+    return Number.isFinite(expected)&&Date.now()>=expected+5*60*1000&&Number(live.lastSearchAt)>=expected;
   }
   setPreviewTelemetry(items){
     const icons={
@@ -1269,8 +1332,8 @@ class SkyAroundMe {
     $("previewFromCode").textContent=f.fromCode||"—";$("previewFromName").textContent=f.from||"";
     $("previewToCode").textContent=f.toCode||"—";$("previewToName").textContent=f.to||"";
     const live=this.watchLive&&this.watchLive.watchKey===this.watchKey(f)?this.watchLive:null;
-    const fresh=!!(live&&Date.now()-Number(live.positionObservedAt||live.lastSeenAt||0)<=90000&&Number(live.positionAgeSec)<=90);
-    const airborne=!!(live&&this.isAirborne(live));
+    const fresh=!!(live&&this.hasFreshPosition(live));
+    const airborne=!!(live&&fresh&&this.isAirborne(live));
     const isLive=airborne;
     const state=this.watchedStatus(f);
     const measuredPct=airborne?progressPercent(f,live):0,currentProgressIcao=normalizeCode(live?.icao||""),progressBelongsToCurrent=!!(f.progressIcao&&currentProgressIcao&&normalizeCode(f.progressIcao)===currentProgressIcao);
@@ -1283,7 +1346,7 @@ class SkyAroundMe {
     if(airborne&&pct>progressFloor+.05){f.progressFloor=pct;Storage.set(WATCHLIST_KEY,this.watchlist)}
     $("watchProgressFill").style.width=pct+"%";$("watchProgressPlane").style.left=pct+"%";
     const lastSeenMinutes=live?Math.max(1,Math.floor((Date.now()-Number(live.lastSeenAt||live.watchLiveAt||Date.now()))/60000)):0;
-    $("previewStatus").textContent=this.watchMismatchKey===this.watchKey(f)&&!f.watchKnown?(f.fromCode&&f.toCode?"SCHEDULED ROUTE · AWAITING LIVE MATCH":"SEARCHING FOR LIVE AIRCRAFT"):isLive?fresh?pct.toFixed(1)+"% JOURNEY · LIVE":pct.toFixed(1)+"% JOURNEY · LAST POSITION "+lastSeenMinutes+"M AGO":(live&&!fresh?"POSITION UPDATING · LAST POSITION RETAINED":f.watchKnown?"IDENTITY SAVED · POSITION NOT VERIFIED":state);
+    $("previewStatus").textContent=this.watchMismatchKey===this.watchKey(f)&&!f.watchKnown?(f.fromCode&&f.toCode?"SCHEDULED ROUTE · AWAITING LIVE MATCH":"SEARCHING FOR LIVE AIRCRAFT"):isLive?fresh?pct.toFixed(1)+"% JOURNEY · LIVE":pct.toFixed(1)+"% JOURNEY · LAST POSITION "+lastSeenMinutes+"M AGO":(live&&!fresh?(safeNumber(live.positionAgeSec)===null?"POSITION AGE UNKNOWN · LAST POSITION RETAINED":"POSITION UPDATING · LAST POSITION RETAINED"):f.watchKnown?"IDENTITY SAVED · POSITION NOT VERIFIED":state);
     if(isLive){
       const toLat=AIRPORTS[f.toCode]?.[0]??safeNumber(f.toLat)??null,toLon=AIRPORTS[f.toCode]?.[1]??safeNumber(f.toLon)??null;
       const distance=toLat===null||toLon===null||live.lat==null||live.lon==null?null:haversine(live.lat,live.lon,toLat,toLon);
@@ -1293,10 +1356,10 @@ class SkyAroundMe {
   }
   nextFlight(){
     const active=this.activeWatchedFlight();
-    if(active&&this.watchLive&&this.watchLiveRetained(active)&&this.isAirborne(this.watchLive))return active;
+    if(active&&this.watchLive&&this.watchLiveRetained(active)&&this.hasFreshPosition(this.watchLive)&&this.isAirborne(this.watchLive))return active;
     const today=this.today();
     const sorted=this.watchlist.slice().sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")));
-    return sorted.find(f=>this.flightState(f)!=="COMPLETED")||sorted[0]||null;
+    return sorted.find(f=>this.flightState(f)!=="COMPLETED")||null;
   }
   activeWatchedFlight(){
     const key=this.watchLive?.watchKey;
@@ -1307,9 +1370,13 @@ class SkyAroundMe {
     if(!f||!live)return null;
     const age=Date.now()-Number(live.lastSeenAt||live.watchLiveAt||0);
     if(!Number.isFinite(age)||!this.watchLiveRetained(f,live))return null;
+    // Once arrival is confirmed or reasonably inferred after signal loss, stop
+    // presenting the retained aircraft and its old route as currently active.
+    if(f.arrivalConfirmedAt||f.arrivalEstimatedAt||this.hasFreshPosition(live)&&this.isLandedAtDestination(f,live)||this.isArrivalEstimated(f,live))return null;
     const sourceRoute=live.liveRoute||(f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:f.fromLat,toLat:f.toLat,fromLon:f.fromLon,toLon:f.toLon}:null);
     const route=sourceRoute?{...sourceRoute,fromLat:AIRPORTS[sourceRoute.fromCode||f.fromCode]?.[0]??sourceRoute.fromLat,fromLon:AIRPORTS[sourceRoute.fromCode||f.fromCode]?.[1]??sourceRoute.fromLon,toLat:AIRPORTS[sourceRoute.toCode||f.toCode]?.[0]??sourceRoute.toLat,toLon:AIRPORTS[sourceRoute.toCode||f.toCode]?.[1]??sourceRoute.toLon}:null;
-    return {...live,liveRoute:route,watchStale:age>=90000||!verifiedCachedPosition(live)};
+    const ageSec=safeNumber(live.positionAgeSec);
+    return {...live,liveRoute:route,watchStale:age>=90000||(ageSec!==null&&!verifiedCachedPosition(live))};
   }
   watchLiveRetained(f,live=this.watchLive){return !!(live&&live.watchKey===this.watchKey(f)&&Date.now()<=watchedLiveExpiry(f,live))}
   previewFlight(){
@@ -1322,6 +1389,10 @@ class SkyAroundMe {
   }
   flightState(f){
     if(!f)return "READY";
+    if(f.arrivalConfirmedAt||f.arrivalEstimatedAt)return "COMPLETED";
+    const retained=this.watchLive&&this.watchLive.watchKey===this.watchKey(f)?this.watchLive:null;
+    if(retained&&this.hasFreshPosition(retained)&&this.isLandedAtDestination(f,retained)){f.arrivalConfirmedAt=Date.now();this.persistWatchlist();return "COMPLETED"}
+    if(retained&&this.isArrivalEstimated(f,retained)){f.arrivalEstimatedAt=Date.now();this.persistWatchlist();return "COMPLETED"}
     if(f.watchKnown&&Number(f.lastLiveSeenAt)>0&&Date.now()-Number(f.lastLiveSeenAt)<12*60*60*1000)return "SEARCHING";
     if(!f.departureUtc&&String(f.date||"")<this.today())return "COMPLETED";
     // Scheduled arrival is not proof a flight landed. Keep discovery open for
@@ -1337,7 +1408,7 @@ class SkyAroundMe {
   async refreshWatched(){
     if(this.watchBusy)return;this.watchBusy=true;
     try{
-      const f=this.nextFlight();if(!f){this.watchLive=null;Storage.set("skyAroundMeWatchLive",null);this.renderPreview();this.renderNearest();return}
+      const f=this.nextFlight();if(!f){const completed=this.activeWatchedFlight(),retainCompleted=completed&&(completed.arrivalConfirmedAt||this.watchLive&&this.isArrivalEstimated(completed,this.watchLive));if(!retainCompleted){this.watchLive=null;Storage.set("skyAroundMeWatchLive",null)}this.renderPreview();this.renderNearest();return}
       const isCurrentTrackedFlight=this.activeWatchedFlight()&&this.watchKey(this.activeWatchedFlight())===this.watchKey(f)&&this.activeWatchedAircraft();
       if(String(f.date||"")!==this.today()&&!isCurrentTrackedFlight){this.renderPreview();return}
       await this.repairNextFlight(f);
@@ -1348,10 +1419,14 @@ class SkyAroundMe {
       f.watchSearchAt=Date.now();
       const live=await this.api.watchedAircraft(f);
       if(live){
+        const previousLive=this.watchLive?.watchKey===this.watchKey(f)?this.watchLive:null;
         const hasRoutePoint=(code,lat,lon)=>Number.isFinite(safeNumber(lat))&&Number.isFinite(safeNumber(lon))||!!AIRPORTS[code];
         if((!f.fromCode||!f.toCode||!hasRoutePoint(f.fromCode,f.fromLat,f.fromLon)||!hasRoutePoint(f.toCode,f.toLat,f.toLon))&&live.callsign){try{const foundRoute=await this.api.liveRoute(live);if(foundRoute&&(!f.fromCode||f.fromCode===foundRoute.fromCode)&&(!f.toCode||f.toCode===foundRoute.toCode)){Object.assign(f,{fromCode:f.fromCode||foundRoute.fromCode,toCode:f.toCode||foundRoute.toCode,from:f.from||foundRoute.from,to:f.to||foundRoute.to,fromLat:safeNumber(f.fromLat)??safeNumber(foundRoute.fromLat),fromLon:safeNumber(f.fromLon)??safeNumber(foundRoute.fromLon),toLat:safeNumber(f.toLat)??safeNumber(foundRoute.toLat),toLon:safeNumber(f.toLon)??safeNumber(foundRoute.toLon),lookupStatus:"ROUTE FOUND"});this.persistWatchlist()}}catch{}}
         const route=f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:AIRPORTS[f.fromCode]?.[0]??f.fromLat,toLat:AIRPORTS[f.toCode]?.[0]??f.toLat,fromLon:AIRPORTS[f.fromCode]?.[1]??f.fromLon,toLon:AIRPORTS[f.toCode]?.[1]??f.toLon}:null;
-        live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=route;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();live.lastFetchedAt=live.watchLiveAt;live.lastSeenAt=safeNumber(live.positionObservedAt)??live.watchLiveAt;this.watchLive=live;this.watchMismatchKey="";f.watchKnown=true;f.lastLiveSeenAt=live.lastSeenAt;f.hex=live.icao;f.registration=live.registration;const liveIcao=normalizeCode(live.icao||"");if(liveIcao&&normalizeCode(f.progressIcao||"")!==liveIcao){f.progressFloor=0;f.progressIcao=liveIcao}Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f);Storage.set("skyAroundMeWatchLive",live);
+        const toLat=route?(safeNumber(route.toLat)??AIRPORTS[route.toCode]?.[0]):null,toLon=route?(safeNumber(route.toLon)??AIRPORTS[route.toCode]?.[1]):null,speedMps=safeNumber(live.speed),moved=!previousLive||haversine(previousLive.lat,previousLive.lon,live.lat,live.lon)>=.5;
+        if(route&&toLat!==null&&toLon!==null&&this.isAirborne(live)&&(this.hasFreshPosition(live)||moved)&&speedMps>0){const distance=haversine(live.lat,live.lon,toLat,toLon),observedAt=safeNumber(live.positionObservedAt)??Date.now();live.estimatedArrivalAt=observedAt+distance/(speedMps*3.6)*3600000}
+        else if(previousLive?.estimatedArrivalAt)live.estimatedArrivalAt=previousLive.estimatedArrivalAt;
+        live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=route;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();live.lastFetchedAt=live.watchLiveAt;live.lastSearchAt=this.hasFreshPosition(live)?0:(previousLive?.lastSearchAt||live.watchLiveAt);live.lastSeenAt=safeNumber(live.positionObservedAt)??live.watchLiveAt;this.watchLive=live;this.watchMismatchKey="";f.watchKnown=true;f.lastLiveSeenAt=live.lastSeenAt;f.hex=live.icao;f.registration=live.registration;if(live.callsign)f.liveCallsign=live.callsign;const liveIcao=normalizeCode(live.icao||"");if(liveIcao&&normalizeCode(f.progressIcao||"")!==liveIcao){f.progressFloor=0;f.progressIcao=liveIcao}Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f);Storage.set("skyAroundMeWatchLive",live);
       }else{
         const retained=this.watchLive?.watchKey===this.watchKey(f)&&this.watchLiveRetained(f,this.watchLive);
         if(retained){
@@ -1368,7 +1443,7 @@ class SkyAroundMe {
         }
       }
       this.renderPreview();this.renderWatchlist();this.renderNearest();
-    }catch{this.renderPreview();this.renderNearest()}
+    }catch{if(this.watchLive){this.watchLive.lastSearchAt=Date.now();this.watchLive.watchStale=true;Storage.set("skyAroundMeWatchLive",this.watchLive)}this.renderPreview();this.renderNearest()}
     finally{this.watchBusy=false}
   }
   async repairNextFlight(flight=null){const f=flight||this.nextFlight();if(!f||!(f.flightNumber||f.flight)||!f.date)return;const hasCoords=code=>Number.isFinite(safeNumber(f[code+"Lat"]))&&Number.isFinite(safeNumber(f[code+"Lon"]))||!!AIRPORTS[f[code+"Code"]];if(f.fromCode&&f.toCode&&f.departureUtc&&f.arrivalUtc&&hasCoords("from")&&hasCoords("to"))return;if(Date.now()-Number(f.scheduleRepairAt||0)<5*60*1000)return;f.scheduleRepairAt=Date.now();this.persistWatchlist();try{const schedule=await this.api.schedule(f.flightNumber||f.flight,f.date);if(schedule&&(schedule.status==="FOUND"||schedule.status==="ROUTE_FOUND")){Object.assign(f,{departureTime:schedule.departureTime||f.departureTime||"",departureUtc:schedule.departureUtc||f.departureUtc||"",arrivalTime:schedule.arrivalTime||f.arrivalTime||"",arrivalUtc:schedule.arrivalUtc||f.arrivalUtc||"",fromCode:schedule.fromCode||f.fromCode||"",toCode:schedule.toCode||f.toCode||"",from:schedule.from||f.from||"",to:schedule.to||f.to||"",fromLat:safeNumber(schedule.fromLat)??f.fromLat,fromLon:safeNumber(schedule.fromLon)??f.fromLon,toLat:safeNumber(schedule.toLat)??f.toLat,toLon:safeNumber(schedule.toLon)??f.toLon,lookupStatus:"ROUTE FOUND",scheduleRepairAt:0});this.persistWatchlist();this.renderWatchlist();this.renderPreview()}}catch{}}
@@ -1435,7 +1510,7 @@ class SkyAroundMe {
   async ping(){if(!this.settings.value.nearestSound||!this.soundUnlocked||!this.soundContext)return;try{const c=this.soundContext;if(c.state==="suspended")await c.resume();if(c.state!=="running")return;const o=c.createOscillator(),g=c.createGain(),t=c.currentTime;o.frequency.setValueAtTime(880,t);o.frequency.exponentialRampToValueAtTime(1320,t+.07);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.06,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.18);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.2)}catch{}}
   elapsedSinceScan(){const seconds=Math.max(0,Math.floor((Date.now()-this.lastScan)/1000));return String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0")}
   countdownText(f){const departure=f.departureUtc?new Date(f.departureUtc).getTime():NaN;if(Number.isFinite(departure)){const minutes=Math.max(0,Math.ceil((departure-Date.now())/60000));return minutes<60?minutes+" MIN":Math.floor(minutes/60)+"H "+String(minutes%60).padStart(2,"0")+"M"}return f.departureTime?"DEP "+f.departureTime:"DEPARTURE TIME PENDING"}
-  clock(){if(!this.nearest){$("metricTime").textContent=this.lastScan?this.elapsedSinceScan():"—";const next=this.nextFlight();if(next&&this.flightState(next)==="SCHEDULED")$("quietFlightCountdown").textContent="DEPARTS IN "+this.countdownText(next)}}
+  clock(){if(!this.nearest){if(!$('quietMapState')||!$('quietMapState').hidden)$('metricTime').textContent=this.lastScan?this.elapsedSinceScan():"—";const next=this.nextFlight();if(next&&this.flightState(next)==="SCHEDULED")$("quietFlightCountdown").textContent="DEPARTS IN "+this.countdownText(next)}}
   toast(message){const t=$("toast");t.textContent=message;t.classList.add("visible");clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>t.classList.remove("visible"),2200)}
 }
 function progressPercent(route,aircraft){
