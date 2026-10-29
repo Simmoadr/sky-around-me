@@ -1292,18 +1292,24 @@ class SkyAroundMe {
   hasFreshPosition(live){const age=safeNumber(live?.positionAgeSec),observed=safeNumber(live?.positionObservedAt);return age!==null&&age>=0&&age<=90&&observed!==null&&Date.now()-observed<=90000&&Date.now()>=observed-5000}
   seedArrivalEstimate(){
     const live=this.watchLive,f=this.activeWatchedFlight();
-    if(!live||!f||safeNumber(live.estimatedArrivalAt)!==null||!this.isAirborne(live))return;
+    if(!live||!f||!this.isAirborne(live))return;
+    f.lastAirborneAt=Number(live.lastSeenAt||live.watchLiveAt||Date.now());
+    if(safeNumber(live.estimatedArrivalAt)!==null){f.lastEstimatedArrivalAt=live.estimatedArrivalAt;this.persistWatchlist();return}
     const to=AIRPORTS[f.toCode],lat=safeNumber(f.toLat)??to?.[0],lon=safeNumber(f.toLon)??to?.[1],speed=safeNumber(live.speed);
     if(lat===undefined||lon===undefined||speed===null||speed<=0)return;
     const distance=haversine(live.lat,live.lon,lat,lon),base=safeNumber(live.lastFetchedAt||live.watchLiveAt||live.lastSeenAt)??Date.now();
-    live.estimatedArrivalAt=base+distance/(speed*3.6)*3600000;Storage.set("skyAroundMeWatchLive",live);
+    live.estimatedArrivalAt=base+distance/(speed*3.6)*3600000;f.lastEstimatedArrivalAt=live.estimatedArrivalAt;this.persistWatchlist();Storage.set("skyAroundMeWatchLive",live);
   }
   isArrivalEstimated(f,live){
-    if(!f||!live||this.hasFreshPosition(live)||!live.lastSearchAt||!this.isAirborne(live))return false;
-    // A computed arrival from the last observed airborne position accounts for
-    // delays. Use the timetable only when we never had enough live data to estimate.
-    const estimate=safeNumber(live.estimatedArrivalAt),schedule=f.arrivalUtc?new Date(f.arrivalUtc).getTime():NaN,expected=Number.isFinite(estimate)?estimate:schedule;
-    return Number.isFinite(expected)&&Date.now()>=expected+5*60*1000&&Number(live.lastSearchAt)>=expected;
+    if(!f||live&&this.hasFreshPosition(live))return false;
+    const airborne=live?this.isAirborne(live):Number(f.lastAirborneAt)>0;
+    if(!airborne)return false;
+    // Prefer the estimate saved from the last observed airborne position; it
+    // follows real delays. If the cached signal was evicted, use the persisted
+    // estimate. Only use timetable arrival as a conservative last resort.
+    const estimate=safeNumber(live?.estimatedArrivalAt)??safeNumber(f.lastEstimatedArrivalAt),schedule=f.arrivalUtc?new Date(f.arrivalUtc).getTime():NaN,hasEstimate=Number.isFinite(estimate),expected=hasEstimate?estimate:schedule;
+    const lastSignal=safeNumber(live?.lastSeenAt)??safeNumber(f.lastLiveSeenAt),lastSearch=safeNumber(live?.lastSearchAt)??safeNumber(f.watchSearchAt),grace=hasEstimate?10:150;
+    return Number.isFinite(expected)&&Number.isFinite(lastSignal)&&Number.isFinite(lastSearch)&&lastSignal<=expected+90*60*1000&&Date.now()>=expected+grace*60*1000&&lastSearch>=expected;
   }
   setPreviewTelemetry(items){
     const icons={
@@ -1391,8 +1397,16 @@ class SkyAroundMe {
     if(!f)return "READY";
     if(f.arrivalConfirmedAt||f.arrivalEstimatedAt)return "COMPLETED";
     const retained=this.watchLive&&this.watchLive.watchKey===this.watchKey(f)?this.watchLive:null;
+    // Migrate watch records created before estimated-arrival metadata existed.
+    // A previously matched flight's last live timestamp is the best available
+    // evidence that it was airborne; subsequent searches decide when to close it.
+    if(f.watchKnown&&Number(f.lastLiveSeenAt)>0&&!Number(f.lastAirborneAt)){
+      f.lastAirborneAt=Number(f.lastLiveSeenAt);
+      if(Number.isFinite(safeNumber(retained?.estimatedArrivalAt)))f.lastEstimatedArrivalAt=retained.estimatedArrivalAt;
+      this.persistWatchlist();
+    }
     if(retained&&this.hasFreshPosition(retained)&&this.isLandedAtDestination(f,retained)){f.arrivalConfirmedAt=Date.now();this.persistWatchlist();return "COMPLETED"}
-    if(retained&&this.isArrivalEstimated(f,retained)){f.arrivalEstimatedAt=Date.now();this.persistWatchlist();return "COMPLETED"}
+    if((retained||f.watchKnown)&&this.isArrivalEstimated(f,retained)){f.arrivalEstimatedAt=Date.now();this.persistWatchlist();return "COMPLETED"}
     if(f.watchKnown&&Number(f.lastLiveSeenAt)>0&&Date.now()-Number(f.lastLiveSeenAt)<12*60*60*1000)return "SEARCHING";
     if(!f.departureUtc&&String(f.date||"")<this.today())return "COMPLETED";
     // Scheduled arrival is not proof a flight landed. Keep discovery open for
@@ -1416,7 +1430,7 @@ class SkyAroundMe {
       if(!f.watchKnown&&(this.flightState(f)==="SCHEDULED"||(dep&&Date.now()<dep-45*60000))){this.renderPreview();this.renderNearest();return}
       const searchInterval=f.watchKnown?30000:20000;
       if(Date.now()-Number(f.watchSearchAt||0)<searchInterval){this.renderPreview();this.renderNearest();return}
-      f.watchSearchAt=Date.now();
+      f.watchSearchAt=Date.now();this.persistWatchlist();
       const live=await this.api.watchedAircraft(f);
       if(live){
         const previousLive=this.watchLive?.watchKey===this.watchKey(f)?this.watchLive:null;
@@ -1426,7 +1440,7 @@ class SkyAroundMe {
         const toLat=route?(safeNumber(route.toLat)??AIRPORTS[route.toCode]?.[0]):null,toLon=route?(safeNumber(route.toLon)??AIRPORTS[route.toCode]?.[1]):null,speedMps=safeNumber(live.speed),moved=!previousLive||haversine(previousLive.lat,previousLive.lon,live.lat,live.lon)>=.5;
         if(route&&toLat!==null&&toLon!==null&&this.isAirborne(live)&&(this.hasFreshPosition(live)||moved)&&speedMps>0){const distance=haversine(live.lat,live.lon,toLat,toLon),observedAt=safeNumber(live.positionObservedAt)??Date.now();live.estimatedArrivalAt=observedAt+distance/(speedMps*3.6)*3600000}
         else if(previousLive?.estimatedArrivalAt)live.estimatedArrivalAt=previousLive.estimatedArrivalAt;
-        live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=route;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();live.lastFetchedAt=live.watchLiveAt;live.lastSearchAt=this.hasFreshPosition(live)?0:(previousLive?.lastSearchAt||live.watchLiveAt);live.lastSeenAt=safeNumber(live.positionObservedAt)??live.watchLiveAt;this.watchLive=live;this.watchMismatchKey="";f.watchKnown=true;f.lastLiveSeenAt=live.lastSeenAt;f.hex=live.icao;f.registration=live.registration;if(live.callsign)f.liveCallsign=live.callsign;const liveIcao=normalizeCode(live.icao||"");if(liveIcao&&normalizeCode(f.progressIcao||"")!==liveIcao){f.progressFloor=0;f.progressIcao=liveIcao}Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f);Storage.set("skyAroundMeWatchLive",live);
+        live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=route;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();live.lastFetchedAt=live.watchLiveAt;live.lastSearchAt=this.hasFreshPosition(live)?0:(previousLive?.lastSearchAt||live.watchLiveAt);live.lastSeenAt=safeNumber(live.positionObservedAt)??live.watchLiveAt;this.watchLive=live;this.watchMismatchKey="";f.watchKnown=true;f.lastLiveSeenAt=live.lastSeenAt;if(this.isAirborne(live)){f.lastAirborneAt=live.lastSeenAt;if(Number.isFinite(safeNumber(live.estimatedArrivalAt)))f.lastEstimatedArrivalAt=live.estimatedArrivalAt}f.hex=live.icao;f.registration=live.registration;if(live.callsign)f.liveCallsign=live.callsign;const liveIcao=normalizeCode(live.icao||"");if(liveIcao&&normalizeCode(f.progressIcao||"")!==liveIcao){f.progressFloor=0;f.progressIcao=liveIcao}Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f);Storage.set("skyAroundMeWatchLive",live);
       }else{
         const retained=this.watchLive?.watchKey===this.watchKey(f)&&this.watchLiveRetained(f,this.watchLive);
         if(retained){
