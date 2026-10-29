@@ -659,17 +659,7 @@ function watchedPositionMatchesRoute(flight,aircraft){
   // corridor; positions hundreds of kilometres away are almost certainly a
   // different aircraft returned by a broad callsign/route search.
   if(geometry&&geometry.deviationKm>600)return false;
-  // A callsign can be reused or an ADS-B lookup can return an earlier record
-  // from the same route. Reject positions that are far behind the scheduled
-  // flight phase (for example near BRS when LS1891 is due into TFS shortly).
-  const dep=Date.parse(flight.departureUtc||""),arr=Date.parse(flight.arrivalUtc||"");
-  if(geometry&&Number.isFinite(dep)&&Number.isFinite(arr)&&arr>dep){
-    const now=Date.now(),duration=arr-dep;
-    if(now>=dep-20*60000&&now<=arr+45*60000&&duration>=60*60000&&duration<=18*60*60000){
-      const expected=clamp((now-dep)/duration,0,1);
-      if(Math.abs(geometry.progress-expected)>.38)return false;
-    }
-  }
+  // Scheduled phase is not reliable when departure or arrival is delayed.
   return true;
 }
 function liveRouteGeometry(route,aircraft){
@@ -1064,7 +1054,7 @@ class SkyAroundMe {
       if(watched){
         const flight=this.activeWatchedFlight(),route=watched.liveRoute||null;
         const deviceDistance=safeNumber(watched.d);
-        const toLat=safeNumber(route?.toLat)??safeNumber(flight?.toLat)??AIRPORTS[route?.toCode||flight?.toCode]?.[0]??null,toLon=safeNumber(route?.toLon)??safeNumber(flight?.toLon)??AIRPORTS[route?.toCode||flight?.toCode]?.[1]??null;
+        const destinationCode=route?.toCode||flight?.toCode,toLat=AIRPORTS[destinationCode]?.[0]??safeNumber(route?.toLat)??safeNumber(flight?.toLat)??null,toLon=AIRPORTS[destinationCode]?.[1]??safeNumber(route?.toLon)??safeNumber(flight?.toLon)??null;
         const distance=toLat===null||toLon===null?null:haversine(watched.lat,watched.lon,toLat,toLon);
         const speedKt=safeNumber(watched.speed)===null?null:watched.speed*1.94384;
         const geometry=route?routeGeometry(route,watched):null,measuredPct=geometry?progressPercent(route,watched):0,storedFloor=safeNumber(flight?.progressFloor)??0,pct=route?Math.max(storedFloor,measuredPct):storedFloor;
@@ -1172,7 +1162,7 @@ class SkyAroundMe {
     $("watchProgressFill").style.width=pct+"%";$("watchProgressPlane").style.left=pct+"%";
     $("previewStatus").textContent=this.watchMismatchKey===this.watchKey(f)?"ROUTE MISMATCH · SEARCHING FOR AIRCRAFT":isLive?pct.toFixed(1)+"% COMPLETE · LIVE":(live&&!fresh?"SIGNAL SEARCHING · LAST POSITION RETAINED":state);
     if(isLive){
-      const toLat=safeNumber(f.toLat)??AIRPORTS[f.toCode]?.[0]??null,toLon=safeNumber(f.toLon)??AIRPORTS[f.toCode]?.[1]??null;
+      const toLat=AIRPORTS[f.toCode]?.[0]??safeNumber(f.toLat)??null,toLon=AIRPORTS[f.toCode]?.[1]??safeNumber(f.toLon)??null;
       const distance=toLat===null||toLon===null||live.lat==null||live.lon==null?null:haversine(live.lat,live.lon,toLat,toLon);
       const speedKt=safeNumber(live.speed)===null?null:live.speed*1.94384;
       this.setPreviewTelemetry([{label:"DISTANCE TO GO",value:distance===null?"—":Math.round(distance).toLocaleString()+" km",icon:"distance"},{label:"ALTITUDE",value:live.alt===null?"—":Math.round(live.alt*3.28084).toLocaleString()+" ft",icon:"altitude"},{label:"TIME LEFT",value:distance===null||!speedKt?"—":this.timeLeft(distance,speedKt),icon:"time"}]);
@@ -1196,7 +1186,8 @@ class SkyAroundMe {
     if(!f||!live||!this.isAirborne(live))return null;
     const age=Date.now()-Number(live.lastSeenAt||live.watchLiveAt||0);
     if(!Number.isFinite(age)||age>=15*60*1000)return null;
-    const route=live.liveRoute||(f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:f.fromLat,toLat:f.toLat,fromLon:f.fromLon,toLon:f.toLon}:null);
+    const sourceRoute=live.liveRoute||(f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:f.fromLat,toLat:f.toLat,fromLon:f.fromLon,toLon:f.toLon}:null);
+    const route=sourceRoute?{...sourceRoute,fromLat:AIRPORTS[sourceRoute.fromCode||f.fromCode]?.[0]??sourceRoute.fromLat,fromLon:AIRPORTS[sourceRoute.fromCode||f.fromCode]?.[1]??sourceRoute.fromLon,toLat:AIRPORTS[sourceRoute.toCode||f.toCode]?.[0]??sourceRoute.toLat,toLon:AIRPORTS[sourceRoute.toCode||f.toCode]?.[1]??sourceRoute.toLon}:null;
     return {...live,liveRoute:route,watchStale:age>=150000};
   }
   previewFlight(){
@@ -1231,7 +1222,7 @@ class SkyAroundMe {
       if(live){
         const hasRoutePoint=(code,lat,lon)=>Number.isFinite(safeNumber(lat))&&Number.isFinite(safeNumber(lon))||!!AIRPORTS[code];
         if((!f.fromCode||!f.toCode||!hasRoutePoint(f.fromCode,f.fromLat,f.fromLon)||!hasRoutePoint(f.toCode,f.toLat,f.toLon))&&live.callsign){try{const foundRoute=await this.api.liveRoute(live);if(foundRoute&&(!f.fromCode||f.fromCode===foundRoute.fromCode)&&(!f.toCode||f.toCode===foundRoute.toCode)){Object.assign(f,{fromCode:f.fromCode||foundRoute.fromCode,toCode:f.toCode||foundRoute.toCode,from:f.from||foundRoute.from,to:f.to||foundRoute.to,fromLat:safeNumber(f.fromLat)??safeNumber(foundRoute.fromLat),fromLon:safeNumber(f.fromLon)??safeNumber(foundRoute.fromLon),toLat:safeNumber(f.toLat)??safeNumber(foundRoute.toLat),toLon:safeNumber(f.toLon)??safeNumber(foundRoute.toLon),lookupStatus:"ROUTE FOUND"});this.persistWatchlist()}}catch{}}
-        const route=f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:f.fromLat,toLat:f.toLat,fromLon:f.fromLon,toLon:f.toLon}:null;
+        const route=f.fromCode&&f.toCode?{status:"FOUND",fromCode:f.fromCode,toCode:f.toCode,from:f.from||f.fromCode,to:f.to||f.toCode,fromLat:AIRPORTS[f.fromCode]?.[0]??f.fromLat,toLat:AIRPORTS[f.toCode]?.[0]??f.toLat,fromLon:AIRPORTS[f.fromCode]?.[1]??f.fromLon,toLon:AIRPORTS[f.toCode]?.[1]??f.toLon}:null;
         live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=route;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();live.lastSeenAt=live.watchLiveAt;this.watchLive=live;this.watchMismatchKey="";f.watchKnown=true;f.hex=live.icao;f.registration=live.registration;Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f);Storage.set("skyAroundMeWatchLive",live);
       }else if(this.api.lastWatchedRouteMismatch){this.watchMismatchKey=this.watchKey(f);const rejected=this.watchLive;if(rejected?.watchKey===this.watchKey(f)){if(f.hex===rejected.icao)delete f.hex;if(f.registration&&f.registration===rejected.registration)delete f.registration;Storage.set(WATCHLIST_KEY,this.watchlist)}}
       this.renderPreview();this.renderWatchlist();this.renderNearest();
