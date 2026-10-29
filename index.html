@@ -992,7 +992,13 @@ class MapView {
       if(observed.length>240)observed=observed.slice(-240);
       this.observedTracks.set(trackKey,observed);
     }
-    const completed=observed.length>1?observed.map(point=>[point.lat,point.lon]):[];
+    // Always show a completed segment. If this page has not collected enough
+    // ADS-B samples yet, use the airport-to-current-position great-circle
+    // estimate. Once samples exist, connect the airport to the observed track
+    // so the route does not appear to start halfway through the flight.
+    const completed=observed.length>1
+      ? [from,...observed.map(point=>[point.lat,point.lon])]
+      : geometry.completed;
     const remaining=geometry.remaining;
     this.routePoints=geometry.points;
     if(completed.length>1){
