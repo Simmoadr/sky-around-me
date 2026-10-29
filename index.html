@@ -996,14 +996,22 @@ class MapView {
     // ADS-B samples yet, use the airport-to-current-position great-circle
     // estimate. Once samples exist, connect the airport to the observed track
     // so the route does not appear to start halfway through the flight.
-    const completed=observed.length>1
+    // Draw a solid completed segment on every live refresh. The airport-to-
+    // current-position segment is an estimate; observed ADS-B samples are
+    // overlaid when available to show the actual track collected in this session.
+    const completed=geometry.completed;
+    const observedTrack=observed.length>1
       ? [from,...observed.map(point=>[point.lat,point.lon])]
-      : geometry.completed;
+      : [];
     const remaining=geometry.remaining;
     this.routePoints=geometry.points;
     if(completed.length>1){
-      this.routeLayers.push(L.polyline(completed,{color:"#fff",weight:7,opacity:.96,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
-      this.routeLayers.push(L.polyline(completed,{color:"#2999F5",weight:3.5,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+      this.routeLayers.push(L.polyline(completed,{color:"#fff",weight:8,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+      this.routeLayers.push(L.polyline(completed,{color:"#2999F5",weight:4.5,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+    }
+    if(observedTrack.length>1){
+      this.routeLayers.push(L.polyline(observedTrack,{color:"#fff",weight:7,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+      this.routeLayers.push(L.polyline(observedTrack,{color:"#0877D1",weight:3.5,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
     }
     this.routeLayers.push(L.polyline(remaining,{color:"#fff",weight:7,opacity:.96,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
     this.routeLayers.push(L.polyline(remaining,{color:"#2999F5",weight:3,opacity:1,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
@@ -1200,13 +1208,30 @@ class SkyAroundMe {
         const arrivalEstimated=this.isArrivalEstimated(flight,watched);
         const deviceDistance=safeNumber(watched.d);
         const destinationCode=route?.toCode||flight?.toCode,toLat=AIRPORTS[destinationCode]?.[0]??safeNumber(route?.toLat)??safeNumber(flight?.toLat)??null,toLon=AIRPORTS[destinationCode]?.[1]??safeNumber(route?.toLon)??safeNumber(flight?.toLon)??null;
-        const distance=toLat===null||toLon===null?null:haversine(watched.lat,watched.lon,toLat,toLon);
+        const rawDistance=toLat===null||toLon===null?null:haversine(watched.lat,watched.lon,toLat,toLon);
         const speedKt=safeNumber(watched.speed)===null?null:watched.speed*1.94384;
         const geometry=route?routeGeometry(route,watched):null,measuredPct=geometry?progressPercent(route,watched):0,currentProgressIcao=normalizeCode(watched.icao||""),progressBelongsToCurrent=!!(flight?.progressIcao&&currentProgressIcao&&normalizeCode(flight.progressIcao)===currentProgressIcao);
+        // ADS-B positions can jitter or briefly move backwards between providers.
+        // Keep displayed distance/time from increasing for this tracked aircraft.
+        if(flight&&currentProgressIcao){
+          if(flight.metricIcao!==currentProgressIcao){
+            flight.metricIcao=currentProgressIcao;flight.distanceToGoFloorKm=null;flight.timeLeftFloorMin=null;
+          }
+        }
+        let distance=rawDistance;
+        if(flight&&rawDistance!==null){
+          const previousDistance=safeNumber(flight.distanceToGoFloorKm);
+          distance=previousDistance===null?rawDistance:Math.min(previousDistance,rawDistance);
+          flight.distanceToGoFloorKm=distance;
+        }
         if(flight&&currentProgressIcao&&!progressBelongsToCurrent){flight.progressFloor=0;flight.progressIcao=currentProgressIcao;Storage.set(WATCHLIST_KEY,this.watchlist)}
         let storedFloor=progressBelongsToCurrent?(safeNumber(flight?.progressFloor)??0):0;
         const progressIsUsable=!!(route&&geometry&&flight&&this.watchMismatchKey!==this.watchKey(flight)&&distance!==null);
-        if(progressIsUsable&&storedFloor-measuredPct>2&&distance>25){storedFloor=measuredPct;flight.progressFloor=measuredPct;Storage.set(WATCHLIST_KEY,this.watchlist);this.resetProgress()}
+        // Progress is monotonic for the same watched aircraft and route. ADS-B
+        // jitter, provider changes, and small route-geometry differences must
+        // not make the completed-journey indicator move backwards. Reset only
+        // when the tracked aircraft/flight identity changes above.
+        if(progressIsUsable&&storedFloor>0){storedFloor=Math.max(storedFloor,safeNumber(flight?.progressFloor)??0)}
         const positionFresh=this.hasFreshPosition(watched),airborne=positionFresh&&this.isAirborne(watched),landed=positionFresh&&this.isLandedAtDestination(flight,watched),complete=landed||arrivalEstimated,pct=complete?100:airborne&&route?Math.min(99,Math.max(storedFloor,measuredPct)):0;
         if(landed&&flight&&!flight.arrivalConfirmedAt){flight.arrivalConfirmedAt=Date.now();Storage.set(WATCHLIST_KEY,this.watchlist)}
         if(arrivalEstimated&&flight&&!flight.arrivalEstimatedAt){flight.arrivalEstimatedAt=Date.now();Storage.set(WATCHLIST_KEY,this.watchlist)}
@@ -1224,7 +1249,17 @@ class SkyAroundMe {
         $("metricDistanceLabel").textContent=complete?"ARRIVAL":"DISTANCE TO GO";$("metricDistance").textContent=complete?(flight?.toCode||"LANDED"):airborne&&distance!==null?Math.round(distance).toLocaleString()+" km":"—";
         $("metricAltitudeLabel").textContent="ALTITUDE";$("metricAltitude").textContent=!positionFresh||watched.alt==null?"—":Math.round(watched.alt*3.28084).toLocaleString()+" ft";
         $("metricSpeedLabel").textContent="SPEED";$("metricSpeed").textContent=!positionFresh||speedKt===null?"—":Math.round(speedKt)+" kt";
-        $("metricTimeLabel").textContent=complete?"FLIGHT STATUS":"TIME LEFT";$("metricTime").textContent=landed?"LANDED":arrivalEstimated?"ARRIVAL EST.":!airborne||distance===null||!speedKt?"—":this.timeLeft(distance,speedKt);
+        $("metricTimeLabel").textContent=complete?"FLIGHT STATUS":"TIME LEFT";
+        if(landed)$("metricTime").textContent="LANDED";
+        else if(arrivalEstimated)$("metricTime").textContent="ARRIVAL EST.";
+        else if(!airborne||distance===null||!speedKt)$("metricTime").textContent="—";
+        else{
+          const rawMinutes=Math.max(1,Math.round(distance/(speedKt*1.852)*60));
+          const previousMinutes=safeNumber(flight?.timeLeftFloorMin);
+          const minutes=previousMinutes===null?rawMinutes:Math.min(previousMinutes,rawMinutes);
+          if(flight){flight.timeLeftFloorMin=minutes;Storage.set(WATCHLIST_KEY,this.watchlist)}
+          $("metricTime").textContent=minutes>=60?Math.floor(minutes/60)+"h "+String(minutes%60).padStart(2,"0")+"m":minutes+"m";
+        }
         this.map.updateWatchedFlight(positionFresh&&!complete?watched:null);this.map.drawRoute(route,positionFresh&&!complete?watched:null);if(route)this.map.setCamera("journey",false);return;
       }
       const quiet=$("quietMapState"),active=this.activeWatchedAircraft()?this.activeWatchedFlight():null,next=active||this.nextFlight();
@@ -1361,9 +1396,23 @@ class SkyAroundMe {
     $("previewStatus").textContent=this.watchMismatchKey===this.watchKey(f)&&!f.watchKnown?(f.fromCode&&f.toCode?"SCHEDULED ROUTE · AWAITING LIVE MATCH":"SEARCHING FOR LIVE AIRCRAFT"):isLive?fresh?pct.toFixed(1)+"% JOURNEY · LIVE":pct.toFixed(1)+"% JOURNEY · LAST POSITION "+lastSeenMinutes+"M AGO":(live&&!fresh?(safeNumber(live.positionAgeSec)===null?"POSITION AGE UNKNOWN · LAST POSITION RETAINED":"POSITION UPDATING · LAST POSITION RETAINED"):f.watchKnown?"IDENTITY SAVED · POSITION NOT VERIFIED":state);
     if(isLive){
       const toLat=AIRPORTS[f.toCode]?.[0]??safeNumber(f.toLat)??null,toLon=AIRPORTS[f.toCode]?.[1]??safeNumber(f.toLon)??null;
-      const distance=toLat===null||toLon===null||live.lat==null||live.lon==null?null:haversine(live.lat,live.lon,toLat,toLon);
+      const rawDistance=toLat===null||toLon===null||live.lat==null||live.lon==null?null:haversine(live.lat,live.lon,toLat,toLon);
+      const metricIcao=normalizeCode(live.icao||"");
+      if(metricIcao&&f.metricIcao!==metricIcao){f.metricIcao=metricIcao;f.distanceToGoFloorKm=null;f.timeLeftFloorMin=null}
+      const previousDistance=safeNumber(f.distanceToGoFloorKm);
+      const distance=rawDistance===null?null:previousDistance===null?rawDistance:Math.min(previousDistance,rawDistance);
+      if(distance!==null)f.distanceToGoFloorKm=distance;
       const speedKt=safeNumber(live.speed)===null?null:live.speed*1.94384;
-      this.setPreviewTelemetry([{label:"DISTANCE TO GO",value:distance===null?"—":Math.round(distance).toLocaleString()+" km",icon:"distance"},{label:"ALTITUDE",value:live.alt===null?"—":Math.round(live.alt*3.28084).toLocaleString()+" ft",icon:"altitude"},{label:"TIME LEFT",value:distance===null||!speedKt?"—":this.timeLeft(distance,speedKt),icon:"time"}]);
+      let timeValue="—";
+      if(distance!==null&&speedKt){
+        const rawMinutes=Math.max(1,Math.round(distance/(speedKt*1.852)*60));
+        const previousMinutes=safeNumber(f.timeLeftFloorMin);
+        const minutes=previousMinutes===null?rawMinutes:Math.min(previousMinutes,rawMinutes);
+        f.timeLeftFloorMin=minutes;
+        timeValue=minutes>=60?Math.floor(minutes/60)+"h "+String(minutes%60).padStart(2,"0")+"m":minutes+"m";
+      }
+      Storage.set(WATCHLIST_KEY,this.watchlist);
+      this.setPreviewTelemetry([{label:"DISTANCE TO GO",value:distance===null?"—":Math.round(distance).toLocaleString()+" km",icon:"distance"},{label:"ALTITUDE",value:live.alt===null?"—":Math.round(live.alt*3.28084).toLocaleString()+" ft",icon:"altitude"},{label:"TIME LEFT",value:timeValue,icon:"time"}]);
     }else this.setPreviewTelemetry([{label:"DEPARTURE",value:f.departureTime||"—",icon:"departure"},{label:"ARRIVAL",value:f.arrivalTime||"—",icon:"arrival"},{label:"FLIGHT",value:(f.flightNumber||f.flight||"—").toUpperCase(),icon:"flight"}]);
   }
   nextFlight(){
