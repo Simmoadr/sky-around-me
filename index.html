@@ -992,26 +992,18 @@ class MapView {
       if(observed.length>240)observed=observed.slice(-240);
       this.observedTracks.set(trackKey,observed);
     }
-    // Always show a completed segment. If this page has not collected enough
-    // ADS-B samples yet, use the airport-to-current-position great-circle
-    // estimate. Once samples exist, connect the airport to the observed track
-    // so the route does not appear to start halfway through the flight.
-    // Draw a solid completed segment on every live refresh. The airport-to-
-    // current-position segment is an estimate; observed ADS-B samples are
-    // overlaid when available to show the actual track collected in this session.
-    const completed=geometry.completed;
-    const observedTrack=observed.length>1
+    // Draw exactly one completed segment. Use the observed track collected
+    // during this session when available; otherwise show the estimated
+    // great-circle segment from departure to the current aircraft position.
+    // Do not draw both geometries: that creates two overlapping solid lines.
+    const completed=observed.length>1
       ? [from,...observed.map(point=>[point.lat,point.lon])]
-      : [];
+      : geometry.completed;
     const remaining=geometry.remaining;
-    this.routePoints=geometry.points;
+    this.routePoints=[...completed,...remaining.slice(1)];
     if(completed.length>1){
       this.routeLayers.push(L.polyline(completed,{color:"#fff",weight:8,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
       this.routeLayers.push(L.polyline(completed,{color:"#2999F5",weight:4.5,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
-    }
-    if(observedTrack.length>1){
-      this.routeLayers.push(L.polyline(observedTrack,{color:"#fff",weight:7,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
-      this.routeLayers.push(L.polyline(observedTrack,{color:"#0877D1",weight:3.5,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
     }
     this.routeLayers.push(L.polyline(remaining,{color:"#fff",weight:7,opacity:.96,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
     this.routeLayers.push(L.polyline(remaining,{color:"#2999F5",weight:3,opacity:1,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
