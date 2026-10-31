@@ -680,6 +680,23 @@ function greatCirclePoints(start,end){
   }
   return points;
 }
+function curvedRoutePoints(start,end){
+  const lat0=Number(start?.[0]),lon0=Number(start?.[1]),lat1=Number(end?.[0]),lon1=Number(end?.[1]);
+  if(![lat0,lon0,lat1,lon1].every(Number.isFinite))return [];
+  const rad=Math.PI/180,mercator=lat=>Math.log(Math.tan(Math.PI/4+clamp(lat,-85,85)*rad/2));
+  let lonEnd=lon1;while(lonEnd-lon0>180)lonEnd-=360;while(lonEnd-lon0< -180)lonEnd+=360;
+  const p0=[lon0*rad,mercator(lat0)],p1=[lonEnd*rad,mercator(lat1)],dx=p1[0]-p0[0],dy=p1[1]-p0[1],length=Math.hypot(dx,dy);
+  if(length<1e-8)return [[lat0,lon0],[lat1,lonEnd]];
+  // Offset the quadratic control point to give the route a visible, smooth
+  // arc at normal map zoom levels, including short live segments.
+  const bend=length*.22,control=[(p0[0]+p1[0])/2-(dy/length)*bend,(p0[1]+p1[1])/2+(dx/length)*bend],distance=haversine(lat0,lon0,lat1,lon1),steps=Math.max(48,Math.min(240,Math.ceil(distance/12))),points=[];
+  for(let i=0;i<=steps;i++){
+    const t=i/steps,u=1-t,x=u*u*p0[0]+2*u*t*control[0]+t*t*p1[0],y=u*u*p0[1]+2*u*t*control[1]+t*t*p1[1];
+    let lon=x/rad;while(lon-lon0>180)lon-=360;while(lon-lon0< -180)lon+=360;
+    points.push([((2*Math.atan(Math.exp(y))-Math.PI/2)/rad),lon]);
+  }
+  return points;
+}
 function routeGeometry(route,aircraft){
   const from=route?.fromLat!=null&&route?.fromLon!=null?[Number(route.fromLat),Number(route.fromLon)]:AIRPORTS[route?.fromCode];
   const to=route?.toLat!=null&&route?.toLon!=null?[Number(route.toLat),Number(route.toLon)]:AIRPORTS[route?.toCode];
@@ -708,7 +725,7 @@ function liveRouteGeometry(route,aircraft){
   const to=route?.toLat!=null&&route?.toLon!=null?[Number(route.toLat),Number(route.toLon)]:AIRPORTS[route?.toCode];
   const position=aircraft&&Number.isFinite(Number(aircraft.lat))&&Number.isFinite(Number(aircraft.lon))?[Number(aircraft.lat),Number(aircraft.lon)]:null;
   if(!from||!to||!position||![...from,...to,...position].every(Number.isFinite))return null;
-  const completed=greatCirclePoints(from,position),remaining=greatCirclePoints(position,to);
+  const completed=curvedRoutePoints(from,position),remaining=curvedRoutePoints(position,to);
   const done=haversine(from[0],from[1],position[0],position[1]),left=haversine(position[0],position[1],to[0],to[1]),total=done+left;
   return {completed,remaining,points:[...completed,...remaining.slice(1)],progress:total?done/total:0,position};
 }
@@ -850,7 +867,7 @@ function adaptAircraft(a,source="ADS-B"){
   const positionAgeSec=safeNumber(a.positionAgeSec??a.seen_pos??a.lastPosition?.seen_pos),providedObservedAt=timestampMs(a.positionObservedAt??a.lastSeenAt),observedAt=providedObservedAt??(positionAgeSec===null?null:Date.now()-positionAgeSec*1000);
   return {icao:String(a.hex||a.icao||"").toLowerCase(),callsign:String(a.flight||a.callsign||"").trim(),registration:String(a.r||a.registration||"").trim(),lat,lon,alt:safeNumber(a.alt_baro)===null?null:Number(a.alt_baro)*.3048,speed:safeNumber(a.gs)===null?null:Number(a.gs)*.514444,heading:safeNumber(a.track),vs:safeNumber(a.baro_rate)===null?null:Number(a.baro_rate)*.00508,type:String(a.t||a.aircraftType||a.model||a.type||""),desc:String(a.desc||a.t||a.aircraftType||a.model||a.type||""),operator:String(a.ownOp||a.operator||""),source:String(a.source||a.provider||a.feed||source),squawk:String(a.squawk||a.squawk_code||a.code_7600||""),mil:a.mil===true||a.mil===1,category:String(a.category||""),onGround:a.onGround===true||a.ground===true||String(a.alt_baro||"").toLowerCase()==="ground",positionAgeSec,positionObservedAt:observedAt};
 }
-function isFreshPosition(aircraft){const age=safeNumber(aircraft?.positionAgeSec);if(age!==null)return age>=0&&age<=90;const observed=timestampMs(aircraft?.positionObservedAt);return observed===null||Date.now()-observed<=90000&&Date.now()>=observed-5000}
+function isFreshPosition(aircraft){const age=safeNumber(aircraft?.positionAgeSec);if(age!==null)return age>=0&&age<=90;const observed=timestampMs(aircraft?.positionObservedAt);return observed!==null&&Date.now()-observed<=90000&&Date.now()>=observed-5000}
 function verifiedCachedPosition(live){
   const observed=timestampMs(live?.positionObservedAt),reportedAge=safeNumber(live?.positionAgeSec),ageSec=reportedAge??(observed===null?null:(Date.now()-observed)/1000);
   return observed!==null&&observed>0&&ageSec!==null&&ageSec>=0&&ageSec<=90&&Date.now()-observed<=90_000&&Date.now()>=observed-5_000;
@@ -876,7 +893,7 @@ function aircraftKind(x){
 }
 function regionFor(lat,lon){const a=Number(lat),o=Number(lon);if(a>=-60&&a<=85&&o>=-170&&o<=-20)return "america";if(a>=34&&a<=72&&o>=-25&&o<45)return "europe";if(a>=-50&&a<=82&&o>=45&&o<=180)return "asia";return ""}
 class MapView {
-  constructor(app){this.app=app;this.map=null;this.markers=new Map();this.specialMarkers=new Map();this.outerMarkers=new Map();this.motionHeadings=new Map();this.observedTracks=new Map();this.watchedMarker=null;this.outer=[];this.aircraftCircle=null;this.extendedCircle=null;this.userMarker=null;this.routeLayers=[];this.fromAirportMarker=null;this.toAirportMarker=null;this.routePoints=[];this.selected=null;this.active=true;this.cameraMode="local";}
+  constructor(app){this.app=app;this.map=null;this.markers=new Map();this.specialMarkers=new Map();this.outerMarkers=new Map();this.motionHeadings=new Map();this.watchedMarker=null;this.outer=[];this.aircraftCircle=null;this.extendedCircle=null;this.userMarker=null;this.routeLayers=[];this.fromAirportMarker=null;this.toAirportMarker=null;this.routePoints=[];this.selected=null;this.active=true;this.cameraMode="local";}
   init(){
     if(!window.L)return;
     this.map=L.map("map",{zoomControl:false,rotate:true,bearing:this.app.settings.value.rotationDeg,dragRotate:false,touchRotate:false,shiftKeyRotate:false}).setView([this.app.settings.value.lat,this.app.settings.value.lon],8);
@@ -992,39 +1009,21 @@ class MapView {
     const to=[safeNumber(route.toLat)??AIRPORTS[route.toCode]?.[0],safeNumber(route.toLon)??AIRPORTS[route.toCode]?.[1]];
     if(from.some(x=>!Number.isFinite(x))||to.some(x=>!Number.isFinite(x))){this.clearAirportMarkers();return}
     if(!aircraft||!Number.isFinite(aircraft.lat)||!Number.isFinite(aircraft.lon)){
-      const planned=greatCirclePoints(from,to);this.routePoints=planned;
+      const planned=curvedRoutePoints(from,to);this.routePoints=planned;
       this.routeLayers.push(L.polyline(planned,{color:"#fff",weight:7,opacity:.96,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
       this.routeLayers.push(L.polyline(planned,{color:"#2999F5",weight:3,opacity:1,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
       this.updateAirportMarker("fromAirportMarker",from,"FROM",route.fromCode,route.from||route.fromName||route.fromCode,"from");this.updateAirportMarker("toAirportMarker",to,"TO",route.toCode,route.to||route.toName||route.toCode,"to");return;
     }
     const geometry=liveRouteGeometry(route,aircraft);if(!geometry){this.clearAirportMarkers();return}
-    // A current ADS-B position plus airport coordinates only gives us a
-    // great-circle estimate, which looks like a straight chord at local zoom.
-    // Preserve successive observed positions during this session and draw the
-    // flown segment from those real samples instead of implying we know the
-    // aircraft's historical airway track.
-    const trackKey=[aircraft.icao||aircraft.callsign||"aircraft",route.fromCode||"",route.toCode||""].join("|");
-    const trackNow=Date.now(),position=geometry.position;
-    let observed=this.observedTracks.get(trackKey)||[];
-    const last=observed[observed.length-1];
-    if(last&&trackNow-last.at>15*60*1000)observed=[];
-    const prior=observed[observed.length-1];
-    if(!prior||haversine(prior.lat,prior.lon,position[0],position[1])>=.08){
-      observed.push({lat:position[0],lon:position[1],at:trackNow});
-      if(observed.length>240)observed=observed.slice(-240);
-      this.observedTracks.set(trackKey,observed);
-    }
-    // When the app starts mid-flight, there is no observed history yet. Draw
-    // the curved origin-to-current great-circle segment as an estimate so the
-    // route remains continuous; replace it with the sampled track once enough
-    // live positions have accumulated.
-    const hasObservedTrack=observed.length>1,completed=hasObservedTrack?observed.map(point=>[point.lat,point.lon]):geometry.completed;
+    // Keep the displayed line as a smooth, curved route on every update.
+    // Progress still uses the live aircraft position; the arc is a visual
+    // route estimate rather than a claim about every flown waypoint.
+    const completed=geometry.completed;
     const remaining=geometry.remaining;
     this.routePoints=geometry.points;
     if(completed.length>1){
-      const completedStyle=hasObservedTrack?{color:"#2999F5",weight:3.5,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}:{color:"#2999F5",weight:2.5,opacity:.68,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false};
-      this.routeLayers.push(L.polyline(completed,{color:"#fff",weight:7,opacity:.82,dashArray:hasObservedTrack?null:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
-      this.routeLayers.push(L.polyline(completed,completedStyle).addTo(this.map));
+      this.routeLayers.push(L.polyline(completed,{color:"#fff",weight:7,opacity:.82,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+      this.routeLayers.push(L.polyline(completed,{color:"#2999F5",weight:2.8,opacity:.9,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
     }
     this.routeLayers.push(L.polyline(remaining,{color:"#fff",weight:7,opacity:.96,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
     this.routeLayers.push(L.polyline(remaining,{color:"#2999F5",weight:3,opacity:1,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
@@ -1235,9 +1234,9 @@ class SkyAroundMe {
         $("nearestEyebrow").textContent=landed?"LANDED WATCHED FLIGHT":arrivalEstimated?"ARRIVAL ESTIMATED · SIGNAL ENDED":positionFresh&&airborne?"LIVE WATCHED FLIGHT":positionFresh?"WATCHED FLIGHT · "+this.watchedStatus(flight):"WATCHED FLIGHT · SIGNAL ENDED";
         $("nearestKind").textContent=aircraftKind(watched);$("nearestKind").hidden=!aircraftKind(watched);
         $("nearestCode").textContent=(flight?.flightNumber||flight?.flight||watched.flightNumber||watched.callsign||watched.icao).toUpperCase();
-        $("nearestDescription").textContent=[flight?.name,flight?.aircraftDesc||watched.desc||watched.type,watched.callsign&&watched.callsign!==watched.flightNumber?watched.callsign:""].filter(Boolean).join(" · ");
+        $("nearestDescription").textContent=[flight?.name,flight?.aircraftDesc||watched.desc||watched.type,watched.registration?"REG "+watched.registration:"",watched.callsign&&watched.callsign!==watched.flightNumber?watched.callsign:""].filter(Boolean).join(" · ");
         const locationText=deviceDistance===null?'TRACKING':(positionFresh?'':'LAST POSITION ')+deviceDistance.toFixed(1)+' KM FROM DEVICE';
-        status.innerHTML='<span class="dot"></span>'+(arrivalEstimated?"ARRIVAL ESTIMATED · LIVE SIGNAL ENDED":this.watchedStatus(flight))+' · '+locationText+(geometry?.deviationKm>250?' · ROUTE DEVIATION '+Math.round(geometry.deviationKm)+' KM':'');
+        status.innerHTML='<span class="dot"></span>'+(arrivalEstimated?"ARRIVAL ESTIMATED · LIVE SIGNAL ENDED":this.watchedStatus(flight))+' · '+locationText+' · '+escapeHtml(watched.source||"ADS-B")+' · POS '+escapeHtml(formatPositionAge(watched))+(geometry?.deviationKm>250?' · ROUTE DEVIATION '+Math.round(geometry.deviationKm)+' KM':'');
         $("nearestRoute").hidden=false;$("fromCode").textContent=route?.fromCode||flight?.fromCode||"—";$("fromName").textContent=route?.from||flight?.from||"";$("toCode").textContent=route?.toCode||flight?.toCode||"—";$("toName").textContent=route?.to||flight?.to||"";
         if(complete){this.resetProgress();this.progressIdentity=String(watched.icao||watched.callsign||"").toLowerCase();this.progressDisplayed=100;this.progressTarget=100;this.writeProgressVisual(100);$("progressLabel").textContent=arrivalEstimated?"ARRIVAL ESTIMATED · SIGNAL ENDED":"LANDED · JOURNEY COMPLETE"}
         else if(route&&airborne){this.updateProgress(pct,watched);if(pct>storedFloor+.05&&flight){flight.progressFloor=pct;Storage.set(WATCHLIST_KEY,this.watchlist)}}
