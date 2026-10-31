@@ -624,17 +624,18 @@ const normalizeCode=s=>String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
 function watchedFlightLookup(flight){
   const number=normalizeCode(flight.flightNumber||flight.flight),iataPrefix=Object.keys(AIRLINE_CALLSIGNS).sort((a,b)=>b.length-a.length).find(code=>number.startsWith(code)&&/^\d/.test(number.slice(code.length))),match=number.match(/^([A-Z]{1,3})(\d+[A-Z]?)$/);
   const iata=iataPrefix||(match&&match[1]),numberPart=iataPrefix?number.slice(iataPrefix.length):match?.[2];
-  const liveCallsign=normalizeCode(flight.liveCallsign||flight.operationalCallsign||flight.callsign);
+  // Schedule providers sometimes return an unrelated or stale operational
+  // alias. Only retain a live alias after the app verified it against ADS-B.
+  const liveCallsign=flight.liveCallsignVerified?normalizeCode(flight.liveCallsign):"";
   if(!iata||!numberPart)return {callsigns:[liveCallsign,normalizeCode(flight.flightIcao)].filter((value,index,array)=>value&&array.indexOf(value)===index),airlinePrefix:normalizeCode(flight.airlineIcao)};
   const mapped=AIRLINE_CALLSIGNS[iata],explicit=normalizeCode(flight.airlineIcao),prefix=mapped||explicit||iata;
   // Derive callsigns from the entered flight number. Some schedule responses
   // attach a stale flightIcao from a different flight; never let that override
   // the requested number. Keep a schedule alias only when it is equivalent.
-  const primary=prefix+numberPart,candidates=[primary,number],scheduleAlias=normalizeCode(flight.flightIcao);
+  const primary=prefix+numberPart,candidates=[primary,number],scheduleAlias=normalizeCode(flight.flightIcao||flight.operationalCallsign||flight.callsign);
   if(scheduleAlias&&candidates.some(candidate=>callsignMatchesFlight(scheduleAlias,candidate)))candidates.unshift(scheduleAlias);
-  // Prefer a callsign learned from the live ADS-B match or returned explicitly
-  // by the schedule provider. Otherwise, route/time discovery below resolves
-  // the operational callsign dynamically; never guess it from a hard-coded map.
+  // A different operational callsign is accepted only after route/time
+  // discovery verifies it against live position data.
   const callsigns=[liveCallsign,...candidates].map(normalizeCode).filter((value,index,array)=>value&&array.indexOf(value)===index);
   return {callsigns,airlinePrefix:prefix};
 }
@@ -648,6 +649,16 @@ function callsignMatchesFlight(actual,expected){
 function watchedCallsignMatchesFlight(flight,aircraft){
   const actual=normalizeCode(aircraft?.callsign);
   return !actual||watchedFlightLookup(flight).callsigns.some(expected=>callsignMatchesFlight(actual,expected));
+}
+function watchedDepartureCompatible(flight,aircraft){
+  const departure=flight?.departureUtc?Date.parse(flight.departureUtc):NaN;
+  if(!Number.isFinite(departure)||Date.now()>=departure)return true;
+  const altitude=safeNumber(aircraft?.alt),speed=safeNumber(aircraft?.speed);
+  // A flight cannot already be cruising before its scheduled departure. This
+  // also prevents a reused callsign or stale schedule alias matching a prior leg.
+  if(aircraft?.onGround===true)return true;
+  if(altitude!==null)return altitude<=140;
+  return speed===null||speed<=80;
 }
 function watchedLiveExpiry(flight,live){
   const lastSeen=Number(live?.lastSeenAt||live?.watchLiveAt||0);
@@ -760,7 +771,7 @@ class Api {
   async watchedAircraft(flight){
     this.lastWatchedRouteMismatch=false;this.lastWatchedIdentityMismatch=false;
     const lookup=watchedFlightLookup(flight),base={lookup:"watched-adsb",flight:normalizeCode(flight.flightNumber||flight.flight),date:flight.date||"",hex:flight.hex||"",registration:flight.registration||"",from:flight.fromCode||"",to:flight.toCode||"",fromLat:String(flight.fromLat??""),fromLon:String(flight.fromLon??"")};
-    const adapt=result=>(result?.ac||[]).map(a=>adaptWatchedAircraft(a,result.source||"ADS-B")).filter(a=>a.icao&&a.lat!==null&&a.lon!==null&&isFreshPosition(a));
+    const adapt=result=>(result?.ac||[]).map(a=>adaptWatchedAircraft(a,result.source||"ADS-B")).filter(a=>a.icao&&a.lat!==null&&a.lon!==null&&isFreshPosition(a)&&watchedDepartureCompatible(flight,a));
     const sameIdentity=x=>(base.hex&&normalizeCode(x.icao)===normalizeCode(base.hex))||(base.registration&&normalizeCode(x.registration)===normalizeCode(base.registration));
     let result=null;
     // A previously confirmed Mode-S hex or registration is more stable than a
@@ -816,14 +827,14 @@ class Api {
       if(base.hex){
         try{
           const fallback=await this.json("https://api.adsb.lol/v2/hex/"+encodeURIComponent(base.hex));
-          const candidate=(fallback?.ac||[]).map(a=>adaptWatchedAircraft(a,"ADS-B.lol")).find(a=>a.icao&&normalizeCode(a.icao)===normalizeCode(base.hex)&&a.lat!==null&&a.lon!==null&&isFreshPosition(a));
+          const candidate=(fallback?.ac||[]).map(a=>adaptWatchedAircraft(a,"ADS-B.lol")).find(a=>a.icao&&normalizeCode(a.icao)===normalizeCode(base.hex)&&a.lat!==null&&a.lon!==null&&isFreshPosition(a)&&watchedDepartureCompatible(flight,a));
           if(candidate){candidate.source="ADS-B.lol";candidate.flightNumber=flight.flightNumber||flight.flight;candidate.watchGlobal=true;this.lastWatchedIdentityMismatch=false;this.lastWatchedRouteMismatch=false;return candidate}
         }catch{}
       }
       for(const callsign of lookup.callsigns){
         try{
           const fallback=await this.json("https://api.adsb.lol/v2/callsign/"+encodeURIComponent(callsign));
-          const candidate=(fallback?.ac||[]).map(a=>adaptWatchedAircraft(a,"ADS-B.lol")).find(a=>a.icao&&a.lat!==null&&a.lon!==null&&isFreshPosition(a)&&callsignMatchesFlight(a.callsign,callsign)&&watchedPositionMatchesRoute(flight,a));
+          const candidate=(fallback?.ac||[]).map(a=>adaptWatchedAircraft(a,"ADS-B.lol")).find(a=>a.icao&&a.lat!==null&&a.lon!==null&&isFreshPosition(a)&&watchedDepartureCompatible(flight,a)&&callsignMatchesFlight(a.callsign,callsign)&&watchedPositionMatchesRoute(flight,a));
           if(candidate){candidate.source="ADS-B.lol";candidate.flightNumber=flight.flightNumber||flight.flight;candidate.watchGlobal=true;this.lastWatchedIdentityMismatch=false;this.lastWatchedRouteMismatch=false;return candidate}
         }catch{}
       }
@@ -1221,7 +1232,7 @@ class SkyAroundMe {
         if(landed&&flight&&!flight.arrivalConfirmedAt){flight.arrivalConfirmedAt=Date.now();Storage.set(WATCHLIST_KEY,this.watchlist)}
         if(arrivalEstimated&&flight&&!flight.arrivalEstimatedAt){flight.arrivalEstimatedAt=Date.now();Storage.set(WATCHLIST_KEY,this.watchlist)}
         $("quietMapState").hidden=true;
-        $("nearestEyebrow").textContent=landed?"LANDED WATCHED FLIGHT":arrivalEstimated?"ARRIVAL ESTIMATED · SIGNAL ENDED":positionFresh?"LIVE WATCHED FLIGHT":"WATCHED FLIGHT · SIGNAL ENDED";
+        $("nearestEyebrow").textContent=landed?"LANDED WATCHED FLIGHT":arrivalEstimated?"ARRIVAL ESTIMATED · SIGNAL ENDED":positionFresh&&airborne?"LIVE WATCHED FLIGHT":positionFresh?"WATCHED FLIGHT · "+this.watchedStatus(flight):"WATCHED FLIGHT · SIGNAL ENDED";
         $("nearestKind").textContent=aircraftKind(watched);$("nearestKind").hidden=!aircraftKind(watched);
         $("nearestCode").textContent=(flight?.flightNumber||flight?.flight||watched.flightNumber||watched.callsign||watched.icao).toUpperCase();
         $("nearestDescription").textContent=[flight?.name,flight?.aircraftDesc||watched.desc||watched.type,watched.callsign&&watched.callsign!==watched.flightNumber?watched.callsign:""].filter(Boolean).join(" · ");
@@ -1235,7 +1246,7 @@ class SkyAroundMe {
         $("metricAltitudeLabel").textContent="ALTITUDE";$("metricAltitude").textContent=!positionFresh||watched.alt==null?"—":Math.round(watched.alt*3.28084).toLocaleString()+" ft";
         $("metricSpeedLabel").textContent="SPEED";$("metricSpeed").textContent=!positionFresh||speedKt===null?"—":Math.round(speedKt)+" kt";
         $("metricTimeLabel").textContent=complete?"FLIGHT STATUS":"EST. TIME LEFT";$("metricTime").textContent=landed?"LANDED":arrivalEstimated?"ARRIVAL EST.":!airborne||distance===null||!speedKt?"—":this.timeLeft(distance,speedKt);
-        this.map.updateWatchedFlight(positionFresh&&!complete?watched:null);this.map.drawRoute(route,positionFresh&&!complete?watched:null);if(route)this.map.setCamera("journey",false);return;
+        const showLivePath=positionFresh&&airborne&&!complete;this.map.updateWatchedFlight(showLivePath?watched:null);this.map.drawRoute(showLivePath?route:null,showLivePath?watched:null);if(showLivePath&&route){if(this.map.cameraMode!=="journey")this.map.setCamera("journey",false)}else if(this.map.cameraMode==="journey")this.map.setCamera("local",false);return;
       }
       const quiet=$("quietMapState"),active=this.activeWatchedAircraft()?this.activeWatchedFlight():null,next=active||this.nextFlight();
       $("nearestKind").hidden=true;
@@ -1244,14 +1255,14 @@ class SkyAroundMe {
       $("nearestEyebrow").textContent=hasFilteredOut?"NO MATCHING AIRCRAFT":"SKIES ARE QUIET";$("nearestCode").textContent=hasFilteredOut?"NO "+filterNames[this.settings.value.filter].toUpperCase():"NO AIRCRAFTS";$("nearestDescription").textContent=hasFilteredOut?this.aircraft.length+" aircraft in range, but none match the selected filter. Change “Aircraft shown” in Settings.":"Within the selected airspace";status.innerHTML='<span class="dot"></span>'+(hasFilteredOut?this.aircraft.length+" AIRCRAFT · 0 MATCH":"QUIET · "+this.settings.value.rangeKm+" KM");
       const waitingForWatched=!!(next&&!this.activeWatchedAircraft()&&(next.watchKnown||this.watchMismatchKey===this.watchKey(next)||this.flightState(next)==="SEARCHING"));
       $("quietTitle").textContent=hasFilteredOut?"Aircraft nearby, but filtered out":waitingForWatched?"Waiting for live position":"Skies are quiet";
-      $("quietMessage").textContent=hasFilteredOut?"There are "+this.aircraft.length+" aircraft in range, but none match "+filterNames[this.settings.value.filter]+". Change the aircraft filter in Settings to see them.":waitingForWatched?"No aircraft nearby. The saved flight route is shown while we search for a matching live aircraft signal.":"No aircraft nearby right now.";
+      $("quietMessage").textContent=hasFilteredOut?"There are "+this.aircraft.length+" aircraft in range, but none match "+filterNames[this.settings.value.filter]+". Change the aircraft filter in Settings to see them.":waitingForWatched?"No aircraft nearby. We’ll show the watched flight path once its live position is confirmed.":"No aircraft nearby right now.";
       $("fromCode").textContent="—";$("toCode").textContent="—";$("fromName").textContent="";$("toName").textContent="";$("nearestRoute").hidden=true;$("progressLabel").textContent="AIRSPACE SCAN";this.resetProgress();
       $("metricDistanceLabel").textContent="RANGE";$("metricDistance").textContent=this.settings.value.rangeKm+" km";
       $("metricAltitudeLabel").textContent="AIRSPACE";$("metricAltitude").textContent="QUIET";
       $("metricSpeedLabel").textContent="TRAFFIC";$("metricSpeed").textContent="NONE";
       $("metricTimeLabel").textContent="LAST SCAN";$("metricTime").textContent=this.lastScan?this.elapsedSinceScan():"—";
       if(quiet){quiet.hidden=false;this.positionQuietState();const quietCard=$("quietNextFlight");quietCard.hidden=!next;const quietLabel=quietCard.querySelector("span");if(quietLabel)quietLabel.textContent=this.activeWatchedAircraft()?"LIVE WATCHED FLIGHT":"NEXT WATCHED FLIGHT";if(next){const flight=(next.flightNumber||next.flight||"WATCHED FLIGHT").toUpperCase();$("quietFlightName").textContent=next.name||flight;$("quietFlightRoute").textContent=[flight,next.fromCode&&next.toCode?next.fromCode+" → "+next.toCode:"ROUTE PENDING"].join(" · ");$("quietFlightCountdown").textContent=next.watchKnown?"IDENTITY SAVED · POSITION NOT VERIFIED":this.watchMismatchKey===this.watchKey(next)?(next.fromCode&&next.toCode?"SCHEDULED ROUTE · AWAITING LIVE MATCH":"SEARCHING FOR LIVE AIRCRAFT"):this.watchedStatus(next)==="LIVE"?"LIVE · FULL JOURNEY":this.flightState(next)==="SCHEDULED"?"DEPARTS IN "+this.countdownText(next):this.watchedStatus(next)}}
-      const liveOnMap=this.activeWatchedAircraft(),flightRoute=next?.fromCode&&next?.toCode?{status:"FOUND",fromCode:next.fromCode,toCode:next.toCode,from:next.from||next.fromCode,to:next.to||next.toCode,fromLat:AIRPORTS[next.fromCode]?.[0]??next.fromLat,fromLon:AIRPORTS[next.fromCode]?.[1]??next.fromLon,toLat:AIRPORTS[next.toCode]?.[0]??next.toLat,toLon:AIRPORTS[next.toCode]?.[1]??next.toLon}:null;this.map.updateWatchedFlight(liveOnMap);this.map.drawRoute(liveOnMap?.liveRoute||flightRoute,liveOnMap);if(liveOnMap?.liveRoute||flightRoute)this.map.setCamera("journey",false);return
+      const liveOnMap=this.activeWatchedAircraft();this.map.updateWatchedFlight(liveOnMap);this.map.drawRoute(liveOnMap?.liveRoute||null,liveOnMap);if(liveOnMap?.liveRoute&&this.map.cameraMode!=="journey")this.map.setCamera("journey",false);else if(!liveOnMap&&this.map.cameraMode==="journey")this.map.setCamera("local",false);return
     }
     $("quietMapState").hidden=true;$("nearestRoute").hidden=false;this.map.updateWatchedFlight(null);
     ["metricDistanceLabel","metricAltitudeLabel","metricSpeedLabel","metricTimeLabel"].forEach((id,i)=>$(id).textContent=["DISTANCE TO GO","ALTITUDE","SPEED","EST. TIME LEFT"][i]);
@@ -1421,6 +1432,14 @@ class SkyAroundMe {
   }
   flightState(f){
     if(!f)return "READY";
+    if(f.liveCallsign&&!f.liveCallsignVerified){
+      const derived=watchedFlightLookup({...f,liveCallsign:"",liveCallsignVerified:false});
+      if(!derived.callsigns.some(c=>callsignMatchesFlight(f.liveCallsign,c))){
+        delete f.liveCallsign;delete f.liveSource;f.hex="";f.registration="";f.watchKnown=false;f.lastLiveSeenAt=0;f.lastAirborneAt=0;f.lastEstimatedArrivalAt=0;f.progressFloor=0;f.progressIcao="";
+        if(this.watchLive?.watchKey===this.watchKey(f)){this.watchLive=null;Storage.set("skyAroundMeWatchLive",null)}
+        this.persistWatchlist();
+      }
+    }
     const retained=this.watchLive&&this.watchLive.watchKey===this.watchKey(f)?this.watchLive:null;
     // Clear legacy inferred completions that were recorded before we required
     // the last known position to be near the destination.
@@ -1469,7 +1488,7 @@ class SkyAroundMe {
         const toLat=route?(safeNumber(route.toLat)??AIRPORTS[route.toCode]?.[0]):null,toLon=route?(safeNumber(route.toLon)??AIRPORTS[route.toCode]?.[1]):null,speedMps=safeNumber(live.speed),moved=!previousLive||haversine(previousLive.lat,previousLive.lon,live.lat,live.lon)>=.5;
         if(route&&toLat!==null&&toLon!==null&&this.isAirborne(live)&&(this.hasFreshPosition(live)||moved)&&speedMps>0){const distance=haversine(live.lat,live.lon,toLat,toLon),observedAt=safeNumber(live.positionObservedAt)??Date.now();live.estimatedArrivalAt=observedAt+distance/(speedMps*3.6)*3600000}
         else if(previousLive?.estimatedArrivalAt)live.estimatedArrivalAt=previousLive.estimatedArrivalAt;
-        live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=route;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();live.lastFetchedAt=live.watchLiveAt;live.lastSearchAt=this.hasFreshPosition(live)?0:(previousLive?.lastSearchAt||live.watchLiveAt);live.lastSeenAt=timestampMs(live.positionObservedAt)??safeNumber(previousLive?.lastSeenAt)??0;this.watchLive=live;this.watchMismatchKey="";f.watchKnown=true;f.lastLiveSeenAt=live.lastSeenAt;if(this.isAirborne(live)&&live.lastSeenAt){f.lastAirborneAt=live.lastSeenAt;if(Number.isFinite(safeNumber(live.estimatedArrivalAt)))f.lastEstimatedArrivalAt=live.estimatedArrivalAt}f.hex=live.icao;f.registration=live.registration;if(live.callsign)f.liveCallsign=live.callsign;if(live.source)f.liveSource=live.source;const liveIcao=normalizeCode(live.icao||"");if(liveIcao&&normalizeCode(f.progressIcao||"")!==liveIcao){f.progressFloor=0;f.progressIcao=liveIcao}Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f);Storage.set("skyAroundMeWatchLive",live);
+        live.d=haversine(this.settings.value.lat,this.settings.value.lon,live.lat,live.lon);live.liveRoute=route;live.watchKey=this.watchKey(f);live.flightNumber=f.flightNumber||f.flight;live.watchLiveAt=Date.now();live.lastFetchedAt=live.watchLiveAt;live.lastSearchAt=this.hasFreshPosition(live)?0:(previousLive?.lastSearchAt||live.watchLiveAt);live.lastSeenAt=timestampMs(live.positionObservedAt)??safeNumber(previousLive?.lastSeenAt)??0;this.watchLive=live;this.watchMismatchKey="";f.watchKnown=true;f.lastLiveSeenAt=live.lastSeenAt;if(this.isAirborne(live)&&live.lastSeenAt){f.lastAirborneAt=live.lastSeenAt;if(Number.isFinite(safeNumber(live.estimatedArrivalAt)))f.lastEstimatedArrivalAt=live.estimatedArrivalAt}f.hex=live.icao;f.registration=live.registration;if(live.callsign){f.liveCallsign=live.callsign;f.liveCallsignVerified=live.watchDiscoveryMatch===true||watchedFlightLookup(f).callsigns.some(candidate=>callsignMatchesFlight(live.callsign,candidate))}if(live.source)f.liveSource=live.source;const liveIcao=normalizeCode(live.icao||"");if(liveIcao&&normalizeCode(f.progressIcao||"")!==liveIcao){f.progressFloor=0;f.progressIcao=liveIcao}Storage.set(WATCHLIST_KEY,this.watchlist);Storage.set(WATCH_KEY,f);Storage.set("skyAroundMeWatchLive",live);
       }else{
         const retained=this.watchLive?.watchKey===this.watchKey(f)&&this.watchLiveRetained(f,this.watchLive);
         if(retained){
