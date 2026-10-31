@@ -697,6 +697,26 @@ function curvedRoutePoints(start,end){
   }
   return points;
 }
+function smoothTrackPoints(track){
+  if(!Array.isArray(track)||track.length<2)return [];
+  if(track.length<3)return curvedRoutePoints(track[0],track[track.length-1]);
+  const rad=Math.PI/180,projected=[];let previousLon=Number(track[0][1]);
+  for(const [latValue,lonValue] of track){
+    const lat=Number(latValue);let lon=Number(lonValue);while(lon-previousLon>180)lon-=360;while(lon-previousLon< -180)lon+=360;previousLon=lon;
+    projected.push([lon*rad,Math.log(Math.tan(Math.PI/4+clamp(lat,-85,85)*rad/2))]);
+  }
+  const points=[],samples=8;
+  for(let i=0;i<projected.length-1;i++){
+    const p0=projected[Math.max(0,i-1)],p1=projected[i],p2=projected[i+1],p3=projected[Math.min(projected.length-1,i+2)];
+    const c1=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6],c2=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];
+    for(let j=0;j<samples;j++){
+      const t=j/samples,u=1-t,x=u*u*u*p1[0]+3*u*u*t*c1[0]+3*u*t*t*c2[0]+t*t*t*p2[0],y=u*u*u*p1[1]+3*u*u*t*c1[1]+3*u*t*t*c2[1]+t*t*t*p2[1];
+      points.push([(2*Math.atan(Math.exp(y))-Math.PI/2)/rad,x/rad]);
+    }
+  }
+  points.push([Number(track[track.length-1][0]),projected[projected.length-1][0]/rad]);
+  return points;
+}
 function routeGeometry(route,aircraft){
   const from=route?.fromLat!=null&&route?.fromLon!=null?[Number(route.fromLat),Number(route.fromLon)]:AIRPORTS[route?.fromCode];
   const to=route?.toLat!=null&&route?.toLon!=null?[Number(route.toLat),Number(route.toLon)]:AIRPORTS[route?.toCode];
@@ -893,7 +913,7 @@ function aircraftKind(x){
 }
 function regionFor(lat,lon){const a=Number(lat),o=Number(lon);if(a>=-60&&a<=85&&o>=-170&&o<=-20)return "america";if(a>=34&&a<=72&&o>=-25&&o<45)return "europe";if(a>=-50&&a<=82&&o>=45&&o<=180)return "asia";return ""}
 class MapView {
-  constructor(app){this.app=app;this.map=null;this.markers=new Map();this.specialMarkers=new Map();this.outerMarkers=new Map();this.motionHeadings=new Map();this.watchedMarker=null;this.outer=[];this.aircraftCircle=null;this.extendedCircle=null;this.userMarker=null;this.routeLayers=[];this.fromAirportMarker=null;this.toAirportMarker=null;this.routePoints=[];this.selected=null;this.active=true;this.cameraMode="local";}
+  constructor(app){this.app=app;this.map=null;this.markers=new Map();this.specialMarkers=new Map();this.outerMarkers=new Map();this.motionHeadings=new Map();this.observedTracks=new Map();this.watchedMarker=null;this.outer=[];this.aircraftCircle=null;this.extendedCircle=null;this.userMarker=null;this.routeLayers=[];this.fromAirportMarker=null;this.toAirportMarker=null;this.routePoints=[];this.selected=null;this.active=true;this.cameraMode="local";}
   init(){
     if(!window.L)return;
     this.map=L.map("map",{zoomControl:false,rotate:true,bearing:this.app.settings.value.rotationDeg,dragRotate:false,touchRotate:false,shiftKeyRotate:false}).setView([this.app.settings.value.lat,this.app.settings.value.lon],8);
@@ -1015,15 +1035,20 @@ class MapView {
       this.updateAirportMarker("fromAirportMarker",from,"FROM",route.fromCode,route.from||route.fromName||route.fromCode,"from");this.updateAirportMarker("toAirportMarker",to,"TO",route.toCode,route.to||route.toName||route.toCode,"to");return;
     }
     const geometry=liveRouteGeometry(route,aircraft);if(!geometry){this.clearAirportMarkers();return}
-    // Keep the displayed line as a smooth, curved route on every update.
-    // Progress still uses the live aircraft position; the arc is a visual
-    // route estimate rather than a claim about every flown waypoint.
-    const completed=geometry.completed;
+    // Smooth the observed live samples with a cubic spline so ordinary ADS-B
+    // update intervals don't appear as hard corners. Include the origin as
+    // the first control point so the flown segment remains connected.
+    const trackKey=[aircraft.icao||aircraft.callsign||"aircraft",route.fromCode||"",route.toCode||""].join("|"),trackNow=timestampMs(aircraft.positionObservedAt)??Date.now(),position=geometry.position;
+    let observed=this.observedTracks.get(trackKey)||[];
+    if(observed.length&&trackNow-observed[observed.length-1].at>15*60*1000)observed=[];
+    const last=observed[observed.length-1];
+    if(!last||haversine(last.lat,last.lon,position[0],position[1])>=.08){observed.push({lat:position[0],lon:position[1],at:trackNow});if(observed.length>240)observed=observed.slice(-240);this.observedTracks.set(trackKey,observed)}
+    const flownSamples=[[from[0],from[1]],...observed.map(point=>[point.lat,point.lon])],completed=flownSamples.length>2?smoothTrackPoints(flownSamples):geometry.completed;
     const remaining=geometry.remaining;
     this.routePoints=geometry.points;
     if(completed.length>1){
-      this.routeLayers.push(L.polyline(completed,{color:"#fff",weight:7,opacity:.82,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
-      this.routeLayers.push(L.polyline(completed,{color:"#2999F5",weight:2.8,opacity:.9,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+      this.routeLayers.push(L.polyline(completed,{color:"#fff",weight:7,opacity:.82,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
+      this.routeLayers.push(L.polyline(completed,{color:"#2999F5",weight:3.5,opacity:1,lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
     }
     this.routeLayers.push(L.polyline(remaining,{color:"#fff",weight:7,opacity:.96,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
     this.routeLayers.push(L.polyline(remaining,{color:"#2999F5",weight:3,opacity:1,dashArray:"2 7",lineCap:"round",lineJoin:"round",smoothFactor:0,interactive:false}).addTo(this.map));
